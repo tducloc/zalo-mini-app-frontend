@@ -1,6 +1,6 @@
 {
-  "cwd": "/Users/lap15182-local/Documents/zmp-blank-templates",
-  "name": "zmp-blank-templates",
+  "cwd": "/Users/lap15284/Desktop/zalo-mini-apps/frontend",
+  "name": "zalo-marketplace",
   "framework": "react-typescript",
   "cssPreProcessor": "scss",
   "includeTailwind": true,
