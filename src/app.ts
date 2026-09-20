@@ -11,7 +11,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mount the app
-import Layout from '@/components/layout.component';
+import MyApp from '@/components/app';
 
 // Expose app configuration
 import appConfig from '../app-config.json';
@@ -35,6 +35,6 @@ root.render(
   React.createElement(
     React.StrictMode,
     null,
-    React.createElement(QueryClientProvider, { client: queryClient }, React.createElement(Layout)),
+    React.createElement(QueryClientProvider, { client: queryClient }, React.createElement(MyApp)),
   ),
 );

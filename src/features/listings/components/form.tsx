@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import FeedbackState from '@/components/feedback-state.component';
-import { categories } from '@/features/categories/categories.constants';
+import FeedbackState from '@/components/feedback-state';
+import { categories } from '@/features/categories/constants';
 
 export type FormState =
   'default' | 'validation' | 'uploading' | 'upload-error' | 'ready' | 'success' | 'edit';
@@ -26,17 +26,23 @@ export default function ListingForm({
         }
       : {},
   );
+
   const [done, setDone] = useState(state === 'success');
+
   const [main, setMain] = useState<string | null>(
     ['ready', 'edit', 'uploading', 'upload-error'].includes(state) ? sampleImage : null,
   );
+
   const [gallery, setGallery] = useState<string[]>(
     ['ready', 'edit', 'uploading', 'upload-error'].includes(state)
       ? [sampleImage, sampleImage]
       : [],
   );
+
   const [retrying, setRetrying] = useState(false);
+
   const createdUrls = useRef<string[]>([]);
+
   useEffect(
     () => () => {
       createdUrls.current.forEach((url) => URL.revokeObjectURL(url));

@@ -1,42 +1,39 @@
 import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
-import { restoreSession } from '@/features/auth/auth.api';
+import { restoreSession, settleAuthBootstrap } from '@/features/auth/api/session';
+import { useAuthStore } from '@/stores/auth';
 
 export function AuthBootstrap({ children }: PropsWithChildren) {
-  const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  const error = useAuthStore((state) => state.error);
+
+  const setError = useAuthStore((state) => state.setError);
 
   const retry = useCallback(async () => {
     setBusy(true);
     try {
       await restoreSession(true);
-      setFailed(false);
     } catch {
-      setFailed(true);
+      setError('Chưa thể xác thực. Bạn vẫn có thể xem tin.');
     } finally {
       setBusy(false);
     }
   }, []);
 
   useEffect(() => {
-    const onFailure = () => setFailed(true);
-    const onSession = () => setFailed(false);
-
-    window.addEventListener('auth:recovery-failed', onFailure);
-    window.addEventListener('auth:session-changed', onSession);
-
-    void restoreSession().catch(() => setFailed(true));
-
-    return () => {
-      window.removeEventListener('auth:recovery-failed', onFailure);
-      window.removeEventListener('auth:session-changed', onSession);
-    };
+    void restoreSession().then(
+      () => settleAuthBootstrap(),
+      () => {
+        settleAuthBootstrap();
+      },
+    );
   }, []);
 
   return (
     <>
       {children}
 
-      {failed && (
+      {error && (
         <div className="auth-retry-notice" role="status">
           <span>Chưa thể xác thực. Bạn vẫn có thể xem tin.</span>
           <button disabled={busy} onClick={retry}>

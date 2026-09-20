@@ -19,7 +19,7 @@ beforeEach(async () => {
   ({ getAccessToken } = await import('zmp-sdk'));
   getAccessToken.mockReset().mockResolvedValue('zalo-token');
   ({ apiClient } = await import('../src/lib/api-client'));
-  ({ restoreSession } = await import('../src/features/auth/auth.api'));
+  ({ restoreSession } = await import('../src/features/auth/api/session'));
   ({ http } = await import('../src/lib/http'));
   ({ getSession, saveSession } = await import('../src/lib/session.storage'));
 });

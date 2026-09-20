@@ -1,15 +1,15 @@
 import { getSystemInfo } from 'zmp-sdk';
 import { AnimationRoutes, App, Route, SnackbarProvider, ZMPRouter } from 'zmp-ui';
 import { AppProps } from 'zmp-ui/app';
-import AppShell from '@/components/app-shell.component';
-import { AuthBootstrap } from '@/features/auth/auth-bootstrap.component';
-import HomePage from '@/pages/home.page';
-import MyListingsPage from '@/pages/my-listings.page';
-import ProductDetailPage from '@/pages/product-detail.page';
-import ProfilePage from '@/pages/profile.page';
-import SellPage from '@/pages/sell.page';
+import AppShell from '@/components/app-shell';
+import { AuthBootstrap } from '@/features/auth/components/bootstrap';
+import HomePage from '@/pages/home';
+import MyListingsPage from '@/pages/my-listings';
+import ProductDetailPage from '@/pages/product-detail';
+import ProfilePage from '@/pages/profile';
+import SellPage from '@/pages/sell';
 
-export default function Layout() {
+export default function MyApp() {
   return (
     <App theme={getSystemInfo().zaloTheme as AppProps['theme']}>
       <SnackbarProvider>

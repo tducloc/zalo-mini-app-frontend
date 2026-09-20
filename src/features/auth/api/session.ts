@@ -1,10 +1,14 @@
 import { getAccessToken } from 'zmp-sdk';
+import { useAuthStore } from '@/stores/auth';
 import { apiClient } from '@/lib/api-client';
 import { saveSession, Session } from '@/lib/session.storage';
 
 let recoveryPromise: Promise<Session> | null = null;
 let recoveryFailure: unknown;
 let retryAfter = 0;
+export function settleAuthBootstrap() {
+  useAuthStore.getState().setBootstrapping(false);
+}
 
 // Bootstrap and concurrent 401s share one recovery; manual retry bypasses cooldown.
 export function restoreSession(manualRetry = false): Promise<Session> {
@@ -37,13 +41,14 @@ export function restoreSession(manualRetry = false): Promise<Session> {
       next = response.data.data;
     }
     saveSession(next);
+    useAuthStore.getState().setError(null);
     retryAfter = 0;
     return next;
   })()
     .catch((error) => {
       recoveryFailure = error;
+      useAuthStore.getState().setError('Chưa thể xác thực. Bạn vẫn có thể xem tin.');
       retryAfter = Date.now() + 5_000;
-      window.dispatchEvent(new Event('auth:recovery-failed'));
       throw error;
     })
     .then(

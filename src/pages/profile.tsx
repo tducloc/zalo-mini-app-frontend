@@ -1,15 +1,9 @@
 import { Icon, Page } from 'zmp-ui';
-import { useEffect, useState } from 'react';
-import MobilePageHeader from '@/components/mobile-page-header.component';
-import { getSession } from '@/lib/session.storage';
+import MobilePageHeader from '@/components/mobile-page-header';
+import { useSession } from '@/features/auth/hooks/session';
 
 export default function ProfilePage() {
-  const [user, setUser] = useState(() => getSession()?.user);
-  useEffect(() => {
-    const updateUser = () => setUser(getSession()?.user);
-    window.addEventListener('auth:session-changed', updateUser);
-    return () => window.removeEventListener('auth:session-changed', updateUser);
-  }, []);
+  const user = useSession().session?.user;
 
   return (
     <Page className="marketplace-page">

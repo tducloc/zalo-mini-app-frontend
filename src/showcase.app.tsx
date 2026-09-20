@@ -6,11 +6,11 @@ import 'zmp-ui/zaui.css';
 import './css/tailwind.scss';
 import './css/app.scss';
 import './css/showcase.scss';
-import AppShell from './components/app-shell.component';
-import FeedbackState from './components/feedback-state.component';
-import Price from './components/price.component';
-import ListingForm, { FormState } from './features/listings/listing-form.component';
-import HomePage from './pages/home.page';
+import AppShell from './components/app-shell';
+import FeedbackState from './components/feedback-state';
+import Price from './components/price';
+import ListingForm, { FormState } from './features/listings/components/form';
+import HomePage from './pages/home';
 const screens = [
   ['home', 'Trang chủ'],
   ['processing', 'Tin nháp đang xử lý'],
@@ -58,9 +58,13 @@ function ListingSummary({ onEdit, onStatus }: { onEdit?: () => void; onStatus?: 
 }
 function Frame({ screen }: { screen: string }) {
   const [recovered, setRecovered] = useState(false);
+
   const [tab, setTab] = useState('Đang bán');
+
   const [dialog, setDialog] = useState('');
+
   const [listingMenuOpen, setListingMenuOpen] = useState(false);
+
   const title = screens.find((s) => s[0] === screen)?.[1] || 'Chợ Zalo';
   const formStates = [
     'sell',
@@ -301,7 +305,9 @@ function Frame({ screen }: { screen: string }) {
 }
 function Showcase() {
   const [selected, setSelected] = useState('home');
+
   const [all, setAll] = useState(false);
+
   const [width, setWidth] = useState(390);
   return (
     <div className="showcase">

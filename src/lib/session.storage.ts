@@ -1,30 +1,19 @@
-export interface SessionUser {
-  id: string;
-  zaloId?: string;
-  name: string | null;
-  avatarUrl: string | null;
-}
+import { Session } from '@/features/auth/model';
+import { useAuthStore } from '@/stores/auth';
 
-export interface Session {
-  accessToken: string;
-  user: SessionUser;
-}
-
-let currentSession: Session | null = null;
+export type { Session, SessionUser } from '@/features/auth/model';
 
 export function getSession(): Session | null {
-  return currentSession;
+  return useAuthStore.getState().session;
 }
 
 export function saveSession(session: Session) {
   if (!session?.accessToken || !session.user?.id) {
     throw new Error('Phản hồi xác thực không hợp lệ.');
   }
-  currentSession = session;
-  window.dispatchEvent(new Event('auth:session-changed'));
+  useAuthStore.getState().setSession(session);
 }
 
 export function clearSession() {
-  currentSession = null;
-  window.dispatchEvent(new Event('auth:session-changed'));
+  useAuthStore.getState().clearSession();
 }

@@ -29,12 +29,12 @@
   "dependencies": {
     "@tanstack/react-query": "^5.103.1",
     "axios": "^1.20.0",
-    "jotai": "^2.12.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zmp": "^0.0.0",
     "zmp-sdk": "latest",
-    "zmp-ui": "latest"
+    "zmp-ui": "latest",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/react": "^18.3.1",

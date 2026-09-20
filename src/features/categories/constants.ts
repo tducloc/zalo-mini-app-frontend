@@ -1,4 +1,4 @@
-import { Category } from './categories.types';
+import { Category } from './types';
 
 export const categories: Category[] = [
   { id: 'cat_electronics', label: 'Điện tử', icon: 'zi-gallery', color: 'blue' },
