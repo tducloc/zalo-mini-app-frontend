@@ -5,7 +5,7 @@
   "cssPreProcessor": "scss",
   "includeTailwind": true,
   "package": "zmp-ui",
-  "stateManagement": "jotai",
+  "stateManagement": "zustand",
   "newProject": true,
   "template": "single-view",
   "theming": {

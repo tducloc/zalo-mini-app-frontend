@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Button, Icon, Page, Sheet, useNavigate } from 'zmp-ui';
 
-import FeedbackState from '@/components/feedback-state.component';
-import { categories as categoryPresentation } from '@/features/categories/categories.constants';
-import { useCategories } from '@/features/categories/categories.query';
-import CategoriesSkeleton from '@/features/categories/categories-skeleton.component';
+import FeedbackState from '@/components/feedback-state';
+import { categories as categoryPresentation } from '@/features/categories/constants';
+import CategoriesSkeleton from '@/features/categories/components/skeleton';
+import { useCategories } from '@/features/categories/query';
 
 const featuredListings = [
   {
@@ -65,7 +65,9 @@ function HomePage({
   state?: 'default' | 'loading' | 'empty' | 'error';
 }) {
   const [isFilterOpen, setIsFilterOpen] = useState(initialFilter);
+
   const navigate = useNavigate();
+
   const liveQuery = useCategories(!preview);
   const categoryQuery = preview
     ? {

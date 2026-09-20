@@ -1,5 +1,5 @@
 import { QueryClient, QueryObserver } from '@tanstack/react-query';
-import { getCategories } from '../src/features/categories/categories.api';
+import { getCategories } from '../src/features/categories/api/categories';
 import { apiClient } from '../src/lib/api-client';
 
 it('exposes pending, success and cached data for categories without authentication', async () => {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Sheet } from 'zmp-ui';
 
-import { ReportReason } from './product-report.api';
+import { ReportReason } from '../api/create-report';
 
 const reasons: Array<{ value: ReportReason; label: string }> = [
   { value: 'SCAM', label: 'Nghi ngờ lừa đảo' },
@@ -23,10 +23,17 @@ export default function ProductReportSheet({
   onSubmit: (input: { reason: ReportReason; description?: string }) => void;
 }) {
   const [reason, setReason] = useState<ReportReason>('SCAM');
+
   const [description, setDescription] = useState('');
 
+  const close = () => {
+    setReason('SCAM');
+    setDescription('');
+    onClose();
+  };
+
   return (
-    <Sheet visible={visible} title="Báo cáo tin đăng" autoHeight unmountOnClose onClose={onClose}>
+    <Sheet visible={visible} title="Báo cáo tin đăng" autoHeight unmountOnClose onClose={close}>
       <form
         className="product-report-sheet"
         onSubmit={(event) => {

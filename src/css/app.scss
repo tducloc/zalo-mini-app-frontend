@@ -826,6 +826,21 @@ body {
   border-radius: 14px;
   background: #edf2fa;
 }
+.product-detail-swiper {
+  overflow: hidden;
+  border-radius: 14px;
+  background: #edf2fa;
+}
+.product-detail-swiper .zaui-swiper-dots {
+  bottom: 10px;
+}
+.product-detail-image-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
 .product-detail-thumbnails {
   display: flex;
   gap: 8px;
@@ -925,6 +940,18 @@ body {
 }
 .product-detail-actions .zaui-btn {
   height: 44px;
+}
+.product-contact-fallback {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px;
+  border: 0;
+  color: var(--marketplace-blue);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
 }
 .product-report-trigger {
   padding: 8px 0;
