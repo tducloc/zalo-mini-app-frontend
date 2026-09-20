@@ -11,7 +11,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mount the app
-import Layout from '@/components/Layout';
+import Layout from '@/components/layout.component';
 
 // Expose app configuration
 import appConfig from '../app-config.json';

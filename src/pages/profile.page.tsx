@@ -1,7 +1,7 @@
 import { Icon, Page } from 'zmp-ui';
 import { useEffect, useState } from 'react';
-import { getSession } from '@/lib/session';
-import MobilePageHeader from '@/components/MobilePageHeader';
+import MobilePageHeader from '@/components/mobile-page-header.component';
+import { getSession } from '@/lib/session.storage';
 
 export default function ProfilePage() {
   const [user, setUser] = useState(() => getSession()?.user);

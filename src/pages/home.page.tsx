@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Button, Icon, Page, Sheet } from 'zmp-ui';
+import { Button, Icon, Page, Sheet, useNavigate } from 'zmp-ui';
 
-import { categories as categoryPresentation } from '@/features/categories/CategoriesConstants';
-import { useCategories } from '@/features/categories/CategoriesQuery';
-import CategoriesSkeleton from '@/features/categories/CategoriesSkeleton';
+import FeedbackState from '@/components/feedback-state.component';
+import { categories as categoryPresentation } from '@/features/categories/categories.constants';
+import { useCategories } from '@/features/categories/categories.query';
+import CategoriesSkeleton from '@/features/categories/categories-skeleton.component';
 
 const featuredListings = [
   {
+    id: 'prd_iphone_13',
     title: 'iPhone 13 128GB',
     price: '6.990.000 đ',
     meta: 'Hà Nội · 2 giờ trước',
@@ -14,6 +16,7 @@ const featuredListings = [
       'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=500&q=80',
   },
   {
+    id: 'prd_chair_sold',
     title: 'Ghế văn phòng công thái học',
     price: '1.200.000 đ',
     meta: 'Hà Nội · 4 giờ trước',
@@ -21,6 +24,7 @@ const featuredListings = [
       'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=500&q=80',
   },
   {
+    id: 'prd_demo_video',
     title: 'Giày thể thao Nike Air',
     price: '850.000 đ',
     meta: 'Hà Nội · 6 giờ trước',
@@ -28,6 +32,7 @@ const featuredListings = [
       'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=500&q=80',
   },
   {
+    id: 'prd_laptop_air',
     title: 'MacBook Air M1 256GB',
     price: '8.500.000 đ',
     meta: 'Hà Nội · 1 ngày trước',
@@ -50,9 +55,26 @@ function LoadingGrid() {
   );
 }
 
-function HomePage() {
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const categoryQuery = useCategories();
+function HomePage({
+  preview = false,
+  initialFilter = false,
+  state = 'default',
+}: {
+  preview?: boolean;
+  initialFilter?: boolean;
+  state?: 'default' | 'loading' | 'empty' | 'error';
+}) {
+  const [isFilterOpen, setIsFilterOpen] = useState(initialFilter);
+  const navigate = useNavigate();
+  const liveQuery = useCategories(!preview);
+  const categoryQuery = preview
+    ? {
+        data: categoryPresentation.map((c) => ({ ...c, name: c.label })),
+        isPending: false,
+        isError: false,
+        refetch: () => {},
+      }
+    : liveQuery;
   const categories = (categoryQuery.data ?? []).map((category) => ({
     ...category,
     label: category.name,
@@ -66,6 +88,11 @@ function HomePage() {
     <Page className="marketplace-page marketplace-home-page">
       <header className="marketplace-home-header">
         <h1 className="marketplace-home-title">Chợ Zalo</h1>
+        {preview && (
+          <span className="home-zalo-control" aria-label="Zalo app controls">
+            •••　◯
+          </span>
+        )}
         <div className="marketplace-search-bar">
           <div className="marketplace-search">
             <Icon icon="zi-search" />
@@ -91,9 +118,9 @@ function HomePage() {
             Xem tất cả <Icon icon="zi-chevron-right" size={14} />
           </button>
         </div>
-        {categoryQuery.isPending ? (
+        {state === 'loading' || categoryQuery.isPending ? (
           <CategoriesSkeleton />
-        ) : categoryQuery.isError && !categoryQuery.data ? (
+        ) : state === 'error' || (categoryQuery.isError && !categoryQuery.data) ? (
           <div className="category-feedback" role="status">
             Không tải được danh mục.{' '}
             <button onClick={() => categoryQuery.refetch()}>Thử lại</button>
@@ -103,7 +130,11 @@ function HomePage() {
         ) : (
           <div className="category-scroll">
             {categories.map((category) => (
-              <button className="category-item border-0 bg-transparent p-0" key={category.id}>
+              <button
+                disabled={category.id === 'cat_others'}
+                className="category-item border-0 bg-transparent p-0"
+                key={category.id}
+              >
                 <span className={`category-icon category-icon-${category.color}`}>
                   <Icon icon={category.icon} size={25} />
                 </span>
@@ -113,17 +144,34 @@ function HomePage() {
           </div>
         )}
         <div className="section-heading">
-          <span>Tin đăng nổi bật</span>
+          <span>Tin đăng mới</span>
         </div>
-        {featuredListings.length ? (
+        {state === 'loading' ? (
+          <LoadingGrid />
+        ) : state === 'empty' ? (
+          <FeedbackState
+            type="empty"
+            title="Chưa tìm thấy sản phẩm"
+            description="Thử thay đổi từ khóa hoặc bỏ bớt bộ lọc."
+          />
+        ) : state === 'error' ? (
+          <FeedbackState
+            type="error"
+            title="Không tải được tin"
+            description="Kiểm tra kết nối mạng và thử lại."
+            onRetry={() => categoryQuery.refetch()}
+          />
+        ) : featuredListings.length ? (
           <div className="listing-grid">
             {featuredListings.map((listing) => (
-              <article className="marketplace-card listing-card" key={listing.title}>
+              <button
+                aria-label={`Xem chi tiết ${listing.title}`}
+                className="marketplace-card listing-card"
+                key={listing.id}
+                onClick={() => navigate(`/products/${listing.id}`)}
+              >
                 <div className="listing-image-wrap">
                   <img src={listing.image} alt="" className="listing-product-image" />
-                  <button className="listing-favorite" aria-label={`Lưu ${listing.title}`}>
-                    <Icon icon="zi-heart" size={17} />
-                  </button>
                 </div>
                 <div className="listing-copy">
                   <h2>{listing.title}</h2>
@@ -132,7 +180,7 @@ function HomePage() {
                     <Icon icon="zi-location" size={14} /> {listing.meta}
                   </p>
                 </div>
-              </article>
+              </button>
             ))}
           </div>
         ) : (
