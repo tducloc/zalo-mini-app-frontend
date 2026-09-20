@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
-import { apiClient } from '@/lib/apiClient';
-import { restoreSession } from '@/features/auth/AuthApi';
-import { getSession } from '@/lib/session';
+import { restoreSession } from '@/features/auth/auth.api';
+import { apiClient } from '@/lib/api-client';
+import { getSession } from '@/lib/session.storage';
 
 declare module 'axios' {
   export interface AxiosRequestConfig {

@@ -1,5 +1,5 @@
 import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
-import { restoreSession } from '@/features/auth/AuthApi';
+import { restoreSession } from '@/features/auth/auth.api';
 
 export function AuthBootstrap({ children }: PropsWithChildren) {
   const [failed, setFailed] = useState(false);

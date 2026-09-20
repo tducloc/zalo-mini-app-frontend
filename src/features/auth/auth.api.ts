@@ -1,6 +1,6 @@
 import { getAccessToken } from 'zmp-sdk';
-import { apiClient } from '@/lib/apiClient';
-import { saveSession, Session } from '@/lib/session';
+import { apiClient } from '@/lib/api-client';
+import { saveSession, Session } from '@/lib/session.storage';
 
 let recoveryPromise: Promise<Session> | null = null;
 let recoveryFailure: unknown;

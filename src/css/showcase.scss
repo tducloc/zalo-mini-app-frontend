@@ -1,0 +1,365 @@
+.showcase {
+  min-height: 100vh;
+  display: flex;
+  background: #edf2f8;
+  font-family: system-ui, sans-serif;
+  color: #111b3d;
+}
+.showcase aside {
+  width: 292px;
+  flex-shrink: 0;
+  padding: 28px 24px;
+  height: 100vh;
+  overflow: auto;
+  position: sticky;
+  top: 0;
+  background: white;
+  border-right: 1px solid #dce5f2;
+}
+.showcase h1 {
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -1px;
+  margin: 20px 0 12px;
+}
+.showcase aside > p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.showcase .eyebrow {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #0068ff;
+  font-weight: 700;
+}
+.showcase select {
+  display: block;
+  padding: 10px;
+  margin: 8px 0 16px;
+  width: 100%;
+  border: 1px solid #dce5f2;
+  border-radius: 8px;
+}
+.showcase nav {
+  display: grid;
+  gap: 3px;
+  margin: 20px 0;
+}
+.showcase nav button {
+  text-align: left;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #68769b;
+}
+.showcase nav button.selected {
+  background: #eaf2ff;
+  color: #0068ff;
+  font-weight: 600;
+}
+.review-canvas {
+  padding: 32px;
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  align-content: flex-start;
+}
+.review-board h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.review-board > p {
+  font-size: 12px;
+  color: #68769b;
+  margin: 6px 0 16px;
+}
+.review-board iframe {
+  display: block;
+  border: 0;
+  border-radius: 22px;
+  box-shadow: 0 10px 40px #16335d18;
+  background: white;
+}
+.review-board > a {
+  display: block;
+  color: #0068ff;
+  margin: 14px 0;
+  font-size: 12px;
+}
+.review-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 30;
+  background: #0068ff;
+  color: white;
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 96px;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 20px;
+  font-weight: 700;
+  height: 90px;
+}
+.review-back {
+  position: static;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  color: #fff;
+  border: 0;
+  background: transparent;
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 1;
+  transform: none;
+  justify-self: start;
+}
+.zalo-control {
+  position: static;
+  font-size: 17px;
+  border: 1px solid #ffffff55;
+  border-radius: 18px;
+  padding: 4px 10px;
+  transform: none;
+  justify-self: end;
+}
+.review-header > span:not(.zalo-control) {
+  grid-column: 2;
+  text-align: center;
+  line-height: 28px;
+}
+.review-content {
+  padding-top: 110px;
+}
+.review-page h1 {
+  font-size: 22px;
+  margin: 12px 0;
+}
+.review-page h2 {
+  font-size: 17px;
+  margin: 20px 0 12px;
+}
+.detail-cover {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  border-radius: 14px;
+}
+.detail-gallery {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+.detail-gallery img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.seller-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0;
+  margin: 16px 0;
+  border-top: 1px solid #e7ecf5;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  background: #eaf2ff;
+  color: #0068ff;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+}
+.review-listing {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  padding: 12px;
+}
+.review-listing-copy {
+  min-width: 0;
+  padding-right: 32px;
+}
+.listing-menu-trigger {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px;
+  border: 0;
+  color: #68769b;
+  background: transparent;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+.listing-status-action {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 99px;
+  color: #138054;
+  background: #e7f8ef;
+  font-size: 11px;
+  font-weight: 600;
+}
+.listing-action-sheet {
+  padding: 4px 16px 18px;
+}
+.listing-action-sheet button {
+  display: block;
+  width: 100%;
+  padding: 16px 4px;
+  border: 0;
+  border-bottom: 1px solid #edf0f5;
+  color: #111b3d;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+}
+.listing-action-sheet button.danger {
+  color: #cf3030;
+}
+.listing-action-sheet button.cancel {
+  margin-top: 8px;
+  border: 0;
+  border-radius: 10px;
+  color: #0068ff;
+  background: #f1f6ff;
+  font-weight: 600;
+  text-align: center;
+}
+.review-listing img {
+  width: 90px;
+  height: 104px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.review-listing h3 {
+  font-size: 15px;
+  margin: 4px 0;
+}
+.review-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.review-tabs button {
+  flex: 1;
+  background: white;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 12px 0;
+  color: #68769b;
+}
+.review-tabs .selected {
+  color: #0068ff;
+  border-color: #0068ff;
+}
+.text-action {
+  border: 0;
+  background: transparent;
+  color: #0068ff;
+  padding: 14px;
+}
+.profile-nav-list {
+  overflow: hidden;
+  border: 1px solid #e7ecf5;
+  border-radius: 14px;
+  background: white;
+}
+.profile-link {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 34px 1fr 16px;
+  gap: 10px;
+  align-items: center;
+  border: 0;
+  border-bottom: 1px solid #e7ecf5;
+  background: white;
+  padding: 15px;
+  color: #111b3d;
+  text-align: left;
+}
+.profile-link:last-child {
+  border-bottom: 0;
+}
+.profile-link-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 10px;
+  color: #0068ff;
+  background: #eaf3ff;
+  font-size: 17px;
+}
+.profile-link b,
+.profile-link small {
+  display: block;
+}
+.profile-link small {
+  margin-top: 3px;
+  color: #68769b;
+  font-size: 12px;
+}
+.profile-link i {
+  color: #98a4bd;
+  font-size: 24px;
+  font-style: normal;
+}
+.review-dialog {
+  position: fixed;
+  inset: 0;
+  background: #111b3d80;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.review-dialog section {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+}
+.review-dialog p {
+  margin: 16px 0;
+}
+.skeleton-card {
+  padding: 10px;
+}
+.skeleton-card > .demo-skeleton {
+  height: 150px;
+}
+.skeleton-card > .line {
+  height: 12px;
+  margin-top: 12px;
+}
+.skeleton-card > .short {
+  width: 60%;
+}
+@media (max-width: 760px) {
+  .showcase {
+    display: block;
+  }
+  .showcase aside {
+    position: relative;
+    width: 100%;
+    height: auto;
+  }
+  .showcase nav {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .review-canvas {
+    padding: 16px;
+    justify-content: center;
+  }
+  .review-board iframe {
+    max-width: calc(100vw - 32px);
+  }
+}

@@ -1,6 +1,6 @@
 import { QueryClient, QueryObserver } from '@tanstack/react-query';
-import { apiClient } from '../src/lib/apiClient';
-import { getCategories } from '../src/features/categories/CategoriesApi';
+import { getCategories } from '../src/features/categories/categories.api';
+import { apiClient } from '../src/lib/api-client';
 
 it('exposes pending, success and cached data for categories without authentication', async () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

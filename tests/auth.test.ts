@@ -18,10 +18,10 @@ beforeEach(async () => {
   vi.stubGlobal('window', new EventTarget());
   ({ getAccessToken } = await import('zmp-sdk'));
   getAccessToken.mockReset().mockResolvedValue('zalo-token');
-  ({ apiClient } = await import('../src/lib/apiClient'));
-  ({ restoreSession } = await import('../src/features/auth/AuthApi'));
+  ({ apiClient } = await import('../src/lib/api-client'));
+  ({ restoreSession } = await import('../src/features/auth/auth.api'));
   ({ http } = await import('../src/lib/http'));
-  ({ getSession, saveSession } = await import('../src/lib/session'));
+  ({ getSession, saveSession } = await import('../src/lib/session.storage'));
 });
 afterEach(() => vi.unstubAllGlobals());
 it('keeps session in memory only', () => {
