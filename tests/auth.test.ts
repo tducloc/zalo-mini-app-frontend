@@ -43,8 +43,10 @@ it('does not retry twice', async () => {
   expect(request).toHaveBeenCalledTimes(2);
 });
 it('rejects empty Zalo token and cools down', async () => {
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
   getAccessToken.mockResolvedValueOnce('');
   await expect(restoreSession()).rejects.toThrow('Zalo');
   await expect(restoreSession()).rejects.toBeDefined();
   expect(getAccessToken).toHaveBeenCalledTimes(1);
+  consoleError.mockRestore();
 });

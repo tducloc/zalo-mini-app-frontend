@@ -20,7 +20,9 @@
     "deploy:showcase": "gh-pages -d ui-review",
     "format": "prettier --write src tests authTest.config.mjs",
     "format:check": "prettier --check src tests authTest.config.mjs",
-    "test:auth": "../backend/node_modules/.bin/vitest run --config authTest.config.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:auth": "vitest run tests/auth.test.ts",
     "login": "zmp login",
     "start": "zmp start",
     "deploy": "zmp deploy",
@@ -37,12 +39,15 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
     "cross-env": "^7.0.3",
     "gh-pages": "^6.3.0",
+    "jsdom": "^25.0.1",
     "postcss": "^8.4.38",
     "postcss-cli": "^8.3.1",
     "postcss-preset-env": "^6.7.0",
@@ -51,6 +56,7 @@
     "tailwindcss": "^3.4.3",
     "typescript": "^5.9.3",
     "vite": "^5.2.13",
+    "vitest": "^2.1.9",
     "zmp-vite-plugin": "latest"
   }
 }
