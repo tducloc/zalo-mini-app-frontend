@@ -158,6 +158,78 @@
   object-fit: cover;
   border-radius: 8px;
 }
+.review-detail-page {
+  position: relative;
+}
+.review-detail-header {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  right: 16px;
+  z-index: 30;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.review-detail-back {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  padding: 0 0 4px;
+  border: 0;
+  border-radius: 50%;
+  background: #00000061;
+  color: #fff;
+  font-size: 31px;
+  font-weight: 300;
+  line-height: 1;
+}
+.review-detail-header .zalo-control {
+  color: #fff;
+  background: #0000004d;
+  border: 0;
+}
+.review-detail-content {
+  padding: 0;
+}
+.review-detail-gallery {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #edf2fa;
+}
+.review-detail-gallery img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.review-detail-gallery span {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  padding: 5px 9px;
+  border-radius: 99px;
+  background: #00000080;
+  color: #fff;
+  font-size: 12px;
+}
+.review-detail-body {
+  padding: 0 16px 16px;
+}
+.review-report {
+  display: block;
+  min-height: 38px;
+  margin-left: auto;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px solid #eef2f8;
+  color: #c63737;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+}
 .seller-card {
   display: flex;
   align-items: center;

@@ -23,13 +23,21 @@ export function restoreSession(manualRetry = false): Promise<Session> {
           () => reject(new Error('Zalo phản hồi chậm. Vui lòng thử lại.')),
           15_000,
         );
+        if (import.meta.env.DEV) console.info('[auth] Requesting Zalo access token');
         getAccessToken().then(
           (token) => {
             clearTimeout(timer);
+            if (import.meta.env.DEV) {
+              console.info('[auth] Zalo access token received', {
+                isPlaceholder: token === 'DEFAULT ACCESS TOKEN',
+                length: token?.length ?? 0,
+              });
+            }
             resolve(token);
           },
           (error) => {
             clearTimeout(timer);
+            if (import.meta.env.DEV) console.error('[auth] getAccessToken rejected', error);
             reject(error);
           },
         );
@@ -37,6 +45,7 @@ export function restoreSession(manualRetry = false): Promise<Session> {
       if (!zaloAccessToken || zaloAccessToken === 'DEFAULT ACCESS TOKEN') {
         throw new Error('Vui lòng mở Mini App trong Zalo để xác thực.');
       }
+      if (import.meta.env.DEV) console.info('[auth] Exchanging Zalo token with API');
       const response = await apiClient.post<{ data: Session }>('/auth/zalo', { zaloAccessToken });
       next = response.data.data;
     }
@@ -47,7 +56,15 @@ export function restoreSession(manualRetry = false): Promise<Session> {
   })()
     .catch((error) => {
       recoveryFailure = error;
-      useAuthStore.getState().setError('Chưa thể xác thực. Bạn vẫn có thể xem tin.');
+      if (import.meta.env.DEV) {
+        console.error('[auth] Session bootstrap failed', error);
+      }
+      const message = error instanceof Error ? error.message : 'Unknown authentication error';
+      const authError =
+        import.meta.env.VITE_AUTH_DEBUG === 'true'
+          ? `Chưa thể xác thực: ${message}`
+          : 'Chưa thể xác thực. Bạn vẫn có thể xem tin.';
+      useAuthStore.getState().setError(authError);
       retryAfter = Date.now() + 5_000;
       throw error;
     })

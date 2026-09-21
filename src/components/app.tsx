@@ -1,4 +1,5 @@
-import { getSystemInfo } from 'zmp-sdk';
+import { useEffect } from 'react';
+import { configAppView, getSystemInfo } from 'zmp-sdk';
 import { AnimationRoutes, App, Route, SnackbarProvider, ZMPRouter } from 'zmp-ui';
 import { AppProps } from 'zmp-ui/app';
 import AppShell from '@/components/app-shell';
@@ -10,6 +11,16 @@ import ProfilePage from '@/pages/profile';
 import SellPage from '@/pages/sell';
 
 export default function MyApp() {
+  useEffect(() => {
+    // Match app-config.json, including when HMR retains an older native view configuration.
+    void configAppView({
+      actionBar: { hide: true },
+      statusBarType: 'transparent',
+    }).catch((error: unknown) => {
+      if (import.meta.env.DEV) console.warn('[app] Cannot configure native header', error);
+    });
+  }, []);
+
   return (
     <App theme={getSystemInfo().zaloTheme as AppProps['theme']}>
       <SnackbarProvider>

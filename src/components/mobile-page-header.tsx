@@ -4,10 +4,12 @@ export default function MobilePageHeader({
   title,
   showBack = false,
   fallbackPath = '/',
+  transparent = false,
 }: {
   title: string;
   showBack?: boolean;
   fallbackPath?: string;
+  transparent?: boolean;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,5 +21,14 @@ export default function MobilePageHeader({
     navigate(-1);
   };
 
-  return <Header title={title} showBackIcon={showBack} onBackClick={goBack} />;
+  return (
+    <Header
+      title={title}
+      showBackIcon={showBack}
+      onBackClick={goBack}
+      className={transparent ? 'product-detail-header' : undefined}
+      backgroundColor={transparent ? 'transparent' : undefined}
+      textColor={transparent ? '#ffffff' : undefined}
+    />
+  );
 }
