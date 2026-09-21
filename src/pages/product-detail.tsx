@@ -1,58 +1,88 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { useState } from 'react';
 import { Page, useParams } from 'zmp-ui';
 
 import FeedbackState from '@/components/feedback-state';
-import MobilePageHeader from '@/components/mobile-page-header';
 import { useSession } from '@/features/auth/hooks/session';
 import { getProductDetail } from '@/features/products/api/detail';
+import ProductActionsSheet from '@/features/products/components/actions-sheet';
 import ProductContactAction from '@/features/products/components/contact-action';
+import ProductDetailHeader from '@/features/products/components/detail-header';
 import DetailSkeleton from '@/features/products/components/detail-skeleton';
 import ProductInformation from '@/features/products/components/information';
 import ProductMediaGallery from '@/features/products/components/media-gallery';
 import ProductSellerContact from '@/features/products/components/seller-card';
+import { ProductDetail } from '@/features/products/types';
 import { ReportReason, reportProduct } from '@/features/reports/api/create-report';
 import ProductReportSheet from '@/features/reports/components/report-sheet';
+import { getApiErrorStatus } from '@/lib/api-error';
+import { useToast } from '@/hooks/use-toast';
 
-function toErrorMessage(error: unknown) {
-  const status = error instanceof AxiosError ? error.response?.status : undefined;
-  if (status === 409) return 'Bạn đã báo cáo tin này trước đó.';
-  if (status === 429) return 'Bạn đã gửi quá nhiều báo cáo. Vui lòng thử lại sau.';
-  if (status === 403) return 'Bạn không thể báo cáo tin đăng của chính mình.';
-  if (status === 401) return 'Bạn cần xác thực lại trước khi báo cáo.';
-  return 'Không thể gửi báo cáo. Vui lòng thử lại.';
-}
+const reportErrorMessages = {
+  401: 'Bạn cần xác thực lại trước khi báo cáo.',
+  403: 'Bạn không thể báo cáo tin đăng của chính mình.',
+  409: 'Bạn đã báo cáo tin này trước đó.',
+  429: 'Bạn đã gửi quá nhiều báo cáo. Vui lòng thử lại sau.',
+};
 
 export default function ProductDetailPage() {
   const { productId = '' } = useParams<{ productId: string }>();
+
+  const { showApiError, showError, showSuccess } = useToast();
+
+  const queryClient = useQueryClient();
 
   const { session, isBootstrapping } = useSession();
 
   const [reportOpen, setReportOpen] = useState(false);
 
-  const [reportMessage, setReportMessage] = useState('');
+  const [actionsOpen, setActionsOpen] = useState(false);
+
+  const productQueryKey = ['product-detail', productId, session?.user.id] as const;
 
   const productQuery = useQuery({
-    queryKey: ['product-detail', productId, session?.user.id],
+    queryKey: productQueryKey,
     queryFn: () => getProductDetail(productId),
     enabled: Boolean(productId) && !isBootstrapping,
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
   });
+
+  const markAsReported = () =>
+    queryClient.setQueryData<ProductDetail>(productQueryKey, (current) =>
+      current
+        ? {
+            ...current,
+            viewer: { ...current.viewer, hasReported: true },
+          }
+        : current,
+    );
 
   const reportMutation = useMutation({
     mutationFn: (input: { reason: ReportReason; description?: string }) =>
       reportProduct(productId, input),
     onSuccess: () => {
+      markAsReported();
       setReportOpen(false);
-      setReportMessage('Cảm ơn bạn. Báo cáo đã được gửi để kiểm tra.');
+      showSuccess('Cảm ơn bạn. Báo cáo đã được gửi để kiểm tra.');
     },
-    onError: (error) => setReportMessage(toErrorMessage(error)),
+    onError: (error) => {
+      if (getApiErrorStatus(error) === 409) {
+        markAsReported();
+        setReportOpen(false);
+      }
+      showApiError(error, {
+        fallbackMessage: 'Không thể gửi báo cáo. Vui lòng thử lại.',
+        messages: reportErrorMessages,
+      });
+    },
   });
 
   if (productQuery.isPending) {
     return (
       <Page className="marketplace-page">
-        <MobilePageHeader title="Chi tiết tin" showBack />
+        <ProductDetailHeader />
         <DetailSkeleton />
       </Page>
     );
@@ -61,8 +91,8 @@ export default function ProductDetailPage() {
   if (!productQuery.data) {
     return (
       <Page className="marketplace-page">
-        <MobilePageHeader title="Chi tiết tin" showBack />
-        <main className="marketplace-content marketplace-content-with-header">
+        <ProductDetailHeader />
+        <main className="marketplace-content product-detail-feedback">
           <FeedbackState
             type={
               productQuery.error instanceof AxiosError &&
@@ -85,26 +115,27 @@ export default function ProductDetailPage() {
   }
 
   const product = productQuery.data;
-  const isOwner = session?.user.id === product.seller.id;
+  const isOwner = product.viewer.isOwner || session?.user.id === product.seller.id;
   return (
     <Page className="marketplace-page product-detail-page">
-      <MobilePageHeader title="Chi tiết tin" showBack />
-      <main className="marketplace-content marketplace-content-with-header">
+      <ProductDetailHeader />
+      <main className="product-detail-content">
         <ProductMediaGallery media={product.media} productTitle={product.title} />
-        <ProductInformation product={product} />
-        <ProductSellerContact product={product} />
-        {reportMessage && (
-          <p className="product-detail-message" role="status">
-            {reportMessage}
-          </p>
-        )}
-        {!isOwner && (
-          <button className="product-report-trigger" onClick={() => setReportOpen(true)}>
-            Báo cáo tin đăng
-          </button>
-        )}
+        <section className="product-detail-body">
+          <ProductInformation product={product} onOpenActions={() => setActionsOpen(true)} />
+          <ProductSellerContact product={product} />
+        </section>
       </main>
-      <ProductContactAction product={product} onContactError={setReportMessage} />
+      <ProductContactAction product={product} onContactError={showError} />
+      <ProductActionsSheet
+        isOwner={isOwner}
+        hasReported={product.viewer.hasReported}
+        product={product}
+        visible={actionsOpen}
+        onClose={() => setActionsOpen(false)}
+        onError={showError}
+        onReport={() => setReportOpen(true)}
+      />
       <ProductReportSheet
         isPending={reportMutation.isPending}
         visible={reportOpen}

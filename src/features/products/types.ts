@@ -31,6 +31,10 @@ export type ProductDetail = {
       phoneNumber: string | null;
     } | null;
   };
+  viewer: {
+    isOwner: boolean;
+    hasReported: boolean;
+  };
   createdAt: string;
   publishedAt: string | null;
 };

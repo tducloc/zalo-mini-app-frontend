@@ -1,11 +1,14 @@
 import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
 import { restoreSession, settleAuthBootstrap } from '@/features/auth/api/session';
+import AuthLoadingScreen from '@/features/auth/components/loading';
 import { useAuthStore } from '@/stores/auth';
 
 export function AuthBootstrap({ children }: PropsWithChildren) {
   const [busy, setBusy] = useState(false);
 
   const error = useAuthStore((state) => state.error);
+
+  const isBootstrapping = useAuthStore((state) => state.isBootstrapping);
 
   const setError = useAuthStore((state) => state.setError);
 
@@ -31,7 +34,7 @@ export function AuthBootstrap({ children }: PropsWithChildren) {
 
   return (
     <>
-      {children}
+      {isBootstrapping ? <AuthLoadingScreen /> : children}
 
       {error && (
         <div className="auth-retry-notice" role="status">
