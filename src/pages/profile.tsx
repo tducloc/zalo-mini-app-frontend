@@ -1,9 +1,13 @@
-import { Icon, Page } from 'zmp-ui';
+import { Button, Icon, Page, useNavigate } from 'zmp-ui';
 import MobilePageHeader from '@/components/mobile-page-header';
 import { useSession } from '@/features/auth/hooks/session';
 
+// Dev-only entry to the media measurement page. Remove with src/pages/media-lab.tsx.
+const showMediaLab = import.meta.env.DEV || import.meta.env.VITE_MEDIA_LAB === 'true';
+
 export default function ProfilePage() {
   const user = useSession().session?.user;
+  const navigate = useNavigate();
 
   return (
     <Page className="marketplace-page">
@@ -20,6 +24,14 @@ export default function ProfilePage() {
             </p>
           </div>
         </section>
+
+        {showMediaLab && (
+          <section className="marketplace-card mt-3 p-4">
+            <Button size="small" variant="tertiary" onClick={() => navigate('/media-lab')}>
+              Media lab (dev)
+            </Button>
+          </section>
+        )}
       </main>
     </Page>
   );
