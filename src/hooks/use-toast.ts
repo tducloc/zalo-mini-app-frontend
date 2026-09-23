@@ -1,9 +1,9 @@
-import { resolveApiErrorMessage } from '@/lib/api-error';
-import type { ApiErrorOptions } from '@/lib/api-error';
+import { resolveApiErrorMessage } from '@/utils/api-error';
+import type { ApiErrorOptions } from '@/utils/api-error';
 import { useCallback } from 'react';
 import { useSnackbar } from 'zmp-ui';
 
-export type { ApiErrorOptions } from '@/lib/api-error';
+export type { ApiErrorOptions } from '@/utils/api-error';
 
 export function useToast() {
   const { openSnackbar } = useSnackbar();

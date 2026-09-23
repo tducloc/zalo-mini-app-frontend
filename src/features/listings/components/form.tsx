@@ -74,7 +74,7 @@ export default function ListingForm({
         title="Tin của bạn đã được đăng"
         description="Bạn có thể theo dõi và cập nhật tin trong Quản lý tin."
         actionLabel="Quay lại form"
-        onRetry={() => setDone(false)}
+        onAction={() => setDone(false)}
       />
     );
   return (

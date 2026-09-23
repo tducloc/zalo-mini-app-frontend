@@ -238,7 +238,7 @@ function Frame({ screen }: { screen: string }) {
                     type="empty"
                     title="Tin không còn tồn tại"
                     description="Tin có thể đã được người bán gỡ."
-                    onRetry={() => setRecovered(true)}
+                    onAction={() => setRecovered(true)}
                   />
                 )}
               </main>

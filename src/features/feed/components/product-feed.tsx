@@ -40,7 +40,7 @@ export default function ProductFeed({
         type="error"
         title="Không tải được tin"
         description="Kiểm tra kết nối mạng và thử lại."
-        onRetry={() => feed.refetch()}
+        onAction={() => feed.refetch()}
       />
     );
   }
@@ -54,7 +54,7 @@ export default function ProductFeed({
         title="Không tìm thấy tin phù hợp"
         description="Thử từ khoá khác hoặc bỏ bớt bộ lọc."
         actionLabel="Xoá tìm kiếm và bộ lọc"
-        onRetry={onClearCriteria}
+        onAction={onClearCriteria}
       />
     ) : (
       <FeedbackState type="empty" title="Chưa có tin đăng" description="Hãy quay lại sau nhé." />
