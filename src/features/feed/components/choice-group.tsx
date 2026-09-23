@@ -29,10 +29,25 @@ export default function ChoiceGroup<T extends string>({
             type="button"
             onClick={() => onChange(nextChoice(value, option.value, isRequired))}
           >
-            {option.label}
+            <StableWeightLabel label={option.label} />
           </button>
         ))}
       </div>
     </fieldset>
+  );
+}
+
+/**
+ * The selected pill turns semibold; an invisible semibold copy reserves that
+ * width up front so selecting never widens the pill and reflows the row.
+ */
+function StableWeightLabel({ label }: { label: string }) {
+  return (
+    <span className="grid justify-items-center">
+      <span aria-hidden className="invisible col-start-1 row-start-1 font-semibold">
+        {label}
+      </span>
+      <span className="col-start-1 row-start-1">{label}</span>
+    </span>
   );
 }
