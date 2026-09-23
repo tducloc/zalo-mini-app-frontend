@@ -1,8 +1,25 @@
+/* Brand tokens: single source for SCSS and Tailwind (tailwind.config.js reads
+   the -rgb channels so utilities can apply opacity, e.g. bg-marketplace-ink/70). */
 :root {
-  --marketplace-blue: #0068ff;
-  --marketplace-ink: #111b3d;
-  --marketplace-muted: #68769b;
-  --marketplace-surface: #f5f8ff;
+  --marketplace-blue-rgb: 0 104 255;
+  --marketplace-blue-dark-rgb: 0 63 158;
+  --marketplace-ink-rgb: 17 27 61;
+  --marketplace-muted-rgb: 104 118 155;
+  --marketplace-subtle-rgb: 169 181 204;
+  --marketplace-surface-rgb: 245 248 255;
+  --marketplace-line-rgb: 231 236 245;
+  --marketplace-tint-rgb: 238 245 255;
+  --marketplace-tint-strong-rgb: 207 224 255;
+  --marketplace-pale-rgb: 229 241 255;
+  --marketplace-skeleton-rgb: 237 242 250;
+  --marketplace-danger-rgb: 207 48 48;
+
+  --marketplace-blue: rgb(var(--marketplace-blue-rgb));
+  --marketplace-ink: rgb(var(--marketplace-ink-rgb));
+  --marketplace-muted: rgb(var(--marketplace-muted-rgb));
+  --marketplace-surface: rgb(var(--marketplace-surface-rgb));
+  --marketplace-line: rgb(var(--marketplace-line-rgb));
+  --marketplace-pale: rgb(var(--marketplace-pale-rgb));
 }
 
 .listing-price {
