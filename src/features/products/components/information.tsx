@@ -1,13 +1,9 @@
 import Price from '@/components/price';
+import { getCategoryLabel } from '@/features/categories/utils/presentation';
 
 import ProductDescription from './description';
+import { conditionLabels } from '../constants';
 import { ProductDetail } from '../types';
-
-const conditionLabel: Record<ProductDetail['condition'], string> = {
-  NEW: 'Mới',
-  LIKE_NEW: 'Như mới',
-  USED: 'Đã dùng',
-};
 
 export default function ProductInformation({
   product,
@@ -33,11 +29,10 @@ export default function ProductInformation({
         </button>
       </div>
       <p className="product-detail-meta product-detail-summary">
-        {product.category.name} · {conditionLabel[product.condition]} · {product.location}
+        {getCategoryLabel(product.category)} · {conditionLabels[product.condition]} ·{' '}
+        {product.location}
       </p>
-      <div className="product-detail-price">
-        <Price value={product.price} />
-      </div>
+      <Price className="mb-0 mt-2 text-[28px] leading-[34px]" value={product.price} />
       <p className="product-detail-meta product-detail-published">Đăng {publishedDate}</p>
       <ProductDescription description={product.description} />
     </>

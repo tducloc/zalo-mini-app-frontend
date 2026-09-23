@@ -1,3 +1,7 @@
+import type { productConditions } from './constants';
+
+export type ProductCondition = (typeof productConditions)[number];
+
 export type MediaType = 'IMAGE' | 'VIDEO';
 
 export type ProductDetail = {
@@ -5,7 +9,7 @@ export type ProductDetail = {
   title: string;
   description: string;
   price: number;
-  condition: 'NEW' | 'LIKE_NEW' | 'USED';
+  condition: ProductCondition;
   status: 'PROCESSING' | 'PUBLISHED' | 'SOLD' | 'ARCHIVED';
   location: string;
   category: {
@@ -38,3 +42,32 @@ export type ProductDetail = {
   createdAt: string;
   publishedAt: string | null;
 };
+
+export interface ProductCard {
+  id: string;
+  title: string;
+  price: number;
+  condition: ProductCondition;
+  category: { id: string; name: string; slug: string };
+  thumbnailUrl: string | null;
+  hasVideo: boolean;
+  // `id` is null for legacy rows whose free-text location is not mapped yet.
+  location: { id: string | null; name: string };
+  publishedAt: string;
+}
+
+export interface ProductFeedParams {
+  q?: string;
+  categoryId?: string;
+  locationId?: string;
+  condition?: ProductCondition;
+  minPrice?: number;
+  maxPrice?: number;
+  sortBy: 'publishedAt' | 'price';
+  order: 'asc' | 'desc';
+}
+
+export interface ProductFeedPage {
+  data: ProductCard[];
+  meta: { nextCursor: string | null; hasNextPage: boolean };
+}
