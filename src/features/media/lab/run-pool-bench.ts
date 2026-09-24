@@ -8,43 +8,17 @@
  */
 
 import { IMAGE_HEAD_BYTES, readImageDimensions } from '@/features/media/image-dimensions';
+import { startFrameMeter } from '@/features/media/lab/frame-meter';
 import {
   createPipelineWorker,
   PipelineError,
   type PipelineWorker,
 } from '@/features/media/optimize-image';
-import {
-  estimateJobBytes,
-  MAX_EDGE,
-  pickWorker,
-  type PoolState,
-} from '@/features/media/pool-scheduler';
+import { MAX_EDGE } from '@/features/media/image-worker-protocol';
+import { estimateJobBytes, pickWorker, type PoolState } from '@/features/media/pool-scheduler';
 import type { BenchConfig, BenchResult, JobRecord } from '@/features/media/lab/pool-bench-summary';
 
 type QueuedJob = { file: File; record: JobRecord; decodeWidth?: number };
-
-/** The longest gap between animation frames is the main-thread block the user feels. */
-function startFrameMeter() {
-  let last = performance.now();
-  let longest = 0;
-  let running = true;
-
-  const tick = () => {
-    if (!running) {
-      return;
-    }
-    const now = performance.now();
-    longest = Math.max(longest, now - last);
-    last = now;
-    requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
-
-  return () => {
-    running = false;
-    return longest;
-  };
-}
 
 async function prepareJob(file: File, decodeWidth?: number): Promise<QueuedJob> {
   const head = new Uint8Array(await file.slice(0, IMAGE_HEAD_BYTES).arrayBuffer());
@@ -79,7 +53,7 @@ function recordSuccess(record: JobRecord, result: Awaited<ReturnType<PipelineWor
 function recordFailure(record: JobRecord, error: unknown) {
   record.ok = false;
   record.error = error instanceof Error ? error.message : String(error);
-  record.step = error instanceof PipelineError ? error.step : undefined;
+  record.step = (error instanceof PipelineError && error.step) || undefined;
 }
 
 export async function runPoolBench(files: File[], config: BenchConfig): Promise<BenchResult> {
@@ -132,7 +106,7 @@ export async function runPoolBench(files: File[], config: BenchConfig): Promise<
         peakEstimatedBytes = Math.max(peakEstimatedBytes, state.bytesInFlight);
 
         workers[index]
-          .run(job.file, { isMain: false, decodeWidth: job.decodeWidth, flushDraw: true })
+          .run(job.file, { decodeWidth: job.decodeWidth, flushDraw: true })
           .then((result) => recordSuccess(job.record, result))
           .catch((error: unknown) => recordFailure(job.record, error))
           .finally(() => finish(index, job));

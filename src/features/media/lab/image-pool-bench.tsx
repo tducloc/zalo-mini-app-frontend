@@ -8,7 +8,7 @@ import {
   summarizeBench,
 } from '@/features/media/lab/pool-bench-summary';
 import { BENCH_CONFIGS, runPoolBench } from '@/features/media/lab/run-pool-bench';
-import { canUseWorker } from '@/features/media/optimize-image';
+import { canOptimizeImages } from '@/features/media/optimize-image';
 
 // Survives the page reload that WKWebView does when it runs out of memory.
 const STAGE_KEY = 'medialab.poolStage';
@@ -44,7 +44,7 @@ function describeDevice() {
   return [
     `cores ${navigator.hardwareConcurrency ?? '?'}`,
     `deviceMemory ${memory ?? 'không có'}`,
-    `OffscreenCanvas ${canUseWorker ? 'có' : 'KHÔNG'}`,
+    `OffscreenCanvas ${canOptimizeImages ? 'có' : 'KHÔNG'}`,
   ].join(' · ');
 }
 
@@ -102,7 +102,7 @@ export default function ImagePoolBench() {
         </Button>
         <Button
           size="small"
-          disabled={isBusy || !files.length || !canUseWorker}
+          disabled={isBusy || !files.length || !canOptimizeImages}
           onClick={() => void runConfigs(TABLE_CONFIGS)}
         >
           Chạy cả bảng
@@ -110,7 +110,7 @@ export default function ImagePoolBench() {
         <Button
           size="small"
           variant="secondary"
-          disabled={isBusy || !files.length || !canUseWorker}
+          disabled={isBusy || !files.length || !canOptimizeImages}
           onClick={() => void runConfigs([ALL_AT_ONCE])}
         >
           Tất cả cùng lúc (có thể crash)

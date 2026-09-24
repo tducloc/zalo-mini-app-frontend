@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from 'zmp-ui';
 
-import { sniffFormat } from '@/features/media/image-pipeline.js';
+import { sniffBlobFormat } from '@/features/media/file-format';
 
 /**
  * Encodes one photo with this device's own canvas encoders and lets you flip
@@ -59,7 +59,7 @@ async function encodeVariants(file: File, edge: Edge): Promise<Variant[]> {
     const started = performance.now();
     const blob = await toBlob(canvas, spec.type, spec.quality);
     const encodeMs = performance.now() - started;
-    const actualType = blob ? await sniffFormat(blob) : 'none';
+    const actualType = blob ? await sniffBlobFormat(blob) : 'none';
     const isReal = actualType === spec.type;
     variants.push({
       ...spec,

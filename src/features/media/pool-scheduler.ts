@@ -9,6 +9,7 @@
  */
 
 import type { ImageDimensions } from '@/features/media/image-dimensions';
+import { MAX_EDGE } from '@/features/media/image-worker-protocol';
 
 export type PoolConfig = {
   workers: number;
@@ -24,7 +25,6 @@ export type PoolState = {
 };
 
 const BYTES_PER_PIXEL = 4;
-export const MAX_EDGE = 1280;
 
 /** Used when the header cannot be read: a 24 MP photo, the iPhone 15+ default. */
 export const UNKNOWN_IMAGE_DIMENSIONS: ImageDimensions = { width: 5712, height: 4284 };

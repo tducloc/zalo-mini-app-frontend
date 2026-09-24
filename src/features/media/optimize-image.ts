@@ -1,77 +1,45 @@
 /**
- * Chooses WHERE the pipeline runs, not WHAT it does.
+ * Starts image workers and talks to them. The pipeline itself is in image-worker.ts.
  *
- * With OffscreenCanvas the whole thing runs in a worker, so the synchronous drawImage
- * never touches the main thread and typing stays smooth while images are processed.
- * Without it (iOS below 16.4) the exact same function runs on the main thread.
- *
- * The worker is started from a Blob URL that we build ourselves, NOT from a file URL.
- * Inside the Zalo Mini App runtime the app is served from a custom origin with
- * `base: ''`, so a worker script URL never resolves. Vite's own `?worker&inline` is not
- * enough either: it only produces a Blob when BUILDING. In dev (`zmp start`) Vite falls
- * back to serving the worker from a URL, so the dev build would break in the very place
- * we test. Reading the pipeline source with `?raw` behaves identically in both modes.
+ * There is no main-thread fallback (decided 2026-09-24): a phone without OffscreenCanvas
+ * (iOS 15.1–16.3) uploads the original photo instead, because decoding and scaling a
+ * 12 MP photo on the main thread freezes the form on exactly the slowest phones.
  */
-import pipelineSource from './image-pipeline.js?raw';
+import workerSource from '@/features/media/image-worker.ts?worker-source';
 
-import {
-  hasOffscreenCanvas,
-  optimizeImage as optimizeOnThisThread,
-  type OptimizeOptions,
-  type OptimizeResult,
-  type PipelineStep,
-} from './image-pipeline.js';
+import type {
+  ImageJob,
+  ImageJobOptions,
+  ImageReply,
+  OptimizedImage,
+  PipelineStep,
+} from '@/features/media/image-worker-protocol';
 
-export const canUseWorker = hasOffscreenCanvas && typeof Worker !== 'undefined';
+export const canOptimizeImages =
+  typeof OffscreenCanvas !== 'undefined' && typeof Worker !== 'undefined';
 
-/** The message loop. Appended to the pipeline source to form the worker script. */
-const WORKER_GLUE = `
-self.onmessage = async (event) => {
-  const { id, file, options } = event.data;
-  try {
-    const result = await optimizeImage(file, options);
-    self.postMessage({ id, ok: true, result });
-  } catch (error) {
-    self.postMessage({
-      id,
-      ok: false,
-      error: String((error && error.message) || error),
-      step: error && error.step,
-    });
-  }
-};
-`;
-
-/** A pipeline failure. `step` is missing when the worker itself crashed. */
+/** A pipeline failure. `step` is null when the worker itself crashed or was stopped. */
 export class PipelineError extends Error {
-  step?: PipelineStep;
-
-  constructor(message: string, step?: PipelineStep) {
+  constructor(
+    message: string,
+    readonly step: PipelineStep | null = null,
+  ) {
     super(message);
-    this.step = step;
   }
 }
 
-export type PipelineWorker = {
-  run: (file: Blob, options: OptimizeOptions) => Promise<OptimizeResult>;
+export interface PipelineWorker {
+  run: (file: Blob, options?: ImageJobOptions) => Promise<OptimizedImage>;
   /** Stops the worker and rejects anything still in flight. */
   dispose: () => void;
   /** True after dispose, including when the worker crashed. */
   isDisposed: () => boolean;
-};
+}
 
-type WorkerReply = {
-  id: number;
-  ok: boolean;
-  result?: OptimizeResult;
-  error?: string;
-  step?: PipelineStep;
-};
-
-type Pending = {
-  resolve: (result: OptimizeResult) => void;
+interface Pending {
+  resolve: (result: OptimizedImage) => void;
   reject: (error: Error) => void;
-};
+}
 
 function rejectAll(pending: Map<number, Pending>, error: Error) {
   for (const entry of pending.values()) {
@@ -82,15 +50,9 @@ function rejectAll(pending: Map<number, Pending>, error: Error) {
 
 /** Starts one worker running the pipeline. Each call is a separate thread. */
 export function createPipelineWorker(): PipelineWorker {
-  // Drop the ESM export keywords so the same file runs as a classic worker script.
-  const source = pipelineSource.replace(
-    /^export\s+(?=const |let |function |async function )/gm,
-    '',
-  );
-  const blob = new Blob([source, WORKER_GLUE], { type: 'text/javascript;charset=utf-8' });
-  // The URL is revoked in dispose, not here. Revoking straight after the constructor
-  // is a known way to make some WebViews fail to start the worker.
-  const url = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }));
+  // The URL is revoked in dispose, not here: revoking straight after the constructor is a
+  // known way to make some WebViews fail to start the worker.
   const worker = new Worker(url);
 
   const pending = new Map<number, Pending>();
@@ -102,12 +64,12 @@ export function createPipelineWorker(): PipelineWorker {
       return;
     }
     disposed = true;
-    rejectAll(pending, new PipelineError('cancelled'));
+    rejectAll(pending, new PipelineError('image worker stopped'));
     worker.terminate();
     URL.revokeObjectURL(url);
   };
 
-  worker.onmessage = (event: MessageEvent<WorkerReply>) => {
+  worker.onmessage = (event: MessageEvent<ImageReply>) => {
     const reply = event.data;
     const entry = pending.get(reply.id);
     if (!entry) {
@@ -115,55 +77,29 @@ export function createPipelineWorker(): PipelineWorker {
     }
     pending.delete(reply.id);
 
-    if (reply.ok && reply.result) {
+    if (reply.ok) {
       entry.resolve(reply.result);
     } else {
-      entry.reject(new PipelineError(reply.error ?? 'image worker failed', reply.step));
+      entry.reject(new PipelineError(reply.error, reply.step));
     }
   };
 
+  // Fires when the worker dies, for example out of memory; nothing in it survives.
   worker.onerror = (event) => {
     rejectAll(pending, new PipelineError(event.message || 'image worker crashed'));
     dispose();
   };
 
-  const run = (file: Blob, options: OptimizeOptions) => {
+  const run = (file: Blob, options: ImageJobOptions = {}) => {
     if (disposed) {
       return Promise.reject(new PipelineError('image worker is gone'));
     }
-    const id = ++sequence;
-    return new Promise<OptimizeResult>((resolve, reject) => {
-      pending.set(id, { resolve, reject });
-      worker.postMessage({ id, file, options });
+    const job: ImageJob = { id: ++sequence, file, options };
+    return new Promise<OptimizedImage>((resolve, reject) => {
+      pending.set(job.id, { resolve, reject });
+      worker.postMessage(job);
     });
   };
 
   return { run, dispose, isDisposed: () => disposed };
-}
-
-let sharedWorker: PipelineWorker | null = null;
-
-export type OptimizeHost = 'auto' | 'worker' | 'main';
-
-export function optimize(
-  file: Blob,
-  isMain: boolean,
-  host: OptimizeHost = 'auto',
-): Promise<OptimizeResult> {
-  const useWorker = host === 'worker' || (host === 'auto' && canUseWorker);
-  if (!useWorker) {
-    return optimizeOnThisThread(file, { isMain });
-  }
-
-  // A crashed worker disposes itself; start a fresh one for the next image.
-  if (!sharedWorker || sharedWorker.isDisposed()) {
-    sharedWorker = createPipelineWorker();
-  }
-  return sharedWorker.run(file, { isMain });
-}
-
-/** Drops the shared worker and rejects anything still in flight. Used on cancel or teardown. */
-export function disposeWorker() {
-  sharedWorker?.dispose();
-  sharedWorker = null;
 }
