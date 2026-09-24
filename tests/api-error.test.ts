@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { getApiErrorStatus, resolveApiErrorMessage } from '../src/lib/api-error';
+import { getApiErrorStatus, resolveApiErrorMessage } from '@/utils/api-error';
 
 function apiError(status: number) {
   return new axios.AxiosError('Request failed', 'ERR_BAD_RESPONSE', undefined, undefined, {

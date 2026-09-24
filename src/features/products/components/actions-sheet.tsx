@@ -1,13 +1,15 @@
 import { openShareSheet } from 'zmp-sdk';
-import { Sheet } from 'zmp-ui';
 
-import { ProductDetail } from '../types';
+import AppSheet from '@/components/app-sheet';
+
+import type { ProductDetail } from '../types';
 
 export default function ProductActionsSheet({
   product,
   visible,
   isOwner,
   hasReported,
+  isReportAvailable,
   onClose,
   onReport,
   onError,
@@ -16,6 +18,7 @@ export default function ProductActionsSheet({
   visible: boolean;
   isOwner: boolean;
   hasReported: boolean;
+  isReportAvailable: boolean;
   onClose: () => void;
   onReport: () => void;
   onError: (message: string) => void;
@@ -49,7 +52,7 @@ export default function ProductActionsSheet({
   };
 
   return (
-    <Sheet visible={visible} title="Tùy chọn" autoHeight unmountOnClose onClose={onClose}>
+    <AppSheet visible={visible} title="Tùy chọn" autoHeight onClose={onClose}>
       <div className="product-actions-sheet">
         <button onClick={shareProduct}>
           <span aria-hidden="true">↗</span>
@@ -58,7 +61,7 @@ export default function ProductActionsSheet({
         {!isOwner && (
           <button
             className={hasReported ? 'reported' : 'danger'}
-            disabled={hasReported}
+            disabled={hasReported || !isReportAvailable}
             onClick={reportProduct}
           >
             <span aria-hidden="true">{hasReported ? '✓' : '!'}</span>
@@ -66,6 +69,6 @@ export default function ProductActionsSheet({
           </button>
         )}
       </div>
-    </Sheet>
+    </AppSheet>
   );
 }

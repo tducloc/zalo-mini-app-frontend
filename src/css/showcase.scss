@@ -435,3 +435,17 @@
     max-width: calc(100vw - 32px);
   }
 }
+
+/* Mimics Zalo's native capsule over the real Home header. */
+.home-zalo-control {
+  position: fixed;
+  top: max(24px, env(safe-area-inset-top, 0px));
+  right: 16px;
+  z-index: 31;
+  padding: 4px 8px;
+  border: 1px solid rgb(255 255 255 / 40%);
+  border-radius: 16px;
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+}

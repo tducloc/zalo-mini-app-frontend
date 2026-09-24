@@ -5,10 +5,14 @@ import { AppProps } from 'zmp-ui/app';
 import AppShell from '@/components/app-shell';
 import { AuthBootstrap } from '@/features/auth/components/bootstrap';
 import HomePage from '@/pages/home';
+import MediaLabPage from '@/pages/media-lab';
 import MyListingsPage from '@/pages/my-listings';
 import ProductDetailPage from '@/pages/product-detail';
 import ProfilePage from '@/pages/profile';
 import SellPage from '@/pages/sell';
+
+// Dev-only measurement page. Remove once the media numbers are recorded.
+const showMediaLab = import.meta.env.DEV || import.meta.env.VITE_MEDIA_LAB === 'true';
 
 export default function MyApp() {
   useEffect(() => {
@@ -32,6 +36,7 @@ export default function MyApp() {
                 <Route path="/my-listings" element={<MyListingsPage />} />
                 <Route path="/sell" element={<SellPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                {showMediaLab && <Route path="/media-lab" element={<MediaLabPage />} />}
                 <Route path="/products/:productId" element={<ProductDetailPage />} />
               </AnimationRoutes>
             </AppShell>

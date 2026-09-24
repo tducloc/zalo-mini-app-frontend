@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
-import ProductActionsSheet from '../src/features/products/components/actions-sheet';
-import ProductDescription from '../src/features/products/components/description';
-import ProductMediaGallery from '../src/features/products/components/media-gallery';
-import { ProductDetail } from '../src/features/products/types';
+import ProductActionsSheet from '@/features/products/components/actions-sheet';
+import ProductDescription from '@/features/products/components/description';
+import ProductMediaGallery from '@/features/products/components/media-gallery';
+import { ProductDetail } from '@/features/products/types';
 
 vi.mock('zmp-sdk', () => ({ openShareSheet: vi.fn() }));
 
@@ -81,6 +81,7 @@ describe('product detail UI', () => {
     render(
       <ProductActionsSheet
         hasReported
+        isReportAvailable
         isOwner={false}
         product={product}
         visible
@@ -104,6 +105,7 @@ describe('product detail UI', () => {
     render(
       <ProductActionsSheet
         hasReported={false}
+        isReportAvailable
         isOwner={false}
         product={product}
         visible
@@ -125,4 +127,22 @@ describe('product detail UI', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Xem thêm' }));
     expect(screen.getByRole('button', { name: 'Thu gọn' })).toBeTruthy();
   });
+});
+
+it('disables reporting until the viewer-specific detail has loaded', () => {
+  render(
+    <ProductActionsSheet
+      product={product}
+      visible
+      isOwner={false}
+      hasReported={false}
+      isReportAvailable={false}
+      onClose={vi.fn()}
+      onReport={vi.fn()}
+      onError={vi.fn()}
+    />,
+  );
+
+  const reportButton = screen.getByRole('button', { name: 'Báo cáo tin đăng' });
+  expect((reportButton as HTMLButtonElement).disabled).toBe(true);
 });

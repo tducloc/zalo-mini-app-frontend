@@ -1,3 +1,12 @@
-export default function Price({ value }: { value: number }) {
-  return <p className="listing-price">{new Intl.NumberFormat('vi-VN').format(value)} đ</p>;
+import { formatVnd } from '@/utils/format';
+
+/** Brand-colored VND price; size/spacing default to the listing-card style. */
+export default function Price({
+  value,
+  className = 'my-1 text-sm leading-[17px]',
+}: {
+  value: number;
+  className?: string;
+}) {
+  return <p className={`font-bold text-marketplace-blue ${className}`}>{formatVnd(value)}</p>;
 }

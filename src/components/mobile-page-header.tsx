@@ -1,4 +1,4 @@
-import { Header, useLocation, useNavigate } from 'zmp-ui';
+import { Header, Icon, useLocation, useNavigate } from 'zmp-ui';
 
 export default function MobilePageHeader({
   title,
@@ -25,6 +25,12 @@ export default function MobilePageHeader({
     <Header
       title={title}
       showBackIcon={showBack}
+      // zmp-ui renders an icon-only button; the label gives it a name.
+      backIcon={
+        <span aria-label="Quay lại" className="inline-flex" role="img">
+          <Icon icon="zi-chevron-left" />
+        </span>
+      }
       onBackClick={goBack}
       className={transparent ? 'product-detail-header' : undefined}
       backgroundColor={transparent ? 'transparent' : undefined}

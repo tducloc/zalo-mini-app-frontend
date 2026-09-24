@@ -1,49 +1,42 @@
-import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
+import { PropsWithChildren, useEffect, useState } from 'react';
+
 import { restoreSession, settleAuthBootstrap } from '@/features/auth/api/session';
-import AuthLoadingScreen from '@/features/auth/components/loading';
 import { useAuthStore } from '@/stores/auth';
 
+import AuthRetryNotice from './auth-retry-notice';
+import { AUTH_ERROR_MESSAGE } from '../constants';
+
+/**
+ * Signs in with Zalo in the background. Public screens (Home, detail) render
+ * immediately; screens that need a session read `isBootstrapping` themselves
+ * instead of the whole app waiting on the SDK and the token exchange.
+ */
 export function AuthBootstrap({ children }: PropsWithChildren) {
-  const [busy, setBusy] = useState(false);
-
   const error = useAuthStore((state) => state.error);
-
-  const isBootstrapping = useAuthStore((state) => state.isBootstrapping);
-
   const setError = useAuthStore((state) => state.setError);
 
-  const retry = useCallback(async () => {
-    setBusy(true);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  useEffect(() => {
+    void restoreSession().then(settleAuthBootstrap, settleAuthBootstrap);
+  }, []);
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
     try {
       await restoreSession(true);
     } catch {
-      setError('Chưa thể xác thực. Bạn vẫn có thể xem tin.');
+      setError(AUTH_ERROR_MESSAGE);
     } finally {
-      setBusy(false);
+      setIsRetrying(false);
     }
-  }, []);
-
-  useEffect(() => {
-    void restoreSession().then(
-      () => settleAuthBootstrap(),
-      () => {
-        settleAuthBootstrap();
-      },
-    );
-  }, []);
+  };
 
   return (
     <>
-      {isBootstrapping ? <AuthLoadingScreen /> : children}
+      {children}
 
-      {error && (
-        <div className="auth-retry-notice" role="status">
-          <span>Chưa thể xác thực. Bạn vẫn có thể xem tin.</span>
-          <button disabled={busy} onClick={retry}>
-            {busy ? 'Đang thử…' : 'Thử lại'}
-          </button>
-        </div>
-      )}
+      {error && <AuthRetryNotice isRetrying={isRetrying} onRetry={handleRetry} />}
     </>
   );
 }

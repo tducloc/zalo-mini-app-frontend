@@ -2,15 +2,13 @@ import { useMemo, useRef, useState } from 'react';
 import { ImageViewer, Swiper } from 'zmp-ui';
 
 import { ProductDetail } from '../types';
+import { getViewerIndex, isNearSlide } from '../utils/gallery';
 
 type ProductMedia = ProductDetail['media'];
 
-function getViewerIndex(media: ProductMedia, activeIndex: number) {
-  return Math.max(
-    0,
-    media.slice(0, activeIndex).filter((item) => item.type === 'IMAGE').length - 1,
-  );
-}
+const slideClass = 'relative block aspect-square w-full overflow-hidden border-0 bg-black p-0';
+// Media keeps its own aspect ratio; the black slide shows around it.
+const contentClass = 'block aspect-square w-full object-contain';
 
 export default function ProductMediaGallery({
   media,
@@ -23,9 +21,8 @@ export default function ProductMediaGallery({
 
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
 
-  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
-
-  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  // Looping clones the first and last slides, so videos are found in the DOM.
+  const galleryRef = useRef<HTMLDivElement>(null);
 
   const viewerImages = useMemo(
     () =>
@@ -40,68 +37,51 @@ export default function ProductMediaGallery({
   }
 
   const handleSlideChange = (nextIndex: number) => {
-    Object.values(videoRefs.current).forEach((video) => video?.pause());
-    setPlayingVideoId(null);
+    galleryRef.current?.querySelectorAll('video').forEach((video) => video.pause());
     setActiveIndex(nextIndex);
-  };
-
-  const toggleVideo = async (id: string) => {
-    const video = videoRefs.current[id];
-    if (!video) return;
-    if (video.paused) {
-      await video.play();
-      return;
-    }
-    video.pause();
   };
 
   return (
     <>
-      <div className="product-detail-gallery">
+      <div className="product-detail-gallery" ref={galleryRef}>
         <Swiper
           afterChange={handleSlideChange}
-          className="product-detail-swiper"
+          // zmp-ui dims inactive slides to 0.8, but with `loop` it also dims the
+          // active one on the last slide (its index check skips the clones),
+          // and on iOS that dimmed slide paints over the counter.
+          className="product-detail-swiper [&_.zaui-swiper-item]:!opacity-100"
           defaultActive={0}
           dots={false}
+          loop={media.length > 1}
         >
           {media.map((item, index) => (
             <Swiper.Slide key={item.id}>
               {item.type === 'VIDEO' ? (
-                <button
-                  aria-label={playingVideoId === item.id ? 'Tạm dừng video' : 'Phát video'}
-                  className="product-detail-video-button"
-                  onClick={() => void toggleVideo(item.id)}
-                >
+                <div className={slideClass}>
                   <video
-                    className="product-detail-media"
-                    muted
+                    aria-label={`Video: ${productTitle}`}
+                    className={`${contentClass} bg-transparent`}
+                    controls
                     playsInline
-                    ref={(element) => {
-                      videoRefs.current[item.id] = element;
-                    }}
-                    preload={index === activeIndex ? 'metadata' : 'none'}
+                    poster={item.thumbnailUrl ?? undefined}
+                    preload="none"
                     src={index === activeIndex ? (item.mediumUrl ?? undefined) : undefined}
-                    onEnded={() => setPlayingVideoId(null)}
-                    onPause={() => setPlayingVideoId(null)}
-                    onPlay={() => setPlayingVideoId(item.id)}
                   />
-                  {playingVideoId !== item.id && <span aria-hidden="true">▶</span>}
-                </button>
+                </div>
               ) : (
                 <button
                   aria-label="Phóng to ảnh"
-                  className="product-detail-image-button"
+                  className={slideClass}
+                  type="button"
                   onClick={() => setImageViewerOpen(true)}
                 >
+                  {/* One image per slide: swapping a thumbnail for the larger
+                      file mid-swipe changed its aspect ratio and made it jump. */}
                   <img
-                    className="product-detail-media"
-                    loading={index === activeIndex ? 'eager' : 'lazy'}
-                    src={
-                      index === activeIndex
-                        ? (item.mediumUrl ?? item.thumbnailUrl ?? '')
-                        : (item.thumbnailUrl ?? '')
-                    }
                     alt={productTitle}
+                    className={contentClass}
+                    loading={isNearSlide(index, activeIndex, media.length) ? 'eager' : 'lazy'}
+                    src={item.mediumUrl ?? item.thumbnailUrl ?? ''}
                   />
                 </button>
               )}
@@ -109,14 +89,12 @@ export default function ProductMediaGallery({
           ))}
         </Swiper>
 
-        {media.length > 0 && (
-          <span
-            className="product-detail-gallery-counter"
-            aria-label={`Nội dung ${activeIndex + 1} trên ${media.length}`}
-          >
-            {activeIndex + 1} / {media.length}
-          </span>
-        )}
+        <span
+          className="product-detail-gallery-counter"
+          aria-label={`Nội dung ${activeIndex + 1} trên ${media.length}`}
+        >
+          {activeIndex + 1} / {media.length}
+        </span>
       </div>
 
       {imageViewerOpen && viewerImages.length > 0 && (

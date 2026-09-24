@@ -2,13 +2,14 @@ export default function FeedbackState({
   type,
   title,
   description,
-  onRetry,
+  onAction,
   actionLabel = 'Thử lại',
 }: {
   type: 'loading' | 'empty' | 'error' | 'success';
   title: string;
   description?: string;
-  onRetry?: () => void;
+  /** Primary action (retry, clear filters…); labelled by `actionLabel`. */
+  onAction?: () => void;
   actionLabel?: string;
 }) {
   return (
@@ -22,8 +23,8 @@ export default function FeedbackState({
       )}
       <h2>{title}</h2>
       <p>{description}</p>
-      {onRetry && (
-        <button className="ui-button" onClick={onRetry}>
+      {onAction && (
+        <button className="ui-button" type="button" onClick={onAction}>
           {actionLabel}
         </button>
       )}
