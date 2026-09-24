@@ -10,6 +10,8 @@ export interface FeedFilters {
   categoryId?: string;
   locationId?: string;
   condition?: ProductCondition;
+  /** Only listings with a video; undefined means all listings. */
+  hasVideo?: true;
   minPrice?: number;
   maxPrice?: number;
   sort: SortOption;

@@ -18,4 +18,13 @@ export const sortOptionConfig: Record<
 };
 
 /** Applied-filter kinds, in chip order. */
-export const FILTER_KEYS = ['locationId', 'categoryId', 'condition', 'price', 'sort'] as const;
+export const FILTER_KEYS = [
+  'locationId',
+  'categoryId',
+  'condition',
+  'hasVideo',
+  'price',
+  'sort',
+] as const;
+
+export const HAS_VIDEO_LABEL = 'Có video';

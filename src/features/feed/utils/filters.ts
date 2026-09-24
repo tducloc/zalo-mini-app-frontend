@@ -4,7 +4,13 @@ import { conditionLabels } from '@/features/products/constants';
 import type { ProductFeedParams } from '@/features/products/types';
 import { formatVnd } from '@/utils/format';
 
-import { DEFAULT_SORT, FILTER_KEYS, SEARCH_MAX_LENGTH, sortOptionConfig } from '../constants';
+import {
+  DEFAULT_SORT,
+  FILTER_KEYS,
+  HAS_VIDEO_LABEL,
+  SEARCH_MAX_LENGTH,
+  sortOptionConfig,
+} from '../constants';
 import type { FeedFilters, FilterChip, FilterKey } from '../types';
 
 export const DEFAULT_FILTERS: FeedFilters = { sort: DEFAULT_SORT };
@@ -23,13 +29,14 @@ export function normalizeSearch(input: string) {
 export function toFeedQueryParams(filters: FeedFilters, search: string): ProductFeedParams {
   const { sortBy, order } = sortOptionConfig[filters.sort];
   const q = normalizeSearch(search);
-  const { categoryId, locationId, condition, minPrice, maxPrice } = filters;
+  const { categoryId, locationId, condition, hasVideo, minPrice, maxPrice } = filters;
 
   return {
     ...(q && { q }),
     ...(categoryId && { categoryId }),
     ...(locationId && { locationId }),
     ...(condition && { condition }),
+    ...(hasVideo && { hasVideo }),
     ...(minPrice !== undefined && { minPrice }),
     ...(maxPrice !== undefined && { maxPrice }),
     sortBy,
@@ -71,6 +78,7 @@ export function getActiveFilterKeys(filters: FeedFilters): FilterKey[] {
     locationId: Boolean(filters.locationId),
     categoryId: Boolean(filters.categoryId),
     condition: Boolean(filters.condition),
+    hasVideo: Boolean(filters.hasVideo),
     price: filters.minPrice !== undefined || filters.maxPrice !== undefined,
     sort: filters.sort !== DEFAULT_SORT,
   };
@@ -101,6 +109,7 @@ export function getFilterChips(
       lookups.categories.find((item) => item.id === filters.categoryId)?.label ??
       'Danh mục đã chọn',
     condition: () => (filters.condition ? conditionLabels[filters.condition] : ''),
+    hasVideo: () => HAS_VIDEO_LABEL,
     price: () => formatPriceRange(filters.minPrice, filters.maxPrice),
     sort: () => sortOptionConfig[filters.sort].label,
   };

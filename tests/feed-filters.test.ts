@@ -67,6 +67,7 @@ describe('toFeedQueryParams', () => {
           categoryId: 'cat_vehicles',
           locationId: 'loc_hanoi',
           condition: 'USED',
+          hasVideo: true,
           minPrice: 1_000_000,
           maxPrice: 5_000_000,
         },
@@ -77,6 +78,7 @@ describe('toFeedQueryParams', () => {
       categoryId: 'cat_vehicles',
       locationId: 'loc_hanoi',
       condition: 'USED',
+      hasVideo: true,
       minPrice: 1_000_000,
       maxPrice: 5_000_000,
       sortBy: 'price',
@@ -98,6 +100,7 @@ describe('category and chip helpers', () => {
       categoryId: 'cat_vehicles',
       locationId: 'loc_hanoi',
       condition: 'LIKE_NEW',
+      hasVideo: true,
       minPrice: 0,
     };
 
@@ -105,10 +108,11 @@ describe('category and chip helpers', () => {
       'Hà Nội',
       'Xe cộ',
       'Như mới',
+      'Có video',
       `Từ ${new Intl.NumberFormat('vi-VN').format(0)} đ`,
       'Giá cao đến thấp',
     ]);
-    expect(getActiveFilterKeys(filters)).toHaveLength(5);
+    expect(getActiveFilterKeys(filters)).toHaveLength(6);
   });
 
   it('shows no chips for the default filters', () => {
@@ -132,6 +136,7 @@ describe('category and chip helpers', () => {
     });
     expect(removeFilter(filters, 'sort').sort).toBe('newest');
     expect(removeFilter(filters, 'locationId').locationId).toBeUndefined();
+    expect(removeFilter({ ...filters, hasVideo: true }, 'hasVideo').hasVideo).toBeUndefined();
   });
 });
 

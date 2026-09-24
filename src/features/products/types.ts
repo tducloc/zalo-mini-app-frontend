@@ -66,6 +66,7 @@ export interface ProductFeedParams {
   categoryId?: string;
   locationId?: string;
   condition?: ProductCondition;
+  hasVideo?: true;
   minPrice?: number;
   maxPrice?: number;
   sortBy: 'publishedAt' | 'price';

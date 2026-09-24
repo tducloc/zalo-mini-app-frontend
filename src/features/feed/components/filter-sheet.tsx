@@ -9,7 +9,7 @@ import { conditionLabels, productConditions } from '@/features/products/constant
 
 import ChoiceGroup from './choice-group';
 import PriceInput from './price-input';
-import { SORT_OPTIONS, sortOptionConfig } from '../constants';
+import { HAS_VIDEO_LABEL, SORT_OPTIONS, sortOptionConfig } from '../constants';
 import {
   filterControlClass,
   filterLabelClass,
@@ -24,6 +24,7 @@ const conditionChoices = productConditions.map((condition) => ({
   value: condition,
   label: conditionLabels[condition],
 }));
+const mediaChoices = [{ value: 'video' as const, label: HAS_VIDEO_LABEL }];
 const sortChoices = SORT_OPTIONS.map((sort) => ({
   value: sort,
   label: sortOptionConfig[sort].label,
@@ -132,6 +133,13 @@ function FilterForm({
         options={conditionChoices}
         value={draft.condition}
         onChange={(condition) => updateDraft({ condition })}
+      />
+
+      <ChoiceGroup
+        label="Loại tin"
+        options={mediaChoices}
+        value={draft.hasVideo ? 'video' : undefined}
+        onChange={(choice) => updateDraft({ hasVideo: choice === 'video' || undefined })}
       />
 
       <fieldset className={filterSectionClass}>
