@@ -11,7 +11,8 @@ import FeedbackState from './components/feedback-state';
 import Price from './components/price';
 import ListingForm, { FormState } from './features/listings/components/form';
 import HomePage from './pages/home';
-import AuthLoadingScreen from './features/auth/components/loading';
+import AuthRetryNotice from '@/features/auth/components/auth-retry-notice';
+import { installShowcaseApi, isShowcaseFeedState } from './showcase-api';
 const screens = [
   ['home', 'Trang chủ'],
   ['processing', 'Tin nháp đang xử lý'],
@@ -27,7 +28,6 @@ const screens = [
   ['manage', 'Quản lý tin'],
   ['profile', 'Cá nhân'],
   ['loading', 'Đang tải'],
-  ['initial-loading', 'Đang mở ứng dụng'],
   ['empty', 'Không có kết quả'],
   ['error', 'Lỗi kết nối'],
   ['auth', 'Lỗi xác thực'],
@@ -58,6 +58,26 @@ function ListingSummary({ onEdit, onStatus }: { onEdit?: () => void; onStatus?: 
     </article>
   );
 }
+// Which tab the shell highlights for each showcase screen (forms default to "Đăng tin").
+const tabPathByScreen: Record<string, string> = {
+  home: '/',
+  processing: '/',
+  manage: '/my-listings',
+  profile: '/profile',
+  detail: '/products/preview',
+  sold: '/products/preview',
+};
+const screenByTabPath: Record<string, string> = {
+  '/': 'home',
+  '/sell': 'sell',
+  '/my-listings': 'manage',
+  '/profile': 'profile',
+};
+
+function getPreviewPath(screen: string) {
+  return tabPathByScreen[screen] ?? '/sell';
+}
+
 function Frame({ screen }: { screen: string }) {
   const [recovered, setRecovered] = useState(false);
 
@@ -81,246 +101,204 @@ function Frame({ screen }: { screen: string }) {
   return (
     <App>
       <ZMPRouter memoryRouter>
-        {screen === 'initial-loading' ? (
-          <AuthLoadingScreen />
-        ) : (
-          <AppShell
-            previewPath={
-              isDetailScreen
-                ? '/products/preview'
-                : screen === 'home' || screen === 'processing'
-                  ? '/'
-                  : screen === 'manage'
-                    ? '/my-listings'
-                    : screen === 'profile'
-                      ? '/profile'
-                      : '/sell'
-            }
-            onPreviewNavigate={(path) =>
-              location.assign(
-                '?screen=' +
-                  ({
-                    '/': 'home',
-                    '/sell': 'sell',
-                    '/my-listings': 'manage',
-                    '/profile': 'profile',
-                  }[path] || 'home'),
-              )
-            }
-            hasDraft={screen === 'processing'}
-          >
-            {['home', 'processing', 'filter', 'auth', 'loading', 'empty', 'error'].includes(
-              screen,
-            ) ? (
-              <HomePage
-                preview
-                initialFilter={screen === 'filter'}
-                state={
-                  ['loading', 'empty', 'error'].includes(screen)
-                    ? (screen as 'loading' | 'empty' | 'error')
-                    : 'default'
-                }
-              />
-            ) : (
-              <div
-                className={`marketplace-page review-page ${isDetailScreen ? 'review-detail-page' : ''}`}
-              >
-                <header className={isDetailScreen ? 'review-detail-header' : 'review-header'}>
-                  <button
-                    className={isDetailScreen ? 'review-detail-back' : 'review-back'}
-                    aria-label="Quay lại"
-                    onClick={() => location.assign('?screen=home')}
-                  >
-                    ‹
-                  </button>
-                  {!isDetailScreen && <span>{title}</span>}
-                  <span className="zalo-control">••• │ ◯</span>
-                </header>
-                <main
-                  className={`marketplace-content review-content ${isDetailScreen ? 'review-detail-content' : ''}`}
+        <AppShell
+          previewPath={getPreviewPath(screen)}
+          onPreviewNavigate={(path) =>
+            location.assign(`?screen=${screenByTabPath[path] ?? 'home'}`)
+          }
+          hasDraft={screen === 'processing'}
+        >
+          {['home', 'processing', 'filter', 'auth', 'loading', 'empty', 'error'].includes(
+            screen,
+          ) ? (
+            <>
+              <HomePage initialFilterOpen={screen === 'filter'} />
+              <span className="home-zalo-control" aria-label="Zalo app controls">
+                •••　◯
+              </span>
+            </>
+          ) : (
+            <div
+              className={`marketplace-page review-page ${isDetailScreen ? 'review-detail-page' : ''}`}
+            >
+              <header className={isDetailScreen ? 'review-detail-header' : 'review-header'}>
+                <button
+                  className={isDetailScreen ? 'review-detail-back' : 'review-back'}
+                  aria-label="Quay lại"
+                  onClick={() => location.assign('?screen=home')}
                 >
-                  {formStates.includes(screen) ? (
-                    <ListingForm
-                      demo
-                      state={(screen === 'sell' ? 'default' : screen) as FormState}
-                    />
-                  ) : isDetailScreen ? (
-                    <>
-                      <div className="review-detail-gallery">
-                        <img src={photo} alt="Ảnh chính iPhone 13" />
-                        <span>1 / 4</span>
-                      </div>
-                      <div className="review-detail-body">
-                        {screen !== 'sold' && (
-                          <button className="review-report">Báo cáo tin đăng</button>
-                        )}
-                        <p className="ui-muted">Điện tử · Như mới</p>
-                        <h1>iPhone 13 128GB</h1>
-                        <Price value={6990000} />
-                        <p className="ui-muted">Hà Nội · Đăng 2 giờ trước</p>
-                        <h2>Mô tả sản phẩm</h2>
-                        <p>
-                          Máy sử dụng tốt, màn hình đẹp. Có hộp và cáp sạc. Xem máy trực tiếp tại
-                          Cầu Giấy, Hà Nội.
-                        </p>
-                        <section className="seller-card">
-                          <span className="avatar">MA</span>
-                          <div>
-                            <b>Minh Anh</b>
-                            <p className="ui-muted">Người bán</p>
-                          </div>
-                        </section>
-                        <button
-                          className="ui-button"
-                          disabled={screen === 'sold'}
-                          onClick={() =>
-                            setDialog(
-                              'Demo liên hệ: mở Zalo hoặc gọi điện khi có thông tin người bán hợp lệ.',
-                            )
-                          }
-                        >
-                          {screen === 'sold' ? 'Sản phẩm đã bán' : 'Liên hệ người bán'}
-                        </button>
-                      </div>
-                    </>
-                  ) : screen === 'manage' ? (
-                    <>
-                      <div className="review-tabs">
-                        {['Đang bán', 'Đã bán', 'Đã ẩn'].map((t) => (
-                          <button
-                            className={t === tab ? 'selected' : ''}
-                            onClick={() => setTab(t)}
-                            key={t}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                      </div>
-                      <ListingSummary
-                        onEdit={() => setListingMenuOpen(true)}
-                        onStatus={() =>
-                          setDialog('Xác nhận đổi trạng thái tin? Đây là thao tác demo.')
-                        }
-                      />
-                    </>
-                  ) : screen === 'profile' ? (
-                    <>
+                  ‹
+                </button>
+                {!isDetailScreen && <span>{title}</span>}
+                <span className="zalo-control">••• │ ◯</span>
+              </header>
+              <main
+                className={`marketplace-content review-content ${isDetailScreen ? 'review-detail-content' : ''}`}
+              >
+                {formStates.includes(screen) ? (
+                  <ListingForm demo state={(screen === 'sell' ? 'default' : screen) as FormState} />
+                ) : isDetailScreen ? (
+                  <>
+                    <div className="review-detail-gallery">
+                      <img src={photo} alt="Ảnh chính iPhone 13" />
+                      <span>1 / 4</span>
+                    </div>
+                    <div className="review-detail-body">
+                      {screen !== 'sold' && (
+                        <button className="review-report">Báo cáo tin đăng</button>
+                      )}
+                      <p className="ui-muted">Điện tử · Như mới</p>
+                      <h1>iPhone 13 128GB</h1>
+                      <Price value={6990000} />
+                      <p className="ui-muted">Hà Nội · Đăng 2 giờ trước</p>
+                      <h2>Mô tả sản phẩm</h2>
+                      <p>
+                        Máy sử dụng tốt, màn hình đẹp. Có hộp và cáp sạc. Xem máy trực tiếp tại Cầu
+                        Giấy, Hà Nội.
+                      </p>
                       <section className="seller-card">
                         <span className="avatar">MA</span>
                         <div>
-                          <h2>Minh Anh</h2>
-                          <p className="ui-muted">Tài khoản Zalo · Dữ liệu mẫu</p>
+                          <b>Minh Anh</b>
+                          <p className="ui-muted">Người bán</p>
                         </div>
                       </section>
-                      <div className="profile-nav-list">
+                      <button
+                        className="ui-button"
+                        disabled={screen === 'sold'}
+                        onClick={() =>
+                          setDialog(
+                            'Demo liên hệ: mở Zalo hoặc gọi điện khi có thông tin người bán hợp lệ.',
+                          )
+                        }
+                      >
+                        {screen === 'sold' ? 'Sản phẩm đã bán' : 'Liên hệ người bán'}
+                      </button>
+                    </div>
+                  </>
+                ) : screen === 'manage' ? (
+                  <>
+                    <div className="review-tabs">
+                      {['Đang bán', 'Đã bán', 'Đã ẩn'].map((t) => (
                         <button
-                          className="profile-link"
-                          onClick={() => location.assign('?screen=manage')}
+                          className={t === tab ? 'selected' : ''}
+                          onClick={() => setTab(t)}
+                          key={t}
                         >
-                          <span className="profile-link-icon">▤</span>
-                          <span>
-                            <b>Quản lý tin</b>
-                            <small>Xem tin bạn đang đăng</small>
-                          </span>
-                          <i>›</i>
+                          {t}
                         </button>
-                        <button
-                          className="profile-link"
-                          onClick={() => location.assign('?screen=sell')}
-                        >
-                          <span className="profile-link-icon">＋</span>
-                          <span>
-                            <b>Đăng tin mới</b>
-                            <small>Tạo một tin để bán sản phẩm</small>
-                          </span>
-                          <i>›</i>
-                        </button>
-                      </div>
-                    </>
-                  ) : recovered ? (
-                    <ListingSummary />
-                  ) : (
-                    <FeedbackState
-                      type={screen === 'error' ? 'error' : 'empty'}
-                      title={
-                        screen === 'error'
-                          ? 'Không tải được tin'
-                          : screen === 'missing'
-                            ? 'Tin không còn tồn tại'
-                            : 'Chưa tìm thấy sản phẩm'
+                      ))}
+                    </div>
+                    <ListingSummary
+                      onEdit={() => setListingMenuOpen(true)}
+                      onStatus={() =>
+                        setDialog('Xác nhận đổi trạng thái tin? Đây là thao tác demo.')
                       }
-                      description={
-                        screen === 'error'
-                          ? 'Kiểm tra kết nối mạng và thử lại.'
-                          : screen === 'missing'
-                            ? 'Tin có thể đã được người bán gỡ.'
-                            : 'Thử thay đổi từ khóa hoặc bỏ bớt bộ lọc.'
-                      }
-                      onRetry={() => setRecovered(true)}
                     />
-                  )}
-                </main>
-              </div>
-            )}
-            {screen === 'auth' && !recovered && (
-              <div className="auth-retry-notice" role="status">
-                <span>Chưa thể xác thực. Bạn vẫn có thể xem tin.</span>
-                <button onClick={() => setRecovered(true)}>Thử lại</button>
-              </div>
-            )}
-            {dialog && (
-              <div className="review-dialog">
-                <section role="dialog" aria-modal="true" aria-label="Xác nhận thao tác">
-                  <h2>Xác nhận</h2>
-                  <p>{dialog}</p>
-                  <button
-                    className="ui-button"
-                    onClick={() => {
-                      setDialog('');
-                      setTab('Đã bán');
-                    }}
-                  >
-                    Xác nhận
-                  </button>
-                  <button className="text-action" onClick={() => setDialog('')}>
-                    Hủy
-                  </button>
-                </section>
-              </div>
-            )}
-            <Sheet
-              visible={screen === 'manage' && listingMenuOpen}
-              title="Tùy chọn tin đăng"
-              autoHeight
-              unmountOnClose
-              onClose={() => setListingMenuOpen(false)}
-            >
-              <div className="listing-action-sheet">
-                <button onClick={() => location.assign('?screen=edit')}>Sửa tin</button>
+                  </>
+                ) : screen === 'profile' ? (
+                  <>
+                    <section className="seller-card">
+                      <span className="avatar">MA</span>
+                      <div>
+                        <h2>Minh Anh</h2>
+                        <p className="ui-muted">Tài khoản Zalo · Dữ liệu mẫu</p>
+                      </div>
+                    </section>
+                    <div className="profile-nav-list">
+                      <button
+                        className="profile-link"
+                        onClick={() => location.assign('?screen=manage')}
+                      >
+                        <span className="profile-link-icon">▤</span>
+                        <span>
+                          <b>Quản lý tin</b>
+                          <small>Xem tin bạn đang đăng</small>
+                        </span>
+                        <i>›</i>
+                      </button>
+                      <button
+                        className="profile-link"
+                        onClick={() => location.assign('?screen=sell')}
+                      >
+                        <span className="profile-link-icon">＋</span>
+                        <span>
+                          <b>Đăng tin mới</b>
+                          <small>Tạo một tin để bán sản phẩm</small>
+                        </span>
+                        <i>›</i>
+                      </button>
+                    </div>
+                  </>
+                ) : recovered ? (
+                  <ListingSummary />
+                ) : (
+                  // Only the "missing" screen reaches here; Home states render the real page.
+                  <FeedbackState
+                    type="empty"
+                    title="Tin không còn tồn tại"
+                    description="Tin có thể đã được người bán gỡ."
+                    onAction={() => setRecovered(true)}
+                  />
+                )}
+              </main>
+            </div>
+          )}
+          {screen === 'auth' && !recovered && (
+            <AuthRetryNotice onRetry={() => setRecovered(true)} />
+          )}
+          {dialog && (
+            <div className="review-dialog">
+              <section role="dialog" aria-modal="true" aria-label="Xác nhận thao tác">
+                <h2>Xác nhận</h2>
+                <p>{dialog}</p>
                 <button
+                  className="ui-button"
                   onClick={() => {
-                    setListingMenuOpen(false);
-                    setDialog('Xác nhận đổi trạng thái tin? Đây là thao tác demo.');
+                    setDialog('');
+                    setTab('Đã bán');
                   }}
                 >
-                  Đánh dấu đã bán
+                  Xác nhận
                 </button>
-                <button
-                  className="danger"
-                  onClick={() => {
-                    setListingMenuOpen(false);
-                    setDialog('Ẩn tin này khỏi danh sách công khai?');
-                  }}
-                >
-                  Ẩn tin
-                </button>
-                <button className="cancel" onClick={() => setListingMenuOpen(false)}>
+                <button className="text-action" onClick={() => setDialog('')}>
                   Hủy
                 </button>
-              </div>
-            </Sheet>
-          </AppShell>
-        )}
+              </section>
+            </div>
+          )}
+          <Sheet
+            visible={screen === 'manage' && listingMenuOpen}
+            title="Tùy chọn tin đăng"
+            autoHeight
+            unmountOnClose
+            onClose={() => setListingMenuOpen(false)}
+          >
+            <div className="listing-action-sheet">
+              <button onClick={() => location.assign('?screen=edit')}>Sửa tin</button>
+              <button
+                onClick={() => {
+                  setListingMenuOpen(false);
+                  setDialog('Xác nhận đổi trạng thái tin? Đây là thao tác demo.');
+                }}
+              >
+                Đánh dấu đã bán
+              </button>
+              <button
+                className="danger"
+                onClick={() => {
+                  setListingMenuOpen(false);
+                  setDialog('Ẩn tin này khỏi danh sách công khai?');
+                }}
+              >
+                Ẩn tin
+              </button>
+              <button className="cancel" onClick={() => setListingMenuOpen(false)}>
+                Hủy
+              </button>
+            </div>
+          </Sheet>
+        </AppShell>
       </ZMPRouter>
     </App>
   );
@@ -386,8 +364,9 @@ function Showcase() {
   );
 }
 const screen = new URLSearchParams(location.search).get('screen');
+installShowcaseApi(isShowcaseFeedState(screen) ? screen : 'default');
 createRoot(document.getElementById('app')!).render(
-  <QueryClientProvider client={new QueryClient()}>
+  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
     {screen ? <Frame screen={screen} /> : <Showcase />}
   </QueryClientProvider>,
 );

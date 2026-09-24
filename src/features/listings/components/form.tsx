@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import FeedbackState from '@/components/feedback-state';
-import { categories } from '@/features/categories/constants';
+import { categoryPresentation } from '@/features/categories/constants';
+import { conditionLabels, productConditions } from '@/features/products/constants';
 
 export type FormState =
   'default' | 'validation' | 'uploading' | 'upload-error' | 'ready' | 'success' | 'edit';
@@ -73,7 +74,7 @@ export default function ListingForm({
         title="Tin của bạn đã được đăng"
         description="Bạn có thể theo dõi và cập nhật tin trong Quản lý tin."
         actionLabel="Quay lại form"
-        onRetry={() => setDone(false)}
+        onAction={() => setDone(false)}
       />
     );
   return (
@@ -199,7 +200,7 @@ export default function ListingForm({
             defaultValue={state === 'edit' ? 'cat_electronics' : ''}
           >
             <option value="">Chọn danh mục</option>
-            {categories.map((c) => (
+            {categoryPresentation.map((c) => (
               <option disabled={c.id === 'cat_others'} key={c.id} value={c.id}>
                 {c.label}
               </option>
@@ -252,11 +253,7 @@ export default function ListingForm({
           <legend>
             Tình trạng <em>*</em>
           </legend>
-          {[
-            ['NEW', 'Mới'],
-            ['LIKE_NEW', 'Như mới'],
-            ['USED', 'Đã dùng'],
-          ].map(([value, label]) => (
+          {productConditions.map((value) => (
             <label key={value}>
               <input
                 type="radio"
@@ -264,7 +261,7 @@ export default function ListingForm({
                 value={value}
                 defaultChecked={state === 'edit' && value === 'LIKE_NEW'}
               />
-              <span>{label}</span>
+              <span>{conditionLabels[value]}</span>
             </label>
           ))}
           {errors.condition && <small className="field-error">{errors.condition}</small>}

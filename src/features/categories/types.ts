@@ -1,8 +1,18 @@
-export type CategoryColor = 'blue' | 'coral' | 'green' | 'orange' | 'purple';
+import type { LucideIcon } from 'lucide-react';
 
-export interface Category {
+// zmp-ui has no product or vehicle glyphs, so categories use Lucide icons.
+export type CategoryIcon = LucideIcon;
+
+/** Category as returned by `GET /categories`. */
+export interface CategoryResponse {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+/** Category ready for display: Vietnamese label and icon. */
+export interface CategoryOption {
   id: string;
   label: string;
-  icon: 'zi-gallery' | 'zi-home' | 'zi-user-circle' | 'zi-auto' | 'zi-more-grid';
-  color: CategoryColor;
+  icon: CategoryIcon;
 }
