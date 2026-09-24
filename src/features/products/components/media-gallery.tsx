@@ -46,7 +46,10 @@ export default function ProductMediaGallery({
       <div className="product-detail-gallery" ref={galleryRef}>
         <Swiper
           afterChange={handleSlideChange}
-          className="product-detail-swiper"
+          // zmp-ui dims inactive slides to 0.8, but with `loop` it also dims the
+          // active one on the last slide (its index check skips the clones),
+          // and on iOS that dimmed slide paints over the counter.
+          className="product-detail-swiper [&_.zaui-swiper-item]:!opacity-100"
           defaultActive={0}
           dots={false}
           loop={media.length > 1}
