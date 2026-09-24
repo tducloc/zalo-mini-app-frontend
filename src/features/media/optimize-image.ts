@@ -17,7 +17,9 @@ import pipelineSource from './image-pipeline.js?raw';
 import {
   hasOffscreenCanvas,
   optimizeImage as optimizeOnThisThread,
+  type OptimizeOptions,
   type OptimizeResult,
+  type PipelineStep,
 } from './image-pipeline.js';
 
 export const canUseWorker = hasOffscreenCanvas && typeof Worker !== 'undefined';
@@ -25,66 +27,121 @@ export const canUseWorker = hasOffscreenCanvas && typeof Worker !== 'undefined';
 /** The message loop. Appended to the pipeline source to form the worker script. */
 const WORKER_GLUE = `
 self.onmessage = async (event) => {
-  const { id, file, isMain } = event.data;
+  const { id, file, options } = event.data;
   try {
-    const result = await optimizeImage(file, { isMain });
+    const result = await optimizeImage(file, options);
     self.postMessage({ id, ok: true, result });
   } catch (error) {
-    self.postMessage({ id, ok: false, error: String((error && error.message) || error) });
+    self.postMessage({
+      id,
+      ok: false,
+      error: String((error && error.message) || error),
+      step: error && error.step,
+    });
   }
 };
 `;
+
+/** A pipeline failure. `step` is missing when the worker itself crashed. */
+export class PipelineError extends Error {
+  step?: PipelineStep;
+
+  constructor(message: string, step?: PipelineStep) {
+    super(message);
+    this.step = step;
+  }
+}
+
+export type PipelineWorker = {
+  run: (file: Blob, options: OptimizeOptions) => Promise<OptimizeResult>;
+  /** Stops the worker and rejects anything still in flight. */
+  dispose: () => void;
+  /** True after dispose, including when the worker crashed. */
+  isDisposed: () => boolean;
+};
+
+type WorkerReply = {
+  id: number;
+  ok: boolean;
+  result?: OptimizeResult;
+  error?: string;
+  step?: PipelineStep;
+};
 
 type Pending = {
   resolve: (result: OptimizeResult) => void;
   reject: (error: Error) => void;
 };
 
-let worker: Worker | null = null;
-let workerUrl: string | null = null;
-let sequence = 0;
-const pending = new Map<number, Pending>();
+function rejectAll(pending: Map<number, Pending>, error: Error) {
+  for (const entry of pending.values()) {
+    entry.reject(error);
+  }
+  pending.clear();
+}
 
-function createWorker(): Worker {
+/** Starts one worker running the pipeline. Each call is a separate thread. */
+export function createPipelineWorker(): PipelineWorker {
   // Drop the ESM export keywords so the same file runs as a classic worker script.
   const source = pipelineSource.replace(
     /^export\s+(?=const |let |function |async function )/gm,
     '',
   );
   const blob = new Blob([source, WORKER_GLUE], { type: 'text/javascript;charset=utf-8' });
-  workerUrl = URL.createObjectURL(blob);
-  // The URL is revoked in disposeWorker, not here. Revoking straight after the
-  // constructor is a known way to make some WebViews fail to start the worker.
-  return new Worker(workerUrl);
-}
+  // The URL is revoked in dispose, not here. Revoking straight after the constructor
+  // is a known way to make some WebViews fail to start the worker.
+  const url = URL.createObjectURL(blob);
+  const worker = new Worker(url);
 
-function getWorker(): Worker {
-  if (worker) return worker;
-  worker = createWorker();
-  worker.onmessage = (event: MessageEvent) => {
-    const data = event.data as { id: number; ok: boolean; result?: OptimizeResult; error?: string };
-    const entry = pending.get(data.id);
-    if (!entry) return;
-    pending.delete(data.id);
-    if (data.ok && data.result) entry.resolve(data.result);
-    else entry.reject(new Error(data.error ?? 'image worker failed'));
+  const pending = new Map<number, Pending>();
+  let sequence = 0;
+  let disposed = false;
+
+  const dispose = () => {
+    if (disposed) {
+      return;
+    }
+    disposed = true;
+    rejectAll(pending, new PipelineError('cancelled'));
+    worker.terminate();
+    URL.revokeObjectURL(url);
   };
+
+  worker.onmessage = (event: MessageEvent<WorkerReply>) => {
+    const reply = event.data;
+    const entry = pending.get(reply.id);
+    if (!entry) {
+      return;
+    }
+    pending.delete(reply.id);
+
+    if (reply.ok && reply.result) {
+      entry.resolve(reply.result);
+    } else {
+      entry.reject(new PipelineError(reply.error ?? 'image worker failed', reply.step));
+    }
+  };
+
   worker.onerror = (event) => {
-    const error = new Error(event.message || 'image worker crashed');
-    for (const entry of pending.values()) entry.reject(error);
-    pending.clear();
-    disposeWorker();
+    rejectAll(pending, new PipelineError(event.message || 'image worker crashed'));
+    dispose();
   };
-  return worker;
+
+  const run = (file: Blob, options: OptimizeOptions) => {
+    if (disposed) {
+      return Promise.reject(new PipelineError('image worker is gone'));
+    }
+    const id = ++sequence;
+    return new Promise<OptimizeResult>((resolve, reject) => {
+      pending.set(id, { resolve, reject });
+      worker.postMessage({ id, file, options });
+    });
+  };
+
+  return { run, dispose, isDisposed: () => disposed };
 }
 
-function runInWorker(file: Blob, isMain: boolean): Promise<OptimizeResult> {
-  const id = ++sequence;
-  return new Promise<OptimizeResult>((resolve, reject) => {
-    pending.set(id, { resolve, reject });
-    getWorker().postMessage({ id, file, isMain });
-  });
-}
+let sharedWorker: PipelineWorker | null = null;
 
 export type OptimizeHost = 'auto' | 'worker' | 'main';
 
@@ -94,15 +151,19 @@ export function optimize(
   host: OptimizeHost = 'auto',
 ): Promise<OptimizeResult> {
   const useWorker = host === 'worker' || (host === 'auto' && canUseWorker);
-  return useWorker ? runInWorker(file, isMain) : optimizeOnThisThread(file, { isMain });
+  if (!useWorker) {
+    return optimizeOnThisThread(file, { isMain });
+  }
+
+  // A crashed worker disposes itself; start a fresh one for the next image.
+  if (!sharedWorker || sharedWorker.isDisposed()) {
+    sharedWorker = createPipelineWorker();
+  }
+  return sharedWorker.run(file, { isMain });
 }
 
-/** Drops the worker and rejects anything still in flight. Used on cancel or teardown. */
+/** Drops the shared worker and rejects anything still in flight. Used on cancel or teardown. */
 export function disposeWorker() {
-  for (const entry of pending.values()) entry.reject(new Error('cancelled'));
-  pending.clear();
-  worker?.terminate();
-  worker = null;
-  if (workerUrl) URL.revokeObjectURL(workerUrl);
-  workerUrl = null;
+  sharedWorker?.dispose();
+  sharedWorker = null;
 }

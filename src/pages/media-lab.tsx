@@ -2,6 +2,8 @@ import { useCallback, useRef, useState } from 'react';
 import { openMediaPicker } from 'zmp-sdk';
 import { Button, Page } from 'zmp-ui';
 import MobilePageHeader from '@/components/mobile-page-header';
+import FormatCompare from '@/features/media/lab/format-compare';
+import ImagePoolBench from '@/features/media/lab/image-pool-bench';
 import { describeCodec, inspectMp4 } from '@/features/media/video-probe';
 
 /**
@@ -303,6 +305,10 @@ export default function MediaLabPage() {
             </p>
           </section>
         )}
+
+        <FormatCompare />
+
+        <ImagePoolBench />
 
         <section className="marketplace-card mt-3 p-4">
           <p className="field-heading m-0">Chỉ gọi openMediaPicker, không đụng vào file</p>

@@ -89,19 +89,51 @@ async function drawScaled(bitmap, width, height, cover) {
   return canvas;
 }
 
+/** Tags an error with the step that failed, so the caller can tell decode errors apart. */
+function failAt(step, error) {
+  const tagged = error instanceof Error ? error : new Error(String(error));
+  tagged.step = step;
+  return tagged;
+}
+
+function decode(file, decodeWidth) {
+  const options = { imageOrientation: 'from-image' };
+  if (decodeWidth) {
+    // Asks the decoder for a smaller bitmap, so the full-size one is never allocated.
+    options.resizeWidth = decodeWidth;
+    options.resizeQuality = 'high';
+  }
+  return createImageBitmap(file, options);
+}
+
 export async function optimizeImage(file, options) {
   const format = await detectFormat();
-  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() =>
-    createImageBitmap(file),
-  );
+
+  const decodeStarted = performance.now();
+  const bitmap = await decode(file, options.decodeWidth).catch((error) => {
+    throw failAt('decode', error);
+  });
+  const decodeMs = performance.now() - decodeStarted;
 
   try {
     const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
     const width = Math.round(bitmap.width * scale);
     const height = Math.round(bitmap.height * scale);
 
-    const canvas = await drawScaled(bitmap, width, height, false);
+    const drawStarted = performance.now();
+    const canvas = await drawScaled(bitmap, width, height, false).catch((error) => {
+      throw failAt('draw', error);
+    });
+    if (options.flushDraw) {
+      // Chrome records drawImage and runs it at encode time; reading one pixel forces it
+      // to finish now, so drawMs is the real draw. Lab only: it costs a sync readback.
+      canvas.getContext('2d').getImageData(0, 0, 1, 1);
+    }
+    const drawMs = performance.now() - drawStarted;
+
+    const encodeStarted = performance.now();
     const encoded = await toBlob(canvas, format, QUALITY);
+    const encodeMs = performance.now() - encodeStarted;
     releaseCanvas(canvas);
 
     let thumbnail;
@@ -114,6 +146,8 @@ export async function optimizeImage(file, options) {
       }
     }
 
+    const timings = { decodeMs, drawMs, encodeMs };
+
     // Never ship a file bigger than the one we were handed. This has already caught a
     // real case where a failed WebP encode came back as a larger PNG.
     if (!encoded || encoded.size >= file.size) {
@@ -124,6 +158,7 @@ export async function optimizeImage(file, options) {
         format: await sniffFormat(file),
         keptOriginal: true,
         thumbnail,
+        timings,
       };
     }
 
@@ -134,6 +169,7 @@ export async function optimizeImage(file, options) {
       format: await sniffFormat(encoded),
       keptOriginal: false,
       thumbnail,
+      timings,
     };
   } finally {
     bitmap.close?.();
