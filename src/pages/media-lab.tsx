@@ -1,24 +1,22 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { openMediaPicker } from 'zmp-sdk';
 import { Button, Page } from 'zmp-ui';
 import MobilePageHeader from '@/components/mobile-page-header';
 import FormatCompare from '@/features/media/lab/format-compare';
 import ImagePoolBench from '@/features/media/lab/image-pool-bench';
-import { describeCodec, inspectMp4 } from '@/features/media/video-probe';
+import { type ByteReader, describeCodec, rangeReaderFor } from '@/features/media/lab/byte-access';
+import { readVideoMetadata } from '@/features/media/video-metadata';
 
 /**
- * Stripped to the bone on purpose.
+ * Measures the two ways to pick a video: Zalo's openMediaPicker and <input type="file">.
  *
- * Everything that touched the picked file is gone: no fetch, no Blob, no <video> element,
- * no mp4 box scan, no canvas, no worker, no benchmark. What is left between tapping a
- * button and the app dying is one await on openMediaPicker.
+ * The SDK route first awaits the picker and nothing else, so a large video that reloads
+ * the app there cannot be our code's fault. Only after the picker has answered does the
+ * page read the returned path (size, first bytes, codec), through range requests, so the
+ * probe never pulls a whole video into memory.
  *
- * If a large video still reloads the app from here, none of our code can be the cause,
- * because there is no longer any of our code in the way.
- *
- * The one thing that is not the picker call is the sessionStorage breadcrumb below. It
- * stays because a crash takes the console with it, and the breadcrumb is the only way to
- * tell afterwards whether we died before or after the picker answered.
+ * The sessionStorage breadcrumb stays because a crash takes the console with it: it is the
+ * only way to tell afterwards which step we died in.
  */
 
 const STAGE_KEY = 'medialab.lastStage';
@@ -40,7 +38,7 @@ function readStage(): string | null {
 }
 
 type PickerArgs = {
-  type: 'video' | 'zcamera_video';
+  type: 'video' | 'photo' | 'zcamera_video';
   silentRequest?: boolean;
   editView?: { enable?: boolean };
 };
@@ -49,6 +47,7 @@ type Variant = { key: string; label: string; args: PickerArgs };
 
 const VARIANTS: Variant[] = [
   { key: 'gallery', label: 'Thư viện', args: { type: 'video' } },
+  { key: 'photo', label: 'Ảnh', args: { type: 'photo' } },
   { key: 'record', label: 'Quay', args: { type: 'zcamera_video' } },
   {
     key: 'record-silent',
@@ -79,92 +78,150 @@ function formatBytes(bytes: number) {
   return `${Math.round(bytes / 1024)} KB`;
 }
 
-/**
- * The head tells us the container. Reading it at all tells us the File is lazy.
- *
- * This is the whole point of the <input type="file"> route: the browser hands back a File
- * handle, not the bytes - which is exactly what openMediaPicker will not do, because it
- * copies the file into a cache path first and dies doing it.
- */
-async function peekHead(file: File): Promise<string> {
-  const head = await file.slice(0, 32).arrayBuffer();
-  const view = new DataView(head);
-  const type = String.fromCharCode(
-    view.getUint8(4),
-    view.getUint8(5),
-    view.getUint8(6),
-    view.getUint8(7),
-  );
-  const brand = String.fromCharCode(
-    view.getUint8(8),
-    view.getUint8(9),
-    view.getUint8(10),
-    view.getUint8(11),
-  );
-  return type === 'ftyp' ? `ftyp ${brand}` : `không phải ftyp (${type})`;
+const MIDDLE_PART_BYTES = 4 * 1024 * 1024;
+
+/** Where the bytes of a picked video come from; both pickers are logged through this. */
+interface VideoSource {
+  pathLine: string;
+  size: number;
+  mime: string;
+  /** How reads reach the bytes: a File on disk, or HTTP range requests on a path. */
+  access: string;
+  canReadRanges: boolean;
+  read: ByteReader;
+  /** What readVideoMetadata reads: the File itself, or the path over HTTP. */
+  metadataSource: Blob | string;
+}
+
+function fileSource(file: File, inputValue: string): VideoSource {
+  // Browsers never expose the real path: input.value is "C:\fakepath\<name>" by spec,
+  // and webkitRelativePath is only set when picking a folder.
+  return {
+    pathLine: `value="${inputValue}" · relativePath="${file.webkitRelativePath}" · sửa lúc ${new Date(
+      file.lastModified,
+    ).toLocaleString('vi-VN')}`,
+    size: file.size,
+    mime: file.type,
+    access: 'File trên đĩa (slice)',
+    canReadRanges: true,
+    read: (start, end) => file.slice(start, end).arrayBuffer(),
+    metadataSource: file,
+  };
+}
+
+/** openMediaPicker answers with a path, not a File: every read is a range request on it. */
+async function pathSource(path: string): Promise<VideoSource> {
+  const { read, size, rangeSupported, contentType } = await rangeReaderFor(path);
+  return {
+    pathLine: path,
+    size,
+    mime: contentType,
+    access: rangeSupported ? 'HTTP Range CÓ (206)' : 'HTTP Range KHÔNG',
+    canReadRanges: rangeSupported && size > 0,
+    read,
+    metadataSource: path,
+  };
+}
+
+function fourCC(view: DataView, offset: number) {
+  return String.fromCharCode(...[0, 1, 2, 3].map((index) => view.getUint8(offset + index)));
 }
 
 /**
- * Reading the head proves nothing on its own - a stream would answer that too.
- *
- * Multipart upload needs RANDOM access: jump to the tail, then to an arbitrary offset in
- * the middle, and pull a part-sized chunk without the other 700 MB coming along. If a 4 MB
- * slice from the middle of a 776 MB file lands in a fraction of a second and the app is
- * still alive afterwards, the file really is a handle on disk and we can upload it part by
- * part straight to S3.
+ * The same lines, in the same order, whichever picker produced the video. Random access is
+ * the point of the test: multipart upload must jump to the tail and to the middle of the
+ * file without the rest of it coming along. The metadata step is the create form's own
+ * check (readVideoMetadata), so the lab shows exactly what the form will see.
  */
-async function probeRandomAccess(file: File): Promise<string[]> {
-  const lines: string[] = [];
+async function probeVideoSource(source: VideoSource, stage: string): Promise<string[]> {
+  const lines = [
+    `  ↳ đường dẫn · ${source.pathLine}`,
+    `  ↳ dung lượng · ${source.size ? `${formatBytes(source.size)} (${source.size} byte)` : 'không rõ'} · ${
+      source.mime || 'không có mime'
+    } · ${source.access}`,
+  ];
+  if (!source.canReadRanges) {
+    lines.push('  ↳ dừng: không đọc từng đoạn được, đọc tiếp sẽ tải cả file');
+    return lines;
+  }
 
-  const tailStarted = Date.now();
-  const tail = await file.slice(Math.max(0, file.size - 32), file.size).arrayBuffer();
-  lines.push(`  ↳ 32 byte cuối · ${Date.now() - tailStarted} ms · ${tail.byteLength} byte`);
+  let step = '32 byte đầu';
+  try {
+    markStage(`${stage}: đọc 32 byte đầu`);
+    let started = Date.now();
+    const head = new DataView(await source.read(0, 32));
+    const kind =
+      fourCC(head, 4) === 'ftyp'
+        ? `ftyp ${fourCC(head, 8)}`
+        : `không phải ftyp (${fourCC(head, 4)})`;
+    lines.push(`  ↳ 32 byte đầu · ${Date.now() - started} ms · ${kind}`);
 
-  const partSize = 4 * 1024 * 1024;
-  const middle = Math.max(0, Math.floor(file.size / 2) - partSize / 2);
-  const midStarted = Date.now();
-  const part = await file.slice(middle, middle + partSize).arrayBuffer();
-  const midMs = Date.now() - midStarted;
-  const mbPerSecond = midMs > 0 ? (part.byteLength / 1024 / 1024 / (midMs / 1000)).toFixed(0) : '?';
-  lines.push(
-    `  ↳ 4 MB giữa file · ${midMs} ms · ${(part.byteLength / 1024 / 1024).toFixed(1)} MB · ~${mbPerSecond} MB/s`,
-  );
+    step = '32 byte cuối';
+    markStage(`${stage}: đọc 32 byte cuối`);
+    started = Date.now();
+    const tail = await source.read(Math.max(0, source.size - 32), source.size);
+    lines.push(`  ↳ 32 byte cuối · ${Date.now() - started} ms · ${tail.byteLength} byte`);
 
+    step = '4 MB giữa file';
+    markStage(`${stage}: đọc 4 MB giữa file`);
+    const middle = Math.max(0, Math.floor(source.size / 2) - MIDDLE_PART_BYTES / 2);
+    started = Date.now();
+    const part = await source.read(middle, middle + MIDDLE_PART_BYTES);
+    const partMs = Date.now() - started;
+    const mbPerSecond =
+      partMs > 0 ? (part.byteLength / 1024 / 1024 / (partMs / 1000)).toFixed(0) : '?';
+    lines.push(
+      `  ↳ 4 MB giữa file · ${partMs} ms · ${formatBytes(part.byteLength)} · ~${mbPerSecond} MB/s`,
+    );
+
+    step = 'metadata';
+    markStage(`${stage}: đọc metadata`);
+    started = Date.now();
+    const meta = await readVideoMetadata(source.metadataSource);
+    lines.push(
+      `  ↳ metadata · ${Date.now() - started} ms · ${meta.mimeType} (mediabunny)`,
+      `  ↳ codec · ${describeCodec(meta.videoCodec)} · audio ${meta.audioCodec ?? 'không có'}`,
+      `  ↳ khung hình · ${meta.width ?? '?'} x ${meta.height ?? '?'} · ${
+        meta.durationMs === null ? '? s' : `${(meta.durationMs / 1000).toFixed(1)} s`
+      } · xoay ${meta.rotation}°`,
+    );
+    markStage(`${stage}: xong`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : describe(error);
+    lines.push(`  ↳ LỖI ở bước ${step} · ${message}`);
+    markStage(`${stage}: lỗi ở bước ${step}`);
+  }
   return lines;
 }
 
-/**
- * Reads the picture size and length from a metadata-only load.
- *
- * Apple caps what the web camera is allowed to record - an old report on the developer
- * forums measured 480x360 with fixed focus, and Apple never answered it. This is how we
- * find out what the cap is on this phone today, and it is the number that decides whether
- * we should send sellers to the Camera app instead of the in-app recorder.
- *
- * preload="metadata" reads the header, not the media data, and the object URL is revoked
- * either way so nothing is left holding the file.
- */
-function readVideoShape(file: File): Promise<string> {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const video = document.createElement('video');
-    video.preload = 'metadata';
-    const done = (text: string) => {
-      URL.revokeObjectURL(url);
-      video.removeAttribute('src');
-      resolve(text);
-    };
-    video.onloadedmetadata = () => {
-      done(`${video.videoWidth} x ${video.videoHeight} · ${video.duration.toFixed(1)} s`);
-    };
-    video.onerror = () => done('không đọc được metadata');
-    window.setTimeout(() => done('quá hạn 5 s'), 5000);
-    video.src = url;
-  });
+/** The SDK answers with paths, or with one string that may be a JSON array of them. */
+function pickedPaths(data: string[] | string | undefined): string[] {
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (!data) {
+    return [];
+  }
+  try {
+    const parsed: unknown = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed.map(String) : [data];
+  } catch {
+    return [data];
+  }
+}
+
+/** One pick: its log lines and what it picked, drawn with an <img> tag. */
+interface LogBlock {
+  id: number;
+  lines: string[];
+  previewSrcs: string[];
 }
 
 export default function MediaLabPage() {
-  const [lines, setLines] = useState<string[]>([]);
+  const [blocks, setBlocks] = useState<LogBlock[]>([]);
+  const nextBlockId = useRef(0);
+  // Object URLs of picked Files stay alive while their preview is on screen.
+  const objectUrls = useRef<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [lastStage, setLastStage] = useState<string | null>(readStage);
   const cameraInput = useRef<HTMLInputElement>(null);
@@ -172,6 +229,13 @@ export default function MediaLabPage() {
   const startedAt = useRef(0);
   const closedAt = useRef(0);
   const source = useRef('input');
+
+  useEffect(() => () => objectUrls.current.forEach((url) => URL.revokeObjectURL(url)), []);
+
+  const addBlock = useCallback((lines: string[], previewSrcs: string[] = []) => {
+    const id = nextBlockId.current++;
+    setBlocks((current) => [{ id, lines, previewSrcs }, ...current]);
+  }, []);
 
   const openInput = useCallback((which: 'camera' | 'library') => {
     source.current = which === 'camera' ? 'input capture' : 'input thư viện';
@@ -201,88 +265,62 @@ export default function MediaLabPage() {
     }
   }, []);
 
-  const onFile = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const elapsed = Date.now() - startedAt.current;
-    const label = source.current;
-    const file = event.target.files?.[0];
-    markStage(`${label}: change đã bắn`);
-    if (!file) {
-      setLines((current) => [`${label} · ${elapsed} ms · không có file (huỷ)`, ...current]);
-      return;
-    }
-    const copyMs = closedAt.current > 0 ? `${Date.now() - closedAt.current} ms copy` : 'copy ?';
-    setLines((current) => [
-      `${label} · ${elapsed} ms tổng · ${copyMs} · ${file.name} · ${formatBytes(file.size)} · ${file.type || 'không có mime'}`,
-      ...current,
-    ]);
-    try {
-      markStage(`${label}: đọc 32 byte đầu`);
-      const startedPeek = Date.now();
-      const head = await peekHead(file);
-      setLines((current) => [
-        `  ↳ 32 byte đầu · ${Date.now() - startedPeek} ms · ${head}`,
-        ...current,
-      ]);
-      markStage(`${label}: đọc kích thước khung hình`);
-      const shapeStarted = Date.now();
-      const shape = await readVideoShape(file);
-      setLines((current) => [
-        `  ↳ khung hình · ${Date.now() - shapeStarted} ms · ${shape}`,
-        ...current,
-      ]);
+  const onFile = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const elapsed = Date.now() - startedAt.current;
+      const label = source.current;
+      const file = event.target.files?.[0];
+      markStage(`${label}: change đã bắn`);
+      if (!file) {
+        addBlock([`${label} · ${elapsed} ms · không có file (huỷ)`]);
+        return;
+      }
 
-      markStage(`${label}: đọc ngẫu nhiên`);
-      const probes = await probeRandomAccess(file);
-      setLines((current) => [...probes.reverse(), ...current]);
+      const copyMs = closedAt.current > 0 ? `${Date.now() - closedAt.current} ms copy` : 'copy ?';
+      console.log('[media-lab] picked file', { file, value: event.target.value });
+      const url = URL.createObjectURL(file);
+      objectUrls.current.push(url);
+      const details = await probeVideoSource(fileSource(file, event.target.value), label);
+      addBlock([`${label} · ${elapsed} ms tổng · ${copyMs} · ${file.name}`, ...details], [url]);
+    },
+    [addBlock],
+  );
 
-      // Now that slicing is proven cheap, the box scan is safe: it reads headers and the
-      // moov atom, never the media data. ftyp qt only names the container - the codec
-      // inside decides whether Android can play the clip at all.
-      markStage(`${label}: quét box`);
-      const scanStarted = Date.now();
-      const info = await inspectMp4(
-        (start, end) => file.slice(start, end).arrayBuffer(),
-        file.size,
-      );
-      setLines((current) => [
-        `  ↳ box · ${Date.now() - scanStarted} ms · ${info.brand} · moov ${formatBytes(info.moovBytes)} · ${
-          info.faststart ? 'faststart CÓ' : 'faststart KHÔNG'
-        }`,
-        `  ↳ codec · ${info.videoCodecs.map(describeCodec).join(', ') || 'không thấy video track'} · audio ${
-          info.audioCodecs.join(',') || 'không có'
-        }`,
-        ...current,
-      ]);
-      markStage(`${label}: xong`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : describe(error);
-      setLines((current) => [`  ↳ đọc 32 byte đầu LỖI ${message}`, ...current]);
-      markStage(`${label}: lỗi khi đọc`);
-    }
-  }, []);
-
-  const run = useCallback(async (variant: Variant) => {
-    setBusy(true);
-    const started = Date.now();
-    markStage(`${variant.key}: mở picker`);
-    try {
-      const response = await openMediaPicker(variant.args);
-      markStage(`${variant.key}: picker đã trả lời`);
-      const elapsed = Date.now() - started;
-      setLines((current) => [
-        `${variant.label} · ${elapsed} ms · ${describe(response)}`,
-        ...current,
-      ]);
-      markStage(`${variant.key}: xong`);
-    } catch (error) {
-      const elapsed = Date.now() - started;
-      const message = error instanceof Error ? error.message : describe(error);
-      setLines((current) => [`${variant.label} · ${elapsed} ms · LỖI ${message}`, ...current]);
-      markStage(`${variant.key}: lỗi`);
-    } finally {
-      setBusy(false);
-    }
-  }, []);
+  const run = useCallback(
+    async (variant: Variant) => {
+      setBusy(true);
+      const started = Date.now();
+      markStage(`${variant.key}: mở picker`);
+      try {
+        const response = await openMediaPicker(variant.args);
+        markStage(`${variant.key}: picker đã trả lời`);
+        const elapsed = Date.now() - started;
+        console.log('[media-lab] openMediaPicker', response);
+        const block = [`${variant.label} · ${elapsed} ms tổng · ${describe(response)}`];
+        const paths = pickedPaths(response.data);
+        // Only after the picker has answered, so the breadcrumb still tells a crash inside
+        // the picker apart from one while we read the file.
+        for (const path of paths) {
+          try {
+            block.push(...(await probeVideoSource(await pathSource(path), variant.key)));
+          } catch (error) {
+            const message = error instanceof Error ? error.message : describe(error);
+            block.push(`  ↳ đường dẫn · ${path}`, `  ↳ LỖI ở bước dung lượng · ${message}`);
+          }
+        }
+        addBlock(block, paths);
+        markStage(`${variant.key}: xong`);
+      } catch (error) {
+        const elapsed = Date.now() - started;
+        const message = error instanceof Error ? error.message : describe(error);
+        addBlock([`${variant.label} · ${elapsed} ms · LỖI ${message}`]);
+        markStage(`${variant.key}: lỗi`);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [addBlock],
+  );
 
   const clearStage = useCallback(() => {
     try {
@@ -291,7 +329,9 @@ export default function MediaLabPage() {
       // Nothing to clear.
     }
     setLastStage(null);
-    setLines([]);
+    setBlocks([]);
+    objectUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    objectUrls.current = [];
   }, []);
 
   return (
@@ -311,7 +351,7 @@ export default function MediaLabPage() {
         <ImagePoolBench />
 
         <section className="marketplace-card mt-3 p-4">
-          <p className="field-heading m-0">Chỉ gọi openMediaPicker, không đụng vào file</p>
+          <p className="field-heading m-0">openMediaPicker, rồi đọc thông tin file qua đường dẫn</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {VARIANTS.map((variant) => (
               <Button
@@ -361,17 +401,57 @@ export default function MediaLabPage() {
         </section>
 
         <section className="marketplace-card mt-3 p-4">
-          {lines.length === 0 ? (
+          {blocks.length === 0 ? (
             <p className="m-0 text-sm text-slate-500">Chưa có kết quả.</p>
           ) : (
-            lines.map((line, index) => (
-              <p key={index} className="m-0 mt-1 break-all text-sm">
-                {line}
-              </p>
+            blocks.map((block) => (
+              <div key={block.id} className="border-0 border-b border-solid border-slate-200 py-2">
+                {block.lines.map((line, index) => (
+                  <p key={index} className="m-0 mt-1 break-all text-sm">
+                    {line}
+                  </p>
+                ))}
+                {block.previewSrcs.map((src) => (
+                  <ImagePreview key={src} src={src} />
+                ))}
+              </div>
             ))
           )}
         </section>
       </main>
     </Page>
+  );
+}
+
+/**
+ * Draws the picked file with a plain <img>, to see whether the WebView can load that
+ * path or File at all. A video is expected to fail here: <img> only decodes images.
+ */
+function ImagePreview({ src }: { src: string }) {
+  const [startedAt] = useState(Date.now);
+  const [status, setStatus] = useState('<img> đang tải…');
+
+  const handleLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth, naturalHeight } = event.currentTarget;
+    setStatus(`<img> tải xong · ${Date.now() - startedAt} ms · ${naturalWidth} x ${naturalHeight}`);
+  };
+
+  const handleError = () => {
+    setStatus(
+      `<img> không hiển thị được sau ${Date.now() - startedAt} ms (video thì <img> không vẽ được)`,
+    );
+  };
+
+  return (
+    <div className="mt-2">
+      <img
+        src={src}
+        alt=""
+        className="block max-h-48 max-w-full rounded border border-solid border-slate-200 object-contain"
+        onLoad={handleLoad}
+        onError={handleError}
+      />
+      <p className="m-0 mt-1 break-all text-xs text-slate-500">{status}</p>
+    </div>
   );
 }
