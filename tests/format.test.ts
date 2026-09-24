@@ -1,4 +1,4 @@
-import { formatRelativeTime } from '@/utils/format';
+import { formatRelativeTime, formatShortRelativeTime } from '@/utils/format';
 
 const now = Date.parse('2026-09-23T10:00:00.000Z');
 const ago = (ms: number) => new Date(now - ms).toISOString();
@@ -18,5 +18,18 @@ describe('formatRelativeTime', () => {
 
   it('treats a publication time slightly in the future as just now', () => {
     expect(formatRelativeTime(new Date(now + 5_000).toISOString(), now)).toBe('Vừa xong');
+  });
+});
+
+describe('formatShortRelativeTime', () => {
+  it('drops "trước" and the year to fit listing cards', () => {
+    expect(formatShortRelativeTime(ago(20_000), now)).toBe('Vừa xong');
+    expect(formatShortRelativeTime(ago(3 * 3_600_000), now)).toBe('3 giờ');
+    expect(formatShortRelativeTime(ago(2 * 86_400_000), now)).toBe('2 ngày');
+
+    const iso = ago(8 * 86_400_000);
+    expect(formatShortRelativeTime(iso, now)).toBe(
+      new Date(iso).toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric' }),
+    );
   });
 });

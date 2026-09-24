@@ -11,10 +11,12 @@ const headerClass =
 // Leaves room on the right for Zalo's native capsule controls.
 const titleClass =
   'm-0 mb-2 flex h-11 items-center pr-24 text-[22px] font-bold leading-7 tracking-[-0.3px]';
+// The focus ring sits on the whole pill; the global input outline would be
+// clipped inside it.
 const searchFormClass =
-  'flex h-11 min-w-0 flex-1 items-center gap-[9px] rounded-[10px] bg-white px-[13px] text-marketplace-muted';
+  'flex h-11 min-w-0 flex-1 items-center gap-[9px] rounded-[10px] bg-white px-[13px] text-marketplace-muted focus-within:ring-2 focus-within:ring-white/70 focus-within:ring-offset-2 focus-within:ring-offset-marketplace-blue';
 const searchInputClass =
-  'min-w-0 flex-1 border-0 bg-transparent py-[11px] font-[inherit] text-marketplace-ink outline-none [&::-webkit-search-cancel-button]:hidden';
+  'min-w-0 flex-1 border-0 bg-transparent py-[11px] font-[inherit] text-marketplace-ink outline-none focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden';
 const iconButtonClass =
   'relative grid size-[42px] flex-none place-items-center border-0 bg-transparent p-0 text-white';
 

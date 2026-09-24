@@ -1,4 +1,7 @@
-export type CategoryIcon = 'zi-gallery' | 'zi-home' | 'zi-user-circle' | 'zi-auto' | 'zi-more-grid';
+import type { LucideIcon } from 'lucide-react';
+
+// zmp-ui has no product or vehicle glyphs, so categories use Lucide icons.
+export type CategoryIcon = LucideIcon;
 
 /** Category as returned by `GET /categories`. */
 export interface CategoryResponse {

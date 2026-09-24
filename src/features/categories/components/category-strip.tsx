@@ -1,5 +1,3 @@
-import { Icon } from 'zmp-ui';
-
 import InlineRetry from '@/components/inline-retry';
 import Skeleton from '@/components/skeleton';
 
@@ -75,7 +73,7 @@ export default function CategoryStrip({
                   : 'bg-marketplace-pale text-marketplace-blue'
               }`}
             >
-              <Icon icon={category.icon} size={25} />
+              <category.icon aria-hidden="true" size={24} strokeWidth={1.75} />
             </span>
             {category.label}
           </button>

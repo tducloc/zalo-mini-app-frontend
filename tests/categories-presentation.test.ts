@@ -1,3 +1,4 @@
+import { DEFAULT_CATEGORY_ICON } from '@/features/categories/constants';
 import { getCategoryLabel, presentCategories } from '@/features/categories/utils/presentation';
 
 const apiCategories = [
@@ -30,7 +31,7 @@ describe('presentCategories', () => {
     ]);
 
     expect(result.map((category) => category.label)).toEqual(['Điện tử', 'Books']);
-    expect(result[1].icon).toBe('zi-more-grid');
+    expect(result[1].icon).toBe(DEFAULT_CATEGORY_ICON);
   });
 
   it('drops presentation entries the API did not return', () => {

@@ -11,7 +11,8 @@ export const DEFAULT_FILTERS: FeedFilters = { sort: DEFAULT_SORT };
 
 /** Trimmed search term, or undefined when there is nothing to search for. */
 export function normalizeSearch(input: string) {
-  const term = input.trim().slice(0, SEARCH_MAX_LENGTH).trim();
+  // Collapsed spaces keep "sofa  góc" and "sofa góc" one query (and cache key).
+  const term = input.replace(/\s+/g, ' ').trim().slice(0, SEARCH_MAX_LENGTH).trim();
   return term || undefined;
 }
 

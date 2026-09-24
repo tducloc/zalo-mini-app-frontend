@@ -31,6 +31,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.103.1",
     "axios": "^1.20.0",
+    "lucide-react": "^1.47.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zmp": "^0.0.0",

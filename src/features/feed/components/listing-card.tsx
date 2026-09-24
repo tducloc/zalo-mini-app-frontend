@@ -3,7 +3,7 @@ import { Icon } from 'zmp-ui';
 
 import Price from '@/components/price';
 import type { ProductCard } from '@/features/products/types';
-import { formatRelativeTime } from '@/utils/format';
+import { formatShortRelativeTime } from '@/utils/format';
 
 import { listingCardClass, listingCopyClass, listingImageClass, videoBadgeClass } from '../styles';
 
@@ -65,9 +65,11 @@ export default function ListingCard({
         <Price value={product.price} />
         <p className="m-0 flex items-center gap-[3px] text-micro leading-[15px] text-marketplace-muted">
           <Icon icon="zi-location" size={14} />
-          <span className="truncate">
-            {product.location.name} · {formatRelativeTime(product.publishedAt)}
+          {/* Only a very long place name shortens; the time stays readable. */}
+          <span className="min-w-0 truncate" title={product.location.name}>
+            {product.location.name}
           </span>
+          <span className="flex-none">· {formatShortRelativeTime(product.publishedAt)}</span>
         </p>
       </div>
     </button>

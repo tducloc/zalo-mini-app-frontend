@@ -7,7 +7,7 @@ import type { CategoryResponse } from '../types';
 import { presentCategories } from '../utils/presentation';
 
 // The category list is fixed per backend release.
-const CATEGORIES_STALE_TIME_MS = 5 * 60_000;
+const CATEGORIES_STALE_TIME_MS = 60 * 60_000;
 
 export async function getCategories(signal?: AbortSignal) {
   const response = await apiClient.get<{ data: CategoryResponse[] }>('/categories', { signal });

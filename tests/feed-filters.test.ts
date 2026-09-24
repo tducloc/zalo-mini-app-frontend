@@ -19,6 +19,7 @@ const lookups = {
 describe('normalizeSearch', () => {
   it('trims input and treats whitespace-only as no search', () => {
     expect(normalizeSearch('  iphone  ')).toBe('iphone');
+    expect(normalizeSearch('sofa  \n góc')).toBe('sofa góc');
     expect(normalizeSearch('   ')).toBeUndefined();
     expect(normalizeSearch('')).toBeUndefined();
   });
