@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Button, Sheet } from 'zmp-ui';
+import { Button } from 'zmp-ui';
 
+import AppSheet from '@/components/app-sheet';
 import InlineRetry from '@/components/inline-retry';
-import { useOpenCount } from '@/hooks/use-open-count';
 import type { CategoryOption } from '@/features/categories/types';
 import type { LocationResponse } from '@/features/locations/types';
 import { conditionLabels, productConditions } from '@/features/products/constants';
@@ -47,13 +47,11 @@ interface FilterSheetProps {
 }
 
 export default function FilterSheet({ visible, onClose, ...formProps }: FilterSheetProps) {
-  // A new key per opening restarts the draft from the applied filters.
-  const openCount = useOpenCount(visible);
-
+  // AppSheet remounts the form per opening, so the draft starts from `filters`.
   return (
-    <Sheet visible={visible} title="Lọc tin đăng" autoHeight onClose={onClose}>
-      <FilterForm key={openCount} {...formProps} />
-    </Sheet>
+    <AppSheet visible={visible} title="Lọc tin đăng" autoHeight onClose={onClose}>
+      <FilterForm {...formProps} />
+    </AppSheet>
   );
 }
 

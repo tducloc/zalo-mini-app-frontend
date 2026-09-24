@@ -1,5 +1,6 @@
 import { openShareSheet } from 'zmp-sdk';
-import { Sheet } from 'zmp-ui';
+
+import AppSheet from '@/components/app-sheet';
 
 import type { ProductDetail } from '../types';
 
@@ -51,7 +52,7 @@ export default function ProductActionsSheet({
   };
 
   return (
-    <Sheet visible={visible} title="Tùy chọn" autoHeight onClose={onClose}>
+    <AppSheet visible={visible} title="Tùy chọn" autoHeight onClose={onClose}>
       <div className="product-actions-sheet">
         <button onClick={shareProduct}>
           <span aria-hidden="true">↗</span>
@@ -68,6 +69,6 @@ export default function ProductActionsSheet({
           </button>
         )}
       </div>
-    </Sheet>
+    </AppSheet>
   );
 }
