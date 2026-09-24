@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { openMediaPicker } from 'zmp-sdk';
 import { Button, Page } from 'zmp-ui';
 import MobilePageHeader from '@/components/mobile-page-header';
+import DraftMediaLab from '@/features/media/lab/draft-media-lab';
 import FormatCompare from '@/features/media/lab/format-compare';
 import ImagePoolBench from '@/features/media/lab/image-pool-bench';
 import { type ByteReader, describeCodec, rangeReaderFor } from '@/features/media/lab/byte-access';
@@ -345,6 +346,8 @@ export default function MediaLabPage() {
             </p>
           </section>
         )}
+
+        <DraftMediaLab />
 
         <FormatCompare />
 
