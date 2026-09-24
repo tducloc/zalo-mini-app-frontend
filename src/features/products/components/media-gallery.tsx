@@ -2,9 +2,13 @@ import { useMemo, useRef, useState } from 'react';
 import { ImageViewer, Swiper } from 'zmp-ui';
 
 import { ProductDetail } from '../types';
-import { getViewerIndex } from '../utils/gallery';
+import { getViewerIndex, isNearSlide } from '../utils/gallery';
 
 type ProductMedia = ProductDetail['media'];
+
+const slideClass = 'relative block aspect-square w-full overflow-hidden border-0 bg-black p-0';
+// Media keeps its own aspect ratio; the black slide shows around it.
+const contentClass = 'block aspect-square w-full object-contain';
 
 export default function ProductMediaGallery({
   media,
@@ -17,7 +21,8 @@ export default function ProductMediaGallery({
 
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
 
-  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  // Looping clones the first and last slides, so videos are found in the DOM.
+  const galleryRef = useRef<HTMLDivElement>(null);
 
   const viewerImages = useMemo(
     () =>
@@ -32,60 +37,48 @@ export default function ProductMediaGallery({
   }
 
   const handleSlideChange = (nextIndex: number) => {
-    Object.values(videoRefs.current).forEach((video) => video?.pause());
+    galleryRef.current?.querySelectorAll('video').forEach((video) => video.pause());
     setActiveIndex(nextIndex);
   };
 
   return (
     <>
-      <div className="product-detail-gallery">
+      <div className="product-detail-gallery" ref={galleryRef}>
         <Swiper
           afterChange={handleSlideChange}
           className="product-detail-swiper"
           defaultActive={0}
           dots={false}
+          loop={media.length > 1}
         >
           {media.map((item, index) => (
             <Swiper.Slide key={item.id}>
               {item.type === 'VIDEO' ? (
-                <div className="relative aspect-square overflow-hidden bg-black">
-                  {/* Blurred poster fills the letterbox around portrait videos. */}
-                  {item.thumbnailUrl && (
-                    <img
-                      alt=""
-                      aria-hidden="true"
-                      className="absolute inset-0 size-full scale-110 object-cover opacity-60 blur-2xl"
-                      src={item.thumbnailUrl}
-                    />
-                  )}
+                <div className={slideClass}>
                   <video
                     aria-label={`Video: ${productTitle}`}
-                    className="relative block aspect-square w-full bg-transparent object-contain"
+                    className={`${contentClass} bg-transparent`}
                     controls
                     playsInline
                     poster={item.thumbnailUrl ?? undefined}
                     preload="none"
-                    ref={(element) => {
-                      videoRefs.current[item.id] = element;
-                    }}
                     src={index === activeIndex ? (item.mediumUrl ?? undefined) : undefined}
                   />
                 </div>
               ) : (
                 <button
                   aria-label="Phóng to ảnh"
-                  className="product-detail-image-button"
+                  className={slideClass}
+                  type="button"
                   onClick={() => setImageViewerOpen(true)}
                 >
+                  {/* One image per slide: swapping a thumbnail for the larger
+                      file mid-swipe changed its aspect ratio and made it jump. */}
                   <img
-                    className="product-detail-media"
-                    loading={index === activeIndex ? 'eager' : 'lazy'}
-                    src={
-                      index === activeIndex
-                        ? (item.mediumUrl ?? item.thumbnailUrl ?? '')
-                        : (item.thumbnailUrl ?? '')
-                    }
                     alt={productTitle}
+                    className={contentClass}
+                    loading={isNearSlide(index, activeIndex, media.length) ? 'eager' : 'lazy'}
+                    src={item.mediumUrl ?? item.thumbnailUrl ?? ''}
                   />
                 </button>
               )}
@@ -93,14 +86,12 @@ export default function ProductMediaGallery({
           ))}
         </Swiper>
 
-        {media.length > 0 && (
-          <span
-            className="product-detail-gallery-counter"
-            aria-label={`Nội dung ${activeIndex + 1} trên ${media.length}`}
-          >
-            {activeIndex + 1} / {media.length}
-          </span>
-        )}
+        <span
+          className="product-detail-gallery-counter"
+          aria-label={`Nội dung ${activeIndex + 1} trên ${media.length}`}
+        >
+          {activeIndex + 1} / {media.length}
+        </span>
       </div>
 
       {imageViewerOpen && viewerImages.length > 0 && (

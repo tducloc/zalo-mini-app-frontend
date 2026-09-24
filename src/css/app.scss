@@ -530,13 +530,6 @@ body {
   overflow: hidden;
   background: #000;
 }
-.product-detail-media {
-  display: block;
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: contain;
-  background: #000;
-}
 .product-detail-swiper {
   width: 100%;
   height: 100%;
@@ -558,13 +551,6 @@ body {
   font-variant-numeric: tabular-nums;
   line-height: 16px;
   pointer-events: none;
-}
-.product-detail-image-button {
-  display: block;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: transparent;
 }
 .product-detail-meta {
   margin: 0;
