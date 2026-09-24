@@ -14,7 +14,7 @@ export const hiddenScrollbarClass = '[scrollbar-width:none] [&::-webkit-scrollba
 // Listing card and its skeleton share geometry so loading never shifts layout.
 export const listingGridClass = 'grid grid-cols-2 gap-2.5';
 export const listingCardClass = `block w-full overflow-hidden rounded-[10px] p-0 text-left text-inherit ${surfaceClass}`;
-export const listingImageClass = 'relative h-[138px] bg-marketplace-skeleton';
+export const listingImageClass = 'relative aspect-square bg-marketplace-skeleton';
 // padding + 34px title + 25px price + 15px meta
 export const listingCopyClass = 'h-[91px] px-[9px] pb-[9px] pt-2';
 export const videoBadgeClass =
