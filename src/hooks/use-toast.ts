@@ -9,7 +9,7 @@ export function useToast() {
   const { openSnackbar } = useSnackbar();
 
   const show = useCallback(
-    (text: string, type: 'error' | 'success', duration: number) =>
+    (text: string, type: 'error' | 'success' | 'info', duration: number) =>
       openSnackbar({
         text,
         type,
@@ -31,11 +31,16 @@ export function useToast() {
     [show],
   );
 
+  const showInfo = useCallback(
+    (message: string, duration = 3_500) => show(message, 'info', duration),
+    [show],
+  );
+
   const showApiError = useCallback(
     (error: unknown, options: ApiErrorOptions) =>
       showError(resolveApiErrorMessage(error, options), options.duration),
     [showError],
   );
 
-  return { showApiError, showError, showSuccess };
+  return { showApiError, showError, showInfo, showSuccess };
 }

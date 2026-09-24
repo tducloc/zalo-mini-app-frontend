@@ -30,7 +30,7 @@ export default function ProductInformation({
       </div>
       <p className="product-detail-meta product-detail-summary">
         {getCategoryLabel(product.category)} · {conditionLabels[product.condition]} ·{' '}
-        {product.location}
+        {product.location.name}
       </p>
       <Price className="mb-0 mt-2 text-[28px] leading-[34px]" value={product.price} />
       <p className="product-detail-meta product-detail-published">Đăng {publishedDate}</p>

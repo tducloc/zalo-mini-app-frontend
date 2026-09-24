@@ -4,6 +4,12 @@ export type ProductCondition = (typeof productConditions)[number];
 
 export type MediaType = 'IMAGE' | 'VIDEO';
 
+/** `id` is null for legacy rows whose free-text location is not mapped yet. */
+export interface ProductLocation {
+  id: string | null;
+  name: string;
+}
+
 export type ProductDetail = {
   id: string;
   title: string;
@@ -11,7 +17,7 @@ export type ProductDetail = {
   price: number;
   condition: ProductCondition;
   status: 'PROCESSING' | 'PUBLISHED' | 'SOLD' | 'ARCHIVED';
-  location: string;
+  location: ProductLocation;
   category: {
     id: string;
     name: string;
@@ -51,8 +57,7 @@ export interface ProductCard {
   category: { id: string; name: string; slug: string };
   thumbnailUrl: string | null;
   hasVideo: boolean;
-  // `id` is null for legacy rows whose free-text location is not mapped yet.
-  location: { id: string | null; name: string };
+  location: ProductLocation;
   publishedAt: string;
 }
 

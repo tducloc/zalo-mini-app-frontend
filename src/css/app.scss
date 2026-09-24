@@ -566,29 +566,6 @@ body {
   border: 0;
   background: transparent;
 }
-.product-detail-video-button {
-  position: relative;
-  display: block;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: #000;
-}
-.product-detail-video-button > span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  display: grid;
-  width: 52px;
-  height: 52px;
-  place-items: center;
-  padding-left: 3px;
-  border-radius: 50%;
-  background: rgb(0 0 0 / 52%);
-  color: #fff;
-  font-size: 21px;
-  transform: translate(-50%, -50%);
-}
 .product-detail-meta {
   margin: 0;
   color: var(--marketplace-muted);

@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Button, Sheet } from 'zmp-ui';
+import { FormEvent, useState } from 'react';
+import { Button } from 'zmp-ui';
 
-import { useOpenCount } from '@/hooks/use-open-count';
+import AppSheet from '@/components/app-sheet';
 
 import type { CreateReportInput, ReportReason } from '../types';
 
@@ -24,13 +24,11 @@ export default function ProductReportSheet({
   onClose: () => void;
   onSubmit: (input: CreateReportInput) => void;
 }) {
-  // A new key per opening resets the reason and description.
-  const openCount = useOpenCount(visible);
-
+  // AppSheet remounts the form per opening, resetting reason and description.
   return (
-    <Sheet visible={visible} title="Báo cáo tin đăng" autoHeight onClose={onClose}>
-      <ReportForm key={openCount} isPending={isPending} onSubmit={onSubmit} />
-    </Sheet>
+    <AppSheet visible={visible} title="Báo cáo tin đăng" autoHeight onClose={onClose}>
+      <ReportForm isPending={isPending} onSubmit={onSubmit} />
+    </AppSheet>
   );
 }
 
@@ -41,19 +39,32 @@ function ReportForm({
   isPending: boolean;
   onSubmit: (input: CreateReportInput) => void;
 }) {
-  const [reason, setReason] = useState<ReportReason>('SCAM');
+  // No default: a one-tap submit must not file the most serious reason.
+  const [reason, setReason] = useState<ReportReason | null>(null);
   const [description, setDescription] = useState('');
+  const [hasTriedSubmit, setHasTriedSubmit] = useState(false);
+
+  const isReasonMissing = hasTriedSubmit && !reason;
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    setHasTriedSubmit(true);
+    if (!reason) {
+      return;
+    }
+    onSubmit({ reason, description: description.trim() || undefined });
+  };
 
   return (
-    <form
-      className="product-report-sheet"
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSubmit({ reason, description: description.trim() || undefined });
-      }}
-    >
+    <form className="product-report-sheet" noValidate onSubmit={handleSubmit}>
       <p>Chọn lý do phù hợp. Mỗi tài khoản chỉ có thể báo cáo một lần cho mỗi tin.</p>
-      <div className="product-report-reasons">
+      <div
+        aria-describedby={isReasonMissing ? 'report-reason-error' : undefined}
+        aria-invalid={isReasonMissing}
+        aria-label="Lý do báo cáo"
+        className="product-report-reasons"
+        role="radiogroup"
+      >
         {reasons.map((item) => (
           <label key={item.value}>
             <input
@@ -67,13 +78,19 @@ function ReportForm({
           </label>
         ))}
       </div>
+      {isReasonMissing && (
+        <p className="m-0 text-caption text-marketplace-danger" id="report-reason-error">
+          Vui lòng chọn lý do báo cáo.
+        </p>
+      )}
       <textarea
         maxLength={1000}
         placeholder="Bổ sung chi tiết (không bắt buộc)"
         value={description}
         onChange={(event) => setDescription(event.target.value)}
       />
-      <Button fullWidth disabled={isPending} htmlType="submit">
+      {/* Enabled until the first submit; then held until a reason is chosen. */}
+      <Button fullWidth disabled={isPending || isReasonMissing} htmlType="submit">
         {isPending ? 'Đang gửi…' : 'Gửi báo cáo'}
       </Button>
     </form>

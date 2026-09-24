@@ -1,6 +1,5 @@
-import { AxiosError } from 'axios';
 import { useState } from 'react';
-import { Page, useParams } from 'zmp-ui';
+import { Page, useNavigate, useParams } from 'zmp-ui';
 
 import FeedbackState from '@/components/feedback-state';
 import { useSession } from '@/features/auth/hooks/session';
@@ -21,14 +20,15 @@ import { getApiErrorStatus } from '@/utils/api-error';
 const reportErrorMessages = {
   401: 'Bạn cần xác thực lại trước khi báo cáo.',
   403: 'Bạn không thể báo cáo tin đăng của chính mình.',
-  409: 'Bạn đã báo cáo tin này trước đó.',
   429: 'Bạn đã gửi quá nhiều báo cáo. Vui lòng thử lại sau.',
 };
 const ALREADY_REPORTED_STATUS = 409;
+const NOT_FOUND_STATUS = 404;
 
 export default function ProductDetailPage() {
   const { productId = '' } = useParams<{ productId: string }>();
-  const { showApiError, showError, showSuccess } = useToast();
+  const navigate = useNavigate();
+  const { showApiError, showError, showInfo, showSuccess } = useToast();
   const { session, isBootstrapping } = useSession();
 
   // sheets
@@ -48,8 +48,11 @@ export default function ProductDetailPage() {
         showSuccess('Cảm ơn bạn. Báo cáo đã được gửi để kiểm tra.');
       },
       onError: (error) => {
+        // Not a failure from the user's side: the report already exists.
         if (getApiErrorStatus(error) === ALREADY_REPORTED_STATUS) {
           setReportOpen(false);
+          showInfo('Bạn đã báo cáo tin này trước đó.');
+          return;
         }
         showApiError(error, {
           fallbackMessage: 'Không thể gửi báo cáo. Vui lòng thử lại.',
@@ -71,26 +74,29 @@ export default function ProductDetailPage() {
   }
 
   if (!productQuery.data) {
+    const isGone = getApiErrorStatus(productQuery.error) === NOT_FOUND_STATUS;
+
+    // Nothing to retry once the listing is gone: offer the way back instead.
     return (
       <Page className="marketplace-page">
-        <ProductDetailHeader />
+        <ProductDetailHeader isOverMedia={false} />
         <main className="marketplace-content product-detail-feedback">
-          <FeedbackState
-            type={
-              productQuery.error instanceof AxiosError &&
-              productQuery.error.response?.status === 404
-                ? 'empty'
-                : 'error'
-            }
-            title={
-              productQuery.error instanceof AxiosError &&
-              productQuery.error.response?.status === 404
-                ? 'Tin không còn tồn tại'
-                : 'Không tải được tin'
-            }
-            description="Vui lòng thử lại hoặc quay về danh sách tin đăng."
-            onAction={() => productQuery.refetch()}
-          />
+          {isGone ? (
+            <FeedbackState
+              type="empty"
+              title="Tin không còn tồn tại"
+              description="Tin có thể đã bán hoặc bị gỡ. Xem các tin khác trên trang chủ."
+              actionLabel="Về trang chủ"
+              onAction={() => navigate('/', { replace: true })}
+            />
+          ) : (
+            <FeedbackState
+              type="error"
+              title="Không tải được tin"
+              description="Kiểm tra kết nối mạng và thử lại."
+              onAction={() => productQuery.refetch()}
+            />
+          )}
         </main>
       </Page>
     );

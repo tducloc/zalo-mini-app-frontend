@@ -2,15 +2,9 @@ import { useMemo, useRef, useState } from 'react';
 import { ImageViewer, Swiper } from 'zmp-ui';
 
 import { ProductDetail } from '../types';
+import { getViewerIndex } from '../utils/gallery';
 
 type ProductMedia = ProductDetail['media'];
-
-function getViewerIndex(media: ProductMedia, activeIndex: number) {
-  return Math.max(
-    0,
-    media.slice(0, activeIndex).filter((item) => item.type === 'IMAGE').length - 1,
-  );
-}
 
 export default function ProductMediaGallery({
   media,
@@ -22,8 +16,6 @@ export default function ProductMediaGallery({
   const [activeIndex, setActiveIndex] = useState(0);
 
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
-
-  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
@@ -41,18 +33,7 @@ export default function ProductMediaGallery({
 
   const handleSlideChange = (nextIndex: number) => {
     Object.values(videoRefs.current).forEach((video) => video?.pause());
-    setPlayingVideoId(null);
     setActiveIndex(nextIndex);
-  };
-
-  const toggleVideo = async (id: string) => {
-    const video = videoRefs.current[id];
-    if (!video) return;
-    if (video.paused) {
-      await video.play();
-      return;
-    }
-    video.pause();
   };
 
   return (
@@ -67,26 +48,29 @@ export default function ProductMediaGallery({
           {media.map((item, index) => (
             <Swiper.Slide key={item.id}>
               {item.type === 'VIDEO' ? (
-                <button
-                  aria-label={playingVideoId === item.id ? 'Tạm dừng video' : 'Phát video'}
-                  className="product-detail-video-button"
-                  onClick={() => void toggleVideo(item.id)}
-                >
+                <div className="relative aspect-square overflow-hidden bg-black">
+                  {/* Blurred poster fills the letterbox around portrait videos. */}
+                  {item.thumbnailUrl && (
+                    <img
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 size-full scale-110 object-cover opacity-60 blur-2xl"
+                      src={item.thumbnailUrl}
+                    />
+                  )}
                   <video
-                    className="product-detail-media"
-                    muted
+                    aria-label={`Video: ${productTitle}`}
+                    className="relative block aspect-square w-full bg-transparent object-contain"
+                    controls
                     playsInline
+                    poster={item.thumbnailUrl ?? undefined}
+                    preload="none"
                     ref={(element) => {
                       videoRefs.current[item.id] = element;
                     }}
-                    preload={index === activeIndex ? 'metadata' : 'none'}
                     src={index === activeIndex ? (item.mediumUrl ?? undefined) : undefined}
-                    onEnded={() => setPlayingVideoId(null)}
-                    onPause={() => setPlayingVideoId(null)}
-                    onPlay={() => setPlayingVideoId(item.id)}
                   />
-                  {playingVideoId !== item.id && <span aria-hidden="true">▶</span>}
-                </button>
+                </div>
               ) : (
                 <button
                   aria-label="Phóng to ảnh"
