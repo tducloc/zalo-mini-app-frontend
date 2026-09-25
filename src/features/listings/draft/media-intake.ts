@@ -36,6 +36,7 @@ import {
   type VideoFacts,
 } from '@/features/media/media-limits';
 import { readVideoMetadata } from '@/features/media/video-metadata';
+import { warnInDev } from '@/utils/dev-log';
 
 interface PickedFile {
   id: string;
@@ -57,11 +58,7 @@ const dispatch = (action: MediaAction) => useListingDraftStore.getState().dispat
 const findMedia = (id: string) =>
   useListingDraftStore.getState().media.find((media) => media.id === id);
 
-function warnInDev(message: string, error: unknown) {
-  if (import.meta.env.DEV) {
-    console.warn(`[media] ${message}`, error);
-  }
-}
+const warn = (message: string, error: unknown) => warnInDev('media', message, error);
 
 /** Enough for the format and a photo's size; null when the file cannot be read. */
 async function readPickedHead(file: File) {
@@ -144,7 +141,7 @@ async function convert(
     });
   } catch (error) {
     if (!signal.aborted) {
-      warnInDev('video conversion failed, trying the original', error);
+      warn('video conversion failed, trying the original', error);
     }
     return null;
   }
@@ -201,7 +198,7 @@ async function take(picked: PickedFile, kind: MediaKind) {
   } catch (error) {
     // Reading the file failed partway (the picker's copy went away); nothing else throws here.
     if (!picked.signal.aborted) {
-      warnInDev('could not read a picked file', error);
+      warn('could not read a picked file', error);
       dispatch({ type: 'rejected', id: picked.id, reason: RejectReason.Unreadable });
     }
   } finally {

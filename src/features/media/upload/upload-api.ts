@@ -1,12 +1,14 @@
 /**
- * The media upload endpoints (api-spec.md, "Media"), each turning a failed request into an
- * UploadFailure so the retry rules see one kind of error whatever went wrong.
+ * The media upload endpoints (api-spec.md, "Media"). The ones an upload retries turn a
+ * failed request into an UploadFailure, so the retry rules see one kind of error whatever
+ * went wrong; `deleteMedia` is best effort and throws the plain axios error.
  */
 
 import axios from 'axios';
 
 import { http } from '@/lib/http';
-import { failureFromApiStatus, UploadFailure } from '@/features/media/upload/retry-policy';
+import { failureFromApiStatus, UploadFailure } from '@/features/media/upload/upload-failure';
+import { getApiErrorStatus } from '@/utils/api-error';
 import type {
   CompletedPart,
   MediaStatusItem,
@@ -18,31 +20,31 @@ import type {
 
 const mediaPath = (mediaId: string) => `/media/${encodeURIComponent(mediaId)}`;
 
-async function call<T>(request: () => Promise<{ data: { data: T } }>) {
+/** The response's `data`, or an UploadFailure; 0 stands for "no answer". */
+async function requestData<T>(request: () => Promise<{ data: { data: T } }>) {
   try {
     return (await request()).data.data;
   } catch (error) {
     if (axios.isCancel(error)) {
       throw error;
     }
-    const status = axios.isAxiosError(error) ? (error.response?.status ?? 0) : 0;
-    throw new UploadFailure(failureFromApiStatus(status), error);
+    throw new UploadFailure(failureFromApiStatus(getApiErrorStatus(error) ?? 0), error);
   }
 }
 
-export function registerUploads(files: UploadRequestFile[], signal?: AbortSignal) {
-  return call(() =>
-    http.post<{ data: { uploads: RegisteredUpload[] } }>(
-      '/media/upload-urls',
-      { files },
-      { signal },
-    ),
+/**
+ * Not abortable on purpose: the server may create the media before a cancelled request
+ * would be dropped, and the caller needs its ID to delete it.
+ */
+export function registerUploads(files: UploadRequestFile[]) {
+  return requestData(() =>
+    http.post<{ data: { uploads: RegisteredUpload[] } }>('/media/upload-urls', { files }),
   ).then((data) => data.uploads);
 }
 
 /** Fresh URLs for a file still uploading; for a video, only `partNumbers` when given. */
 export function refreshUploadUrl(mediaId: string, partNumbers?: number[], signal?: AbortSignal) {
-  return call(() =>
+  return requestData(() =>
     http.post<{ data: UploadTarget }>(
       `${mediaPath(mediaId)}/upload-url`,
       { partNumbers },
@@ -52,7 +54,7 @@ export function refreshUploadUrl(mediaId: string, partNumbers?: number[], signal
 }
 
 export function completeParts(mediaId: string, parts: CompletedPart[], signal?: AbortSignal) {
-  return call(() =>
+  return requestData(() =>
     http.post<{ data: { status: ServerMediaStatus } }>(
       `${mediaPath(mediaId)}/parts/complete`,
       { parts },
@@ -62,7 +64,7 @@ export function completeParts(mediaId: string, parts: CompletedPart[], signal?: 
 }
 
 export function completeUpload(mediaId: string, signal?: AbortSignal) {
-  return call(() =>
+  return requestData(() =>
     http.post<{ data: { status: ServerMediaStatus } }>(
       `${mediaPath(mediaId)}/complete`,
       undefined,
@@ -75,7 +77,7 @@ export function completeUpload(mediaId: string, signal?: AbortSignal) {
 
 /** Statuses of the caller's media; an ID the server no longer has is left out. */
 export function fetchMediaStatuses(mediaIds: string[]) {
-  return call(() =>
+  return requestData(() =>
     http.get<{ data: MediaStatusItem[] }>('/media', { params: { ids: mediaIds.join(',') } }),
   );
 }

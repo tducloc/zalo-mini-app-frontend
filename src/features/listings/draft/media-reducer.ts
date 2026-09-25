@@ -8,7 +8,7 @@
  */
 
 import type { MediaKind, RejectReason } from '@/features/media/media-limits';
-import type { ServerMedia } from '@/features/media/upload/upload-types';
+import { type ServerMedia, ServerMediaStatus } from '@/features/media/upload/upload-types';
 import type { UploadWait } from '@/features/media/upload/file-upload';
 
 export enum DraftMediaStatus {
@@ -84,6 +84,10 @@ export type DraftMedia =
     })
   | (PreparedMedia & { status: DraftMediaStatus.Uploaded; mediaId: string; server: ServerMedia });
 
+export type PreparedDraftMedia = Extract<DraftMedia, PreparedMedia>;
+export type ReadyDraftMedia = Extract<DraftMedia, { status: DraftMediaStatus.ReadyToUpload }>;
+export type UploadedDraftMedia = Extract<DraftMedia, { status: DraftMediaStatus.Uploaded }>;
+
 export type MediaAction =
   | { type: 'added'; items: BaseMedia[] }
   | { type: 'rejected'; id: string; reason: RejectReason }
@@ -98,11 +102,21 @@ export type MediaAction =
     }
   | { type: 'uploadStarted'; id: string }
   | { type: 'uploadWaiting'; id: string; waitingFor: UploadWait }
+  /** The next attempt starts after a wait. */
+  | { type: 'uploadResumed'; id: string }
   | { type: 'uploadFailed'; id: string; isRetryable: boolean }
   | { type: 'uploaded'; id: string; mediaId: string; server: ServerMedia }
   | { type: 'serverUpdated'; id: string; server: ServerMedia }
   | { type: 'removed'; id: string }
   | { type: 'cleared' };
+
+/**
+ * The server is done with the media: READY, or FAILED with its reason. `complete` can answer
+ * FAILED without the reason, when an earlier answer was lost; one poll then fetches it.
+ */
+export const isServerSettled = (server: ServerMedia) =>
+  server.status === ServerMediaStatus.Ready ||
+  (server.status === ServerMediaStatus.Failed && server.error !== null);
 
 type FileEvent = Exclude<MediaAction, { type: 'added' | 'removed' | 'cleared' }>;
 
@@ -114,25 +128,20 @@ const LEAVES_FROM: Record<FileEvent['type'], DraftMediaStatus[]> = {
   optimizing: [DraftMediaStatus.Checking],
   progressed: [DraftMediaStatus.Optimizing, DraftMediaStatus.Uploading],
   ready: [DraftMediaStatus.Checking, DraftMediaStatus.Optimizing],
-  uploadStarted: [
-    DraftMediaStatus.ReadyToUpload,
-    DraftMediaStatus.Retrying,
-    DraftMediaStatus.UploadFailed,
-  ],
+  uploadStarted: [DraftMediaStatus.ReadyToUpload, DraftMediaStatus.UploadFailed],
   uploadWaiting: UPLOAD_IN_PROGRESS,
+  uploadResumed: [DraftMediaStatus.Retrying],
   uploadFailed: UPLOAD_IN_PROGRESS,
   uploaded: UPLOAD_IN_PROGRESS,
   serverUpdated: [DraftMediaStatus.Uploaded],
 };
 
-const isPrepared = (media: DraftMedia): media is Extract<DraftMedia, PreparedMedia> =>
-  'upload' in media;
+const isPrepared = (media: DraftMedia): media is PreparedDraftMedia => 'upload' in media;
 
 /** Upload events, for a file past ready-to-upload (LEAVES_FROM guarantees it). */
-function applyUploadEvent(
-  media: Extract<DraftMedia, PreparedMedia>,
-  action: FileEvent,
-): DraftMedia {
+function applyUploadEvent(media: PreparedDraftMedia, action: FileEvent): DraftMedia {
+  // Field by field on purpose: spreading `media` would carry the previous state's fields
+  // (progress, isRetryable, …) into the next one.
   const prepared = {
     id: media.id,
     kind: media.kind,
@@ -146,6 +155,7 @@ function applyUploadEvent(
 
   switch (action.type) {
     case 'uploadStarted':
+    case 'uploadResumed':
       return { ...prepared, status: DraftMediaStatus.Uploading, progress };
     case 'progressed':
       return { ...prepared, status: DraftMediaStatus.Uploading, progress: action.progress };
@@ -170,7 +180,8 @@ function applyUploadEvent(
         server: action.server,
       };
     case 'serverUpdated':
-      return media.status === DraftMediaStatus.Uploaded
+      // A slow poll answering after a newer one must not take a settled tile back.
+      return media.status === DraftMediaStatus.Uploaded && !isServerSettled(media.server)
         ? { ...media, server: action.server }
         : media;
     default:

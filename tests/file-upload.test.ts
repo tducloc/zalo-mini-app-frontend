@@ -3,11 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { MediaKind } from '@/features/media/media-limits';
 import {
   FileUpload,
+  type PutOptions,
   type UploadListener,
   type UploadTransport,
   UploadWait,
 } from '@/features/media/upload/file-upload';
-import { FailureKind, UploadFailure } from '@/features/media/upload/retry-policy';
+import { MAX_UPLOAD_ATTEMPTS, UPLOAD_URL_LIFETIME_MS } from '@/features/media/upload/retry-policy';
+import { FailureKind, UploadFailure } from '@/features/media/upload/upload-failure';
 import {
   ServerMediaStatus,
   type UploadRequestFile,
@@ -42,6 +44,9 @@ const videoTarget: UploadTarget = {
 
 const failure = (kind: FailureKind) => new UploadFailure(kind, 'test');
 
+/** For `failing`: fail every call. */
+const ALWAYS = Infinity;
+
 function fakeTransport(overrides: Partial<UploadTransport> = {}) {
   return {
     register: vi.fn(async (file: UploadRequestFile) =>
@@ -64,19 +69,21 @@ function fakeTransport(overrides: Partial<UploadTransport> = {}) {
     waitForNetwork: vi.fn(async () => {}),
     sleep: vi.fn(async () => {}),
     random: () => 0,
-    now: () => NOW,
+    now: vi.fn(() => NOW),
     ...overrides,
   };
 }
 
 function recordingListener() {
   const events: string[] = [];
+  const registered: string[] = [];
   const listener: UploadListener = {
+    onRegistered: (mediaId) => registered.push(mediaId),
     onProgress: (fraction) => events.push(`progress ${fraction}`),
     onWaiting: (wait) => events.push(`waiting ${wait}`),
     onResumed: () => events.push('resumed'),
   };
-  return { events, listener };
+  return { events, registered, listener };
 }
 
 /** Fails the first `times` calls with `kind`, then does what `then` does. */
@@ -144,20 +151,24 @@ describe('FileUpload, photo', () => {
   });
 
   it('gives up after 3 attempts, offering retry', async () => {
-    const transport = fakeTransport({ put: failing(99, FailureKind.Server, async () => '"e"') });
+    const transport = fakeTransport({
+      put: failing(ALWAYS, FailureKind.Server, async () => '"e"'),
+    });
 
     const result = await run(new FileUpload(photoRequest, photoBlob, transport));
 
-    expect(result).toEqual({ kind: 'failed', isRetryable: true });
-    expect(transport.put).toHaveBeenCalledTimes(3);
+    expect(result).toEqual({ kind: 'failed', failure: FailureKind.Server, isRetryable: true });
+    expect(transport.put).toHaveBeenCalledTimes(MAX_UPLOAD_ATTEMPTS);
   });
 
   it('stops at once when refused for good, offering remove only', async () => {
-    const transport = fakeTransport({ put: failing(99, FailureKind.Rejected, async () => '"e"') });
+    const transport = fakeTransport({
+      put: failing(ALWAYS, FailureKind.Rejected, async () => '"e"'),
+    });
 
     const result = await run(new FileUpload(photoRequest, photoBlob, transport));
 
-    expect(result).toEqual({ kind: 'failed', isRetryable: false });
+    expect(result).toEqual({ kind: 'failed', failure: FailureKind.Rejected, isRetryable: false });
     expect(transport.put).toHaveBeenCalledTimes(1);
     expect(transport.sleep).not.toHaveBeenCalled();
   });
@@ -174,14 +185,78 @@ describe('FileUpload, photo', () => {
     ]);
   });
 
-  it('refreshes a URL about to expire before using it', async () => {
+  it('refreshes a URL about to expire before using it, by the phone’s own clock', async () => {
+    const transport = fakeTransport();
+    const upload = new FileUpload(photoRequest, photoBlob, transport);
+    upload.assign(photoTarget);
+    // The URL arrived almost 15 minutes ago; the server's expiresAt is never compared.
+    transport.now.mockReturnValue(NOW + UPLOAD_URL_LIFETIME_MS - 30_000);
+
+    await run(upload);
+
+    expect(transport.put.mock.calls.map(([url]) => url)).toEqual(['put://photo-fresh']);
+  });
+
+  it('ignores a phone clock that runs ahead of the server', async () => {
     const transport = fakeTransport({
-      register: vi.fn(async () => ({ ...photoTarget, expiresAt: '2026-09-25T10:00:30Z' })),
+      // expiresAt is 15 minutes after NOW, but the phone thinks it is 20 minutes later.
+      now: vi.fn(() => NOW + 20 * 60_000),
     });
 
     await run(new FileUpload(photoRequest, photoBlob, transport));
 
-    expect(transport.put.mock.calls.map(([url]) => url)).toEqual(['put://photo-fresh']);
+    expect(transport.refresh).not.toHaveBeenCalled();
+  });
+
+  it('starts the seller’s Retry with fresh URLs', async () => {
+    const transport = fakeTransport({
+      put: failing(MAX_UPLOAD_ATTEMPTS, FailureKind.Server, async () => '"e"'),
+    });
+    const upload = new FileUpload(photoRequest, photoBlob, transport);
+    expect((await run(upload)).kind).toBe('failed');
+
+    upload.markUrlsStale();
+    expect((await run(upload)).kind).toBe('uploaded');
+
+    expect(transport.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits before registering when offline from the start', async () => {
+    let isOnline = false;
+    const order: string[] = [];
+    const transport = fakeTransport({
+      isOnline: vi.fn(() => isOnline),
+      waitForNetwork: vi.fn(async () => {
+        order.push('waited');
+        isOnline = true;
+      }),
+    });
+    transport.register.mockImplementation(async () => {
+      order.push('registered');
+      return photoTarget;
+    });
+
+    await run(new FileUpload(photoRequest, photoBlob, transport));
+
+    expect(order).toEqual(['waited', 'registered']);
+  });
+
+  it('reports the media it registered even when removed meanwhile, so it can be deleted', async () => {
+    const controller = new AbortController();
+    const transport = fakeTransport({
+      register: vi.fn(async () => {
+        controller.abort();
+        return photoTarget;
+      }),
+    });
+    const { registered, listener } = recordingListener();
+
+    await expect(
+      new FileUpload(photoRequest, photoBlob, transport).run(listener, controller.signal),
+    ).rejects.toBeDefined();
+
+    expect(registered).toEqual(['m1']);
+    expect(transport.put).not.toHaveBeenCalled();
   });
 
   it('waits for the network without using up an attempt', async () => {
@@ -346,7 +421,7 @@ describe('FileUpload, video', () => {
 
     const result = await run(new FileUpload(videoRequest, videoBlob, transport));
 
-    expect(result).toEqual({ kind: 'failed', isRetryable: false });
+    expect(result).toEqual({ kind: 'failed', failure: FailureKind.Rejected, isRetryable: false });
     expect(transport.completeParts).not.toHaveBeenCalled();
   });
 
@@ -364,5 +439,76 @@ describe('FileUpload, video', () => {
 
     expect(transport.refresh).toHaveBeenCalledWith('m2', [2], expect.anything());
     expect(transport.put.mock.calls.map(([url]) => url)).toContain('put://part2-fresh');
+  });
+
+  it('shares one URL refresh between the parts in flight', async () => {
+    const transport = fakeTransport();
+    const upload = new FileUpload(videoRequest, videoBlob, transport);
+    upload.assign(videoTarget);
+    transport.now.mockReturnValue(NOW + UPLOAD_URL_LIFETIME_MS);
+
+    await run(upload);
+
+    expect(transport.refresh).toHaveBeenCalledTimes(1);
+    expect(transport.refresh).toHaveBeenCalledWith('m2', [1, 2, 3], expect.anything());
+  });
+
+  it('stops the other parts and never joins them when removed mid-upload', async () => {
+    const controller = new AbortController();
+    const transport = fakeTransport({
+      put: vi.fn(async (url: string, _body: Blob, { signal }: PutOptions) => {
+        if (url === 'put://part1') {
+          controller.abort();
+        }
+        return new Promise<string>((resolve, reject) => {
+          if (signal?.aborted) {
+            reject(signal.reason);
+            return;
+          }
+          signal?.addEventListener('abort', () => reject(signal.reason));
+          setTimeout(() => resolve(`"etag-${url}"`), 10);
+        });
+      }),
+    });
+
+    await expect(
+      new FileUpload(videoRequest, videoBlob, transport).run(
+        recordingListener().listener,
+        controller.signal,
+      ),
+    ).rejects.toBeDefined();
+
+    expect(transport.completeParts).not.toHaveBeenCalled();
+    expect(transport.complete).not.toHaveBeenCalled();
+  });
+
+  it('starts over as a new media when a part finds the upload gone', async () => {
+    let calls = 0;
+    const transport = fakeTransport({
+      put: vi.fn(async (url: string) => {
+        calls += 1;
+        if (url === 'put://part3' && calls <= 3) {
+          throw failure(FailureKind.Gone);
+        }
+        return `"etag-${url}"`;
+      }),
+    });
+
+    await run(new FileUpload(videoRequest, videoBlob, transport));
+
+    expect(transport.register).toHaveBeenCalledTimes(2);
+    // Every part again: the new upload has none of the old ones.
+    expect(transport.put).toHaveBeenCalledTimes(6);
+  });
+
+  it('starts over as a new media when complete finds the joined video wrong', async () => {
+    const transport = fakeTransport({
+      complete: failing(1, FailureKind.Conflict, async () => ServerMediaStatus.Processing),
+    });
+
+    await run(new FileUpload(videoRequest, videoBlob, transport));
+
+    expect(transport.register).toHaveBeenCalledTimes(2);
+    expect(transport.completeParts).toHaveBeenCalledTimes(2);
   });
 });

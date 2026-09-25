@@ -1,14 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import { isUrlExpiring, pollDelayMs, retryDelayMs } from '@/features/media/upload/retry-policy';
 import {
   failureFromApiStatus,
   failureFromStorageStatus,
   FailureKind,
   isRetryable,
-  isUrlExpiring,
-  pollDelayMs,
-  retryDelayMs,
-} from '@/features/media/upload/retry-policy';
+} from '@/features/media/upload/upload-failure';
 
 describe('failureFromApiStatus', () => {
   it.each([
@@ -31,11 +29,13 @@ describe('failureFromStorageStatus', () => {
   it.each([
     [0, FailureKind.Network],
     [403, FailureKind.Expired],
+    [404, FailureKind.Gone],
+    [400, FailureKind.Server],
     [408, FailureKind.Server],
     [500, FailureKind.Server],
     [503, FailureKind.Server],
-    [400, FailureKind.Rejected],
     [411, FailureKind.Rejected],
+    [413, FailureKind.Rejected],
   ])('maps %i to %s', (status, kind) => {
     expect(failureFromStorageStatus(status)).toBe(kind);
   });
@@ -71,12 +71,12 @@ describe('pollDelayMs', () => {
 describe('isUrlExpiring', () => {
   const now = Date.parse('2026-09-25T10:00:00Z');
 
-  it('treats a URL with under a minute left as expired', () => {
-    expect(isUrlExpiring('2026-09-25T10:00:59Z', now)).toBe(true);
-    expect(isUrlExpiring('2026-09-25T10:01:01Z', now)).toBe(false);
+  it('treats a URL with under a minute left, on the phone’s clock, as expired', () => {
+    expect(isUrlExpiring(now + 59_000, now)).toBe(true);
+    expect(isUrlExpiring(now + 61_000, now)).toBe(false);
   });
 
-  it('treats a missing expiry as expired', () => {
-    expect(isUrlExpiring('', now)).toBe(true);
+  it('treats a URL never received as expired', () => {
+    expect(isUrlExpiring(0, now)).toBe(true);
   });
 });

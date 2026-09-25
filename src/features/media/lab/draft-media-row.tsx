@@ -1,7 +1,11 @@
 import { Button } from 'zmp-ui';
 
 import { removeDraftMedia } from '@/features/listings/draft/media-intake';
-import { type DraftMedia, DraftMediaStatus } from '@/features/listings/draft/media-reducer';
+import {
+  type DraftMedia,
+  DraftMediaStatus,
+  type UploadedDraftMedia,
+} from '@/features/listings/draft/media-reducer';
 import { retryUpload } from '@/features/listings/draft/media-upload';
 import { rejectMessages } from '@/features/listings/draft/reject-messages';
 import {
@@ -21,7 +25,7 @@ export interface RowTimes {
 
 const percent = (fraction: number) => `${Math.round(fraction * 100)}%`;
 
-function describeServer(media: Extract<DraftMedia, { status: DraftMediaStatus.Uploaded }>) {
+function describeServer(media: UploadedDraftMedia) {
   switch (media.server.status) {
     case ServerMediaStatus.Ready:
       return 'Máy chủ xử lý xong';
@@ -86,7 +90,7 @@ export default function DraftMediaRow({ media, times }: { media: DraftMedia; tim
         </p>
         <p className="m-0 text-slate-500">
           Gốc {(media.file.size / MIB).toFixed(2)} MB
-          {original?.width && ` · ${original.width}×${original.height}`}
+          {!!original?.width && ` · ${original.width}×${original.height}`}
           {times.preparing && ` · chuẩn bị ${times.preparing} s`}
           {times.uploading && ` · tải lên ${times.uploading} s`}
         </p>

@@ -1,6 +1,6 @@
 /**
- * Uploads one file and follows diagram 05 when it fails: photo in one PUT, video in 8 MB
- * parts 3 at a time, then `complete`. Remembers what already reached storage, so another
+ * Uploads one file and follows diagram 05 when it fails: photo in one PUT, video in parts of
+ * the server's part size, PARTS_IN_FLIGHT at a time, then `complete`. Remembers what already reached storage, so another
  * attempt, or the seller's Retry, sends only what is missing.
  *
  * The network comes in through UploadTransport, so the tests drive every failure.
@@ -13,21 +13,27 @@ import type {
   UploadRequestFile,
   UploadTarget,
 } from '@/features/media/upload/upload-types';
-import type { PutOptions } from '@/features/media/upload/put-blob';
+import { FailureKind, isRetryable, UploadFailure } from '@/features/media/upload/upload-failure';
 import {
-  FailureKind,
-  isRetryable,
   isUrlExpiring,
   MAX_UPLOAD_ATTEMPTS,
   retryDelayMs,
-  UploadFailure,
+  UPLOAD_URL_LIFETIME_MS,
 } from '@/features/media/upload/retry-policy';
 
 /** Parts of one video in flight at once (api-spec: "at most 3 at once"). */
-export const PARTS_IN_FLIGHT = 3;
+const PARTS_IN_FLIGHT = 3;
+
+export interface PutOptions {
+  /** Sent as Content-Type; photos must send the declared type, which the URL signs. */
+  contentType?: string;
+  onProgress?: (sentBytes: number) => void;
+  signal?: AbortSignal;
+}
 
 export interface UploadTransport {
-  register: (file: UploadRequestFile, signal: AbortSignal) => Promise<UploadTarget>;
+  /** Not abortable: once the server has created the media, the caller must learn its ID. */
+  register: (file: UploadRequestFile) => Promise<UploadTarget>;
   refresh: (
     mediaId: string,
     partNumbers: number[] | undefined,
@@ -54,6 +60,8 @@ export enum UploadWait {
 }
 
 export interface UploadListener {
+  /** The server created the media; also after a removal, so it can be deleted. */
+  onRegistered: (mediaId: string) => void;
   /** Share of the file's bytes in storage, 0–1. */
   onProgress: (fraction: number) => void;
   onWaiting: (wait: UploadWait) => void;
@@ -63,16 +71,17 @@ export interface UploadListener {
 
 export type UploadResult =
   | { kind: 'uploaded'; mediaId: string; status: ServerMediaStatus }
-  | { kind: 'failed'; isRetryable: boolean };
+  | { kind: 'failed'; failure: FailureKind; isRetryable: boolean };
 
 /** Bytes in 1-based part `partNumber` of a `size`-byte file cut in `partSize` pieces. */
-export function partBytes(size: number, partSize: number, partNumber: number) {
+function partBytes(size: number, partSize: number, partNumber: number) {
   return Math.min(partSize, size - (partNumber - 1) * partSize);
 }
 
 export class FileUpload {
-  private mediaIdValue: string | null = null;
-  private expiresAt = '';
+  #mediaId: string | null = null;
+  /** On the client's clock; see UPLOAD_URL_LIFETIME_MS. */
+  private urlsValidUntil = 0;
   private hasStaleUrls = false;
   private photoUrl: string | null = null;
   private partSize = 0;
@@ -92,7 +101,7 @@ export class FileUpload {
 
   /** The server's ID once registered; it changes if the server lost the first one. */
   get mediaId() {
-    return this.mediaIdValue;
+    return this.#mediaId;
   }
 
   /** Takes URLs from a registration made for several files at once. */
@@ -100,33 +109,35 @@ export class FileUpload {
     this.applyTarget(target);
   }
 
+  /** The seller taps Retry: start with fresh URLs, as diagram 05 draws it. */
+  markUrlsStale() {
+    this.hasStaleUrls = true;
+  }
+
   /** Attempts until uploaded, refused for good, or out of attempts. Rejects only on abort. */
   async run(listener: UploadListener, signal: AbortSignal): Promise<UploadResult> {
     let attempt = 0;
     for (;;) {
-      if (!this.transport.isOnline()) {
-        // Offline is a pause, not a failure: it uses up no attempt (diagram 05).
-        listener.onWaiting(UploadWait.Network);
-        await this.transport.waitForNetwork(signal);
-        listener.onResumed();
-      }
-
-      attempt += 1;
+      await this.waitWhileOffline(listener, signal);
       try {
         return await this.attempt(listener, signal);
       } catch (error) {
         if (signal.aborted || !(error instanceof UploadFailure)) {
           throw error;
         }
+
+        // The network went away mid-request: a pause like the one above, not an attempt.
         if (error.kind === FailureKind.Network && !this.transport.isOnline()) {
-          attempt -= 1;
           continue;
         }
 
+        attempt += 1;
         this.recover(error.kind);
+
         if (!isRetryable(error.kind) || attempt >= MAX_UPLOAD_ATTEMPTS) {
-          return { kind: 'failed', isRetryable: isRetryable(error.kind) };
+          return { kind: 'failed', failure: error.kind, isRetryable: isRetryable(error.kind) };
         }
+
         listener.onWaiting(UploadWait.Retry);
         await this.transport.sleep(retryDelayMs(attempt, this.transport.random()), signal);
         listener.onResumed();
@@ -134,15 +145,29 @@ export class FileUpload {
     }
   }
 
-  private async attempt(listener: UploadListener, signal: AbortSignal): Promise<UploadResult> {
-    if (!this.mediaIdValue) {
-      this.applyTarget(await this.transport.register(this.request, signal));
+  /** Offline is a pause, not a failure: it uses up no attempt (diagram 05). */
+  private async waitWhileOffline(listener: UploadListener, signal: AbortSignal) {
+    if (this.transport.isOnline()) {
+      return;
     }
+    listener.onWaiting(UploadWait.Network);
+    await this.transport.waitForNetwork(signal);
+    listener.onResumed();
+  }
+
+  private async attempt(listener: UploadListener, signal: AbortSignal): Promise<UploadResult> {
+    if (!this.#mediaId) {
+      this.applyTarget(await this.transport.register(this.request));
+      listener.onRegistered(this.requireMediaId());
+      signal.throwIfAborted();
+    }
+
     if (!this.isStored) {
       await (this.request.type === MediaKind.Video
         ? this.sendParts(listener, signal)
         : this.sendPhoto(listener, signal));
     }
+
     return {
       kind: 'uploaded',
       mediaId: this.requireMediaId(),
@@ -153,15 +178,22 @@ export class FileUpload {
   /** Clears whatever the failure showed to be wrong, before the next attempt. */
   private recover(kind: FailureKind) {
     if (kind === FailureKind.Gone) {
-      // The server no longer has the media: register again and send everything.
-      this.mediaIdValue = null;
-      this.partUrls.clear();
-      this.sentParts.clear();
-      this.isStored = false;
+      this.forgetServerState();
     }
     if (kind === FailureKind.Expired) {
       this.hasStaleUrls = true;
     }
+  }
+
+  /** The server no longer has the media: register again and send everything. */
+  private forgetServerState() {
+    this.#mediaId = null;
+    this.urlsValidUntil = 0;
+    this.hasStaleUrls = false;
+    this.photoUrl = null;
+    this.partUrls.clear();
+    this.sentParts.clear();
+    this.isStored = false;
   }
 
   private async complete(signal: AbortSignal) {
@@ -169,8 +201,13 @@ export class FileUpload {
       return await this.transport.complete(this.requireMediaId(), signal);
     } catch (error) {
       if (error instanceof UploadFailure && error.kind === FailureKind.Conflict) {
-        // Storage does not have the whole file after all: send it again.
-        this.isStored = false;
+        // Storage does not have the whole file after all. A photo is simply sent again; a
+        // video's parts may no longer join, so it starts over as a new media.
+        if (this.request.type === MediaKind.Video) {
+          this.forgetServerState();
+        } else {
+          this.isStored = false;
+        }
       }
       throw error;
     }
@@ -181,6 +218,7 @@ export class FileUpload {
     if (!this.photoUrl) {
       throw new UploadFailure(FailureKind.Rejected, 'no upload URL for the photo');
     }
+
     await this.transport.put(this.photoUrl, this.blob, {
       contentType: this.request.contentType,
       signal,
@@ -193,53 +231,68 @@ export class FileUpload {
     if (!this.partSize) {
       throw new UploadFailure(FailureKind.Rejected, 'no part size for the video');
     }
+    await this.sendUnsentParts(listener, signal);
+    await this.joinParts(signal);
+    this.isStored = true;
+  }
+
+  /** PARTS_IN_FLIGHT at a time; one failed part stops the others and fails the attempt. */
+  private async sendUnsentParts(listener: UploadListener, signal: AbortSignal) {
+    signal.throwIfAborted();
     const queue = this.unsentParts();
     const inFlight = new Map<number, number>();
-    const reportProgress = () => {
-      let sent = 0;
-      for (const partNumber of this.sentParts.keys()) {
-        sent += partBytes(this.blob.size, this.partSize, partNumber);
-      }
-      for (const bytes of inFlight.values()) {
-        sent += bytes;
-      }
-      listener.onProgress(sent / this.blob.size);
-    };
+    const reportProgress = () => listener.onProgress(this.storedBytes(inFlight) / this.blob.size);
 
-    // One failed part stops the others, so the next attempt never overlaps this one.
+    // Stopping the others means the next attempt never overlaps this one.
     const attemptController = new AbortController();
     const stopAll = () => attemptController.abort(signal.reason);
     signal.addEventListener('abort', stopAll);
     let firstFailure: unknown = null;
 
     const sendNext = async () => {
-      for (let partNumber = queue.shift(); partNumber; partNumber = queue.shift()) {
+      let partNumber = queue.shift();
+      while (partNumber !== undefined && !attemptController.signal.aborted) {
+        const current = partNumber;
         try {
-          await this.sendPart(partNumber, attemptController.signal, (sent) => {
-            inFlight.set(partNumber, sent);
+          await this.sendPart(current, attemptController.signal, (sent) => {
+            inFlight.set(current, sent);
             reportProgress();
           });
-          inFlight.delete(partNumber);
-          reportProgress();
         } catch (error) {
-          inFlight.delete(partNumber);
           firstFailure ??= error;
           attemptController.abort();
-          return;
+        } finally {
+          inFlight.delete(current);
         }
+        reportProgress();
+        partNumber = queue.shift();
       }
     };
     await Promise.all(Array.from({ length: PARTS_IN_FLIGHT }, sendNext));
     signal.removeEventListener('abort', stopAll);
+
     if (firstFailure) {
       throw firstFailure;
     }
+  }
 
+  /** Bytes of the parts storage has, plus those on their way. */
+  private storedBytes(inFlight: Map<number, number>) {
+    let bytes = 0;
+    for (const partNumber of this.sentParts.keys()) {
+      bytes += partBytes(this.blob.size, this.partSize, partNumber);
+    }
+    for (const sent of inFlight.values()) {
+      bytes += sent;
+    }
+    return bytes;
+  }
+
+  private async joinParts(signal: AbortSignal) {
     const parts = [...this.sentParts]
       .map(([partNumber, etag]) => ({ partNumber, etag }))
       .sort((a, b) => a.partNumber - b.partNumber);
     await this.transport.completeParts(this.requireMediaId(), parts, signal);
-    this.isStored = true;
   }
 
   private async sendPart(
@@ -275,7 +328,7 @@ export class FileUpload {
 
   /** Fresh URLs when they expired or soon will; parts in flight share one refresh. */
   private async ensureFreshUrls(partNumbers: number[] | undefined, signal: AbortSignal) {
-    if (!this.hasStaleUrls && !isUrlExpiring(this.expiresAt, this.transport.now())) {
+    if (!this.hasStaleUrls && !isUrlExpiring(this.urlsValidUntil, this.transport.now())) {
       return;
     }
     this.refreshing ??= this.transport
@@ -291,8 +344,8 @@ export class FileUpload {
   }
 
   private applyTarget(target: UploadTarget) {
-    this.mediaIdValue = target.mediaId;
-    this.expiresAt = target.expiresAt;
+    this.#mediaId = target.mediaId;
+    this.urlsValidUntil = this.transport.now() + UPLOAD_URL_LIFETIME_MS;
     this.photoUrl = target.presignedUrl ?? this.photoUrl;
     this.partSize = target.partSize ?? this.partSize;
     for (const part of target.parts ?? []) {
@@ -301,9 +354,9 @@ export class FileUpload {
   }
 
   private requireMediaId() {
-    if (!this.mediaIdValue) {
+    if (!this.#mediaId) {
       throw new UploadFailure(FailureKind.Gone, 'not registered');
     }
-    return this.mediaIdValue;
+    return this.#mediaId;
   }
 }

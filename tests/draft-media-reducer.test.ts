@@ -151,7 +151,7 @@ describe('mediaReducer, uploading', () => {
       waitingFor: UploadWait.Network,
     });
 
-    const resumed = mediaReducer(waiting, { type: 'uploadStarted', id: 'p1' });
+    const resumed = mediaReducer(waiting, { type: 'uploadResumed', id: 'p1' });
     expect(resumed[0]).toMatchObject({ status: DraftMediaStatus.Uploading, progress: 0.6 });
   });
 
