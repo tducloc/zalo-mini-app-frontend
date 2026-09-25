@@ -16,6 +16,7 @@ import { useListingDraftStore } from '@/features/listings/draft/store';
 import { canConvertVideos, convertVideo } from '@/features/media/convert-video';
 import {
   FileFormat,
+  IMAGE_FORMATS,
   IMAGE_HEAD_BYTES,
   type ImageDimensions,
   readHead,
@@ -215,7 +216,8 @@ export async function addDraftFiles(files: File[]) {
     const head = heads[index];
     const format = head ? sniffFormat(head) : null;
     const kind = mediaKindOf(format ?? FileFormat.Unknown, file.type);
-    const dimensions = head && kind === MediaKind.Image ? readImageDimensions(head) : null;
+    const isPhoto = format !== null && IMAGE_FORMATS.includes(format);
+    const dimensions = head && isPhoto ? readImageDimensions(head) : null;
     return { file, kind, format, bytes: file.size, dimensions };
   });
   const refusals = refusePicked(picked, acceptedCounts());

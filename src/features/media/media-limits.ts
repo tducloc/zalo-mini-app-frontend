@@ -25,11 +25,11 @@ export const MAX_VIDEO_BYTES = 150 * MIB;
 export const MAX_VIDEO_DURATION_MS = 60_000;
 /** The server allows the same slack: phones round a 60 s recording up. */
 const VIDEO_DURATION_TOLERANCE_MS = 500;
-export const MAX_VIDEO_LONG_EDGE = 1920;
+const MAX_VIDEO_LONG_EDGE = 1920;
 export const MAX_VIDEO_SHORT_EDGE = 1080;
 
 /** Conversion target (plans/create-listing.md, "Video on the client"). */
-export const CONVERTED_SHORT_EDGE = 720;
+const CONVERTED_SHORT_EDGE = 720;
 export const CONVERTED_BITRATE = 3_000_000;
 /** A clip already at or below 720p is converted only when its bitrate is above this. */
 const CONVERT_ABOVE_BITRATE = 4_000_000;

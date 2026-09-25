@@ -72,9 +72,8 @@ describe('readImageDimensions', () => {
     expect(readImageDimensions(head)).toBeNull();
   });
 
-  it('returns null for formats it does not read', () => {
-    const heic = new Uint8Array([0, 0, 0, 24, ...Array.from('ftypheic', (c) => c.charCodeAt(0))]);
-    expect(readImageDimensions(heic)).toBeNull();
+  it('returns null for bytes it cannot read', () => {
     expect(readImageDimensions(new Uint8Array())).toBeNull();
+    expect(readImageDimensions(new TextEncoder().encode('%PDF-1.7'))).toBeNull();
   });
 });

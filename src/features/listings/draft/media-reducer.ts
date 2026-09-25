@@ -84,7 +84,7 @@ export type DraftMedia =
     })
   | (PreparedMedia & { status: DraftMediaStatus.Uploaded; mediaId: string; server: ServerMedia });
 
-export type PreparedDraftMedia = Extract<DraftMedia, PreparedMedia>;
+type PreparedDraftMedia = Extract<DraftMedia, PreparedMedia>;
 export type ReadyDraftMedia = Extract<DraftMedia, { status: DraftMediaStatus.ReadyToUpload }>;
 export type UploadedDraftMedia = Extract<DraftMedia, { status: DraftMediaStatus.Uploaded }>;
 

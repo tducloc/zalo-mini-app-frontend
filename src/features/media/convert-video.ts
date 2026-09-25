@@ -17,9 +17,7 @@ const FRAME_RATE_SAMPLE_PACKETS = 60;
 export const canConvertVideos =
   typeof VideoEncoder !== 'undefined' && typeof VideoDecoder !== 'undefined';
 
-export class VideoConversionError extends Error {}
-
-export interface ConvertVideoOptions {
+interface ConvertVideoOptions {
   /** Display size of the result, from convertedVideoSize. */
   width: number;
   height: number;
@@ -28,9 +26,9 @@ export interface ConvertVideoOptions {
 }
 
 /**
- * Resolves with the converted MP4 (index first). Rejects with VideoConversionError when this
- * phone cannot decode the clip or encode H.264/AAC, and with a cancellation error when
- * `signal` aborts.
+ * Resolves with the converted MP4 (index first). Rejects when this phone cannot decode the
+ * clip or encode H.264/AAC, and with a cancellation error when `signal` aborts; the caller
+ * falls back to the original either way.
  */
 export async function convertVideo(file: Blob, options: ConvertVideoOptions): Promise<Blob> {
   const {
@@ -79,7 +77,7 @@ export async function convertVideo(file: Blob, options: ConvertVideoOptions): Pr
     // Never upload a clip that silently lost its sound.
     if (!conversion.isValid || !keptVideo || (hasAudio && !keptAudio)) {
       const reasons = conversion.discardedTracks.map((discarded) => discarded.reason);
-      throw new VideoConversionError(`cannot convert: ${reasons.join(', ') || 'no video'}`);
+      throw new Error(`cannot convert: ${reasons.join(', ') || 'no video'}`);
     }
 
     options.signal.throwIfAborted();
@@ -93,7 +91,7 @@ export async function convertVideo(file: Blob, options: ConvertVideoOptions): Pr
     }
 
     if (!target.buffer) {
-      throw new VideoConversionError('conversion produced no file');
+      throw new Error('conversion produced no file');
     }
     return new Blob([target.buffer], { type: 'video/mp4' });
   } finally {

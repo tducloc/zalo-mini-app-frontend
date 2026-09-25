@@ -40,9 +40,6 @@ export enum FileFormat {
   Unknown = 'unknown',
 }
 
-/** Enough for every signature below. */
-export const FORMAT_HEAD_BYTES = 16;
-
 export const IMAGE_FORMATS: readonly FileFormat[] = [
   FileFormat.Jpeg,
   FileFormat.Png,
@@ -83,10 +80,6 @@ export function sniffFormat(head: Uint8Array): FileFormat {
   return FileFormat.Unknown;
 }
 
-export async function sniffBlobFormat(blob: Blob) {
-  return sniffFormat(await readHead(blob, FORMAT_HEAD_BYTES));
-}
-
 // ---- Photo size ----
 
 export interface ImageDimensions {
@@ -97,11 +90,11 @@ export interface ImageDimensions {
 /** Enough for a JPEG's size to follow a full 64 KB EXIF segment plus ICC and MPF. */
 export const IMAGE_HEAD_BYTES = 256 * 1024;
 
-/** Null when the header does not say, e.g. cut short or damaged; the server then decides. */
+/**
+ * Null when the header does not say, e.g. cut short or damaged; the server then decides.
+ * Callers check the format first (sniffFormat); a format the app refuses has no use for it.
+ */
 export function readImageDimensions(head: Uint8Array): ImageDimensions | null {
-  if (!IMAGE_FORMATS.includes(sniffFormat(head))) {
-    return null;
-  }
   try {
     const { width, height } = imageSize(head);
     return { width, height };

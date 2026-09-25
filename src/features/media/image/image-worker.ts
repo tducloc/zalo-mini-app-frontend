@@ -12,7 +12,7 @@ import workerSource from '@/features/media/image/worker.ts?worker-source';
 export const MAX_EDGE = 1280;
 
 /** JPEG only, decided 2026-09-24: WebP was not smaller at the quality product photos need. */
-export const JPEG_QUALITY = 0.85;
+const JPEG_QUALITY = 0.85;
 
 /**
  * A photo takes well under a few seconds even on a slow phone. A worker that has not
