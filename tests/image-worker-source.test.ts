@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import workerSource from '@/features/media/image/worker.ts?worker-source';
+import workerSource from '@/features/media/image/image-worker-thread.ts?worker-source';
 
 // The worker starts from this string through a Blob URL, as a classic script.
 describe('image worker source', () => {

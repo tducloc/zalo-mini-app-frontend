@@ -22,11 +22,11 @@ interface QueuedJob {
 
 async function prepareJob(file: File, decodeWidth?: number): Promise<QueuedJob> {
   const head = await readHead(file, IMAGE_HEAD_BYTES);
-  const dimensions = readPhotoHeader(head);
+  const photo = readPhotoHeader(head);
 
   // Only shrink at decode when the stored width is larger; resizeWidth would upscale.
   const effectiveWidth =
-    decodeWidth && (!dimensions || dimensions.width > decodeWidth) ? decodeWidth : undefined;
+    decodeWidth && (!photo || photo.width > decodeWidth) ? decodeWidth : undefined;
 
   return {
     file,
@@ -34,8 +34,8 @@ async function prepareJob(file: File, decodeWidth?: number): Promise<QueuedJob> 
     record: {
       name: file.name,
       fileBytes: file.size,
-      dimensions,
-      costBytes: estimateJobBytes(dimensions, effectiveWidth),
+      dimensions: photo,
+      costBytes: estimateJobBytes(photo, effectiveWidth),
       ok: false,
     },
   };

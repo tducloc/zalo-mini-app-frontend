@@ -14,18 +14,17 @@ import {
 } from '@/features/listings/draft/media-reducer';
 import { cancelUpload } from '@/features/listings/draft/media-upload';
 import { useListingDraftStore } from '@/features/listings/draft/store';
-import { detectPickedFile } from '@/features/media/detect-media';
+import { MediaDetector } from '@/features/media/media-detector';
 import { ImageQueue } from '@/features/media/image/image-queue';
 import { ImageFormat, type PhotoHeader } from '@/features/media/image/image-utils';
 import { canOptimizeImages } from '@/features/media/image/image-worker';
 import { MediaKind, refusePicked, RejectReason } from '@/features/media/media-utils';
 import { canConvertVideos, convertVideo } from '@/features/media/video/convert-video';
 import {
-  checkVideoLength,
-  convertedVideoSize,
   originalVideoProblem,
   readVideoMetadata,
   shouldConvertVideo,
+  videoLengthProblem,
   type VideoFacts,
   VideoFormat,
   type VideoMetadata,
@@ -44,7 +43,7 @@ interface PickedFile {
 const imageQueue = new ImageQueue();
 /** One per file still being worked on. */
 const inProgress = new Map<string, AbortController>();
-let fileCount = 0;
+let nextFileNumber = 1;
 
 const dispatch = (action: MediaAction) => useListingDraftStore.getState().dispatchMedia(action);
 
@@ -65,7 +64,7 @@ function acceptedCounts() {
 
 async function takeImage({ id, file, photo, signal }: PickedFile) {
   if (!photo?.format) {
-    // detectPickedFile refuses such a file first; never leave a tile on Checking.
+    // MediaDetector refuses such a file first; never leave a tile on Checking.
     dispatch({ type: MediaActionType.Rejected, id, reason: RejectReason.UnsupportedFormat });
     return;
   }
@@ -99,25 +98,20 @@ async function takeImage({ id, file, photo, signal }: PickedFile) {
 }
 
 /** Resolves with the converted clip, or null to fall back to the picked file. */
-async function convert(
-  { id, file, signal }: PickedFile,
-  original: OriginalFile,
-  facts: VideoFacts,
-) {
-  if (!canConvertVideos || !facts.width || !facts.height) {
+async function convertPickedVideo({ id, file, signal }: PickedFile, original: OriginalFile) {
+  if (!canConvertVideos) {
     return null;
   }
 
   dispatch({ type: MediaActionType.OptimizeStarted, id, original });
-  let shownPercent = 0;
+  let shownPercent = -1;
   try {
     return await convertVideo(file, {
-      ...convertedVideoSize(facts.width, facts.height),
       signal,
       onProgress: (progress) => {
         // mediabunny reports every frame; the tile only needs whole percents.
         const percent = Math.floor(progress * 100);
-        if (percent > shownPercent) {
+        if (percent !== shownPercent) {
           shownPercent = percent;
           dispatch({ type: MediaActionType.OptimizeProgressed, id, progress: percent / 100 });
         }
@@ -146,7 +140,7 @@ async function takeVideo(picked: PickedFile) {
     return;
   }
 
-  const tooLong = checkVideoLength(facts.durationMs);
+  const tooLong = videoLengthProblem(facts.durationMs);
   if (tooLong) {
     dispatch({ type: MediaActionType.Rejected, id, reason: tooLong });
     return;
@@ -155,7 +149,7 @@ async function takeVideo(picked: PickedFile) {
   const original = { bytes: file.size, width: facts.width, height: facts.height };
   const problem = originalVideoProblem(facts);
   if (shouldConvertVideo(facts)) {
-    const converted = await convert(picked, original, facts);
+    const converted = await convertPickedVideo(picked, original);
     if (signal.aborted) {
       return;
     }
@@ -176,7 +170,7 @@ async function takeVideo(picked: PickedFile) {
   dispatch({ type: MediaActionType.Ready, id, original, upload, previewUrl: null });
 }
 
-async function take(picked: PickedFile, kind: MediaKind) {
+async function processPickedFile(picked: PickedFile, kind: MediaKind) {
   try {
     await (kind === MediaKind.Image ? takeImage(picked) : takeVideo(picked));
   } catch (error) {
@@ -192,11 +186,11 @@ async function take(picked: PickedFile, kind: MediaKind) {
 
 /** Adds the picked files to the draft, in order, and starts checking them. */
 export async function addDraftFiles(files: File[]) {
-  const picked = await Promise.all(files.map(detectPickedFile));
+  const picked = await Promise.all(files.map((file) => new MediaDetector(file).detect()));
 
   // No await from here to the dispatch, so two quick picks cannot both take the last slot.
   const refusals = refusePicked(picked, acceptedCounts());
-  const ids = files.map(() => `local-${++fileCount}`);
+  const ids = files.map(() => `local-${nextFileNumber++}`);
   dispatch({
     type: MediaActionType.Added,
     items: picked.map(({ kind }, index) => ({ id: ids[index], file: files[index], kind })),
@@ -213,7 +207,7 @@ export async function addDraftFiles(files: File[]) {
 
     const controller = new AbortController();
     inProgress.set(id, controller);
-    void take({ id, file, photo, signal: controller.signal }, kind);
+    void processPickedFile({ id, file, photo, signal: controller.signal }, kind);
   });
 }
 

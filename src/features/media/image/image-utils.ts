@@ -27,7 +27,7 @@ export enum ImageFormat {
 }
 
 /** image-size's names for them; any other image it recognises is refused. */
-const FORMAT_BY_TYPE: Record<string, ImageFormat> = {
+const FORMAT_BY_TYPE: Partial<Record<string, ImageFormat>> = {
   jpg: ImageFormat.Jpeg,
   png: ImageFormat.Png,
   webp: ImageFormat.Webp,
@@ -50,7 +50,7 @@ export interface PhotoHeader extends ImageDimensions {
 export function readPhotoHeader(head: Uint8Array): PhotoHeader | null {
   try {
     const { type, width, height } = imageSize(head);
-    return { format: (type && FORMAT_BY_TYPE[type]) || null, width, height };
+    return { format: FORMAT_BY_TYPE[type ?? ''] ?? null, width, height };
   } catch {
     // image-size throws on bytes it cannot follow.
     return null;

@@ -18,6 +18,10 @@ import {
 import { UploadWait } from '@/features/media/upload/file-upload';
 import { MediaError } from '@/features/media/upload/upload-types';
 
+/** The same advice whether the phone or the server finds the clip unplayable. */
+const NOT_PLAYABLE =
+  'Video này không phát được trên mọi điện thoại. Hãy quay bằng camera của máy rồi chọn lại.';
+
 // ---- Before uploading ----
 
 /** What the seller reads under a refused file: why, and what to do instead. */
@@ -34,8 +38,7 @@ export const rejectMessages: Record<RejectReason, string> = {
   [RejectReason.VideoResolution]: `Video trên ${MAX_VIDEO_SHORT_EDGE}p. Hãy quay ở ${MAX_VIDEO_SHORT_EDGE}p rồi chọn lại.`,
   [RejectReason.VideoHevc]:
     'Video ở định dạng HEVC (hiệu quả cao) mà máy này chưa chuyển được. iPhone: Cài đặt > Camera > Định dạng > Tương thích nhất. Android: tắt HEVC trong cài đặt camera. Rồi quay lại.',
-  [RejectReason.VideoNotPlayable]:
-    'Video này không phát được trên mọi điện thoại. Hãy quay bằng camera của máy rồi chọn lại.',
+  [RejectReason.VideoNotPlayable]: NOT_PLAYABLE,
 };
 
 // ---- Uploading and processing ----
@@ -56,8 +59,7 @@ const mediaErrorMessages: Record<MediaError, string> = {
   [MediaError.UnsupportedFormat]: 'Máy chủ không đọc được tệp này. Hãy chọn tệp khác.',
   [MediaError.FileTooLarge]: 'Tệp quá lớn. Hãy chọn tệp nhỏ hơn.',
   [MediaError.VideoTooLong]: 'Video quá dài. Hãy cắt ngắn rồi chọn lại.',
-  [MediaError.VideoNotPlayable]:
-    'Video này không phát được trên mọi điện thoại. Hãy quay bằng camera của máy rồi chọn lại.',
+  [MediaError.VideoNotPlayable]: NOT_PLAYABLE,
   [MediaError.ImageTooSmall]: 'Ảnh quá nhỏ. Hãy chọn ảnh rõ hơn.',
   [MediaError.BlankImage]: 'Ảnh trống hoặc bị che. Hãy chụp lại.',
   [MediaError.ProcessingFailed]: 'Máy chủ chưa xử lý được tệp này. Hãy xoá và chọn lại.',

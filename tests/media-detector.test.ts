@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { detectPickedFile } from '@/features/media/detect-media';
+import { MediaDetector } from '@/features/media/media-detector';
 import { ImageFormat } from '@/features/media/image/image-utils';
 import { MediaKind, RejectReason } from '@/features/media/media-utils';
 
@@ -37,9 +37,9 @@ function withMetadata(jpeg: Uint8Array, count: number) {
 const mp4Head = (brand: string) =>
   new Uint8Array([0, 0, 0, 0x18, ...new TextEncoder().encode(`ftyp${brand}`), 0, 0, 0, 0]);
 
-describe('detectPickedFile', () => {
+describe('MediaDetector', () => {
   it('takes a photo it can read, with its format and size', async () => {
-    const detected = await detectPickedFile(pick(fixture('images', 'image-45x31.png')));
+    const detected = await new MediaDetector(pick(fixture('images', 'image-45x31.png'))).detect();
     expect(detected).toMatchObject({
       kind: MediaKind.Image,
       photo: { format: ImageFormat.Png, width: 45, height: 31 },
@@ -48,13 +48,13 @@ describe('detectPickedFile', () => {
 
   it('reads further for a JPEG whose metadata pushes its size past the first 256 KB', async () => {
     const jpeg = withMetadata(fixture('images', 'baseline-37x23.jpg'), 5);
-    const detected = await detectPickedFile(pick(jpeg));
+    const detected = await new MediaDetector(pick(jpeg)).detect();
     expect(detected.photo).toEqual({ format: ImageFormat.Jpeg, width: 37, height: 23 });
   });
 
   it('leaves an MP4 or MOV to the video checks, even with no file.type', async () => {
     for (const brand of ['isom', 'qt  ']) {
-      expect(await detectPickedFile(pick(mp4Head(brand)))).toEqual({
+      expect(await new MediaDetector(pick(mp4Head(brand))).detect()).toEqual({
         kind: MediaKind.Video,
         photo: null,
         problem: null,
@@ -70,7 +70,7 @@ describe('detectPickedFile', () => {
       [pdf, 'application/pdf'],
       [new Uint8Array(300 * 1024), ''],
     ] as const) {
-      expect((await detectPickedFile(pick(bytes, type))).problem).toBe(
+      expect((await new MediaDetector(pick(bytes, type)).detect()).problem).toBe(
         RejectReason.UnsupportedFormat,
       );
     }
@@ -78,7 +78,7 @@ describe('detectPickedFile', () => {
 
   it('refuses a photo format the app does not take', async () => {
     const gif = new TextEncoder().encode('GIF89a\x0a\x00\x14\x00\x00\x00\x00');
-    expect(await detectPickedFile(pick(gif, 'image/gif'))).toMatchObject({
+    expect(await new MediaDetector(pick(gif, 'image/gif')).detect()).toMatchObject({
       kind: MediaKind.Image,
       problem: RejectReason.UnsupportedFormat,
     });

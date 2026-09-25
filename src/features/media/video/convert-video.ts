@@ -7,7 +7,10 @@
  * between them. Whether that stays smooth on the main thread is a device check (media lab).
  */
 
-import { CONVERTED_BITRATE } from '@/features/media/video/video-utils';
+import { CONVERTED_SHORT_EDGE, VideoFormat } from '@/features/media/video/video-utils';
+
+/** About a fifth of a 1080p phone recording, and still sharp at 720p for a product clip. */
+const CONVERTED_BITRATE = 3_000_000;
 
 /** Faster clips are converted at this rate: product clips do not need 60 fps, and it halves the work. */
 const MAX_FRAME_RATE = 30;
@@ -18,11 +21,15 @@ export const canConvertVideos =
   typeof VideoEncoder !== 'undefined' && typeof VideoDecoder !== 'undefined';
 
 interface ConvertVideoOptions {
-  /** Display size of the result, from convertedVideoSize. */
-  width: number;
-  height: number;
   onProgress: (progress: number) => void;
   signal: AbortSignal;
+}
+
+/** 720p on the short side, same shape, even sides as H.264 needs. Never upscales. */
+export function convertedVideoSize(width: number, height: number) {
+  const scale = Math.min(1, CONVERTED_SHORT_EDGE / Math.min(width, height));
+  const even = (side: number) => Math.max(2, Math.round((side * scale) / 2) * 2);
+  return { width: even(width), height: even(height) };
 }
 
 /**
@@ -54,10 +61,13 @@ export async function convertVideo(file: Blob, options: ConvertVideoOptions): Pr
       output,
       tracks: 'primary',
       video: async (track) => {
-        const { averagePacketRate } = await track.computePacketStats(FRAME_RATE_SAMPLE_PACKETS);
+        const [{ averagePacketRate }, displayWidth, displayHeight] = await Promise.all([
+          track.computePacketStats(FRAME_RATE_SAMPLE_PACKETS),
+          track.getDisplayWidth(),
+          track.getDisplayHeight(),
+        ]);
         return {
-          width: options.width,
-          height: options.height,
+          ...convertedVideoSize(displayWidth, displayHeight),
           fit: 'fill',
           codec: 'avc',
           quality: new Quality({ bitrate: CONVERTED_BITRATE }),
@@ -83,7 +93,7 @@ export async function convertVideo(file: Blob, options: ConvertVideoOptions): Pr
     options.signal.throwIfAborted();
     const cancel = () => void conversion.cancel();
     options.signal.addEventListener('abort', cancel, { once: true });
-    conversion.onProgress = (progress) => options.onProgress(progress);
+    conversion.onProgress = options.onProgress;
     try {
       await conversion.execute();
     } finally {
@@ -93,7 +103,7 @@ export async function convertVideo(file: Blob, options: ConvertVideoOptions): Pr
     if (!target.buffer) {
       throw new Error('conversion produced no file');
     }
-    return new Blob([target.buffer], { type: 'video/mp4' });
+    return new Blob([target.buffer], { type: VideoFormat.Mp4 });
   } finally {
     input.dispose();
   }

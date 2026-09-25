@@ -5,7 +5,7 @@
  * it needs no budget; the bench still measures whether running more at once would pay.
  */
 
-import { type ImageDimensions } from '@/features/media/image/image-utils';
+import type { ImageDimensions } from '@/features/media/image/image-utils';
 import { MAX_EDGE } from '@/features/media/image/image-worker';
 
 const BYTES_PER_PIXEL = 4;

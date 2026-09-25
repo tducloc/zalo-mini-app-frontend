@@ -5,8 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { RejectReason } from '@/features/media/media-utils';
 import {
-  checkVideoLength,
-  convertedVideoSize,
+  videoLengthProblem,
   MAX_VIDEO_BYTES,
   originalVideoProblem,
   readVideoMetadata,
@@ -81,11 +80,11 @@ const IPHONE_1080P: VideoFacts = {
   height: 1920,
 };
 
-describe('checkVideoLength', () => {
+describe('videoLengthProblem', () => {
   it('allows the half second phones add to a 60 s recording', () => {
-    expect(checkVideoLength(60_400)).toBeNull();
-    expect(checkVideoLength(60_600)).toBe(RejectReason.VideoTooLong);
-    expect(checkVideoLength(null)).toBeNull();
+    expect(videoLengthProblem(60_400)).toBeNull();
+    expect(videoLengthProblem(60_600)).toBe(RejectReason.VideoTooLong);
+    expect(videoLengthProblem(null)).toBeNull();
   });
 });
 
@@ -139,18 +138,5 @@ describe('shouldConvertVideo', () => {
     const small = { ...IPHONE_1080P, width: 720, height: 1280, bytes: 20 * MB };
     expect(shouldConvertVideo(small)).toBe(false);
     expect(shouldConvertVideo({ ...small, bytes: 60 * MB })).toBe(true);
-  });
-});
-
-describe('convertedVideoSize', () => {
-  it('brings the short side to 720 and keeps the shape', () => {
-    expect(convertedVideoSize(1080, 1920)).toEqual({ width: 720, height: 1280 });
-    expect(convertedVideoSize(3840, 2160)).toEqual({ width: 1280, height: 720 });
-  });
-
-  it('rounds to even sides and never upscales', () => {
-    expect(convertedVideoSize(1080, 1350)).toEqual({ width: 720, height: 900 });
-    expect(convertedVideoSize(1440, 1080)).toEqual({ width: 960, height: 720 });
-    expect(convertedVideoSize(480, 853)).toEqual({ width: 480, height: 854 });
   });
 });

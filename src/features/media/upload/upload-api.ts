@@ -1,15 +1,14 @@
 /**
- * The network side of uploads: the media endpoints (api-spec.md, "Media"), the presigned
- * PUT to storage, and the online/offline signals, put together as the transport FileUpload
- * runs on. Every call an upload retries turns a failure into an UploadFailure, so the retry
- * rules see one kind of error whatever went wrong; `deleteMedia` is best effort and throws
- * the plain axios error.
+ * The HTTP calls of uploads: the media endpoints (api-spec.md, "Media") and the presigned
+ * PUT to storage. Every call an upload retries turns a failure into an UploadFailure, so
+ * the retry rules see one kind of error whatever went wrong; `deleteMedia` is best effort
+ * and throws the plain axios error.
  */
 
 import axios from 'axios';
 
 import { http } from '@/lib/http';
-import type { PutOptions, UploadTransport } from '@/features/media/upload/file-upload';
+import type { PutOptions } from '@/features/media/upload/file-upload';
 import {
   failureFromApiStatus,
   failureFromStorageStatus,
@@ -158,72 +157,3 @@ export async function putBlob(
     signal?.removeEventListener('abort', stop);
   }
 }
-
-// ---- Network state ----
-
-/**
- * While offline, look again this often: a WebView can miss the `online` event, or come
- * back from the background without one.
- */
-const NETWORK_RECHECK_MS = 5_000;
-/**
- * Stop waiting after this long and let an attempt find out: `onLine` can stay false in a
- * WebView that is online. If it really is offline, the attempt fails as offline and the
- * wait starts again, still using up no attempt.
- */
-const MAX_NETWORK_WAIT_MS = 60_000;
-
-// A WebView that does not know says true, which only means a lost network costs an attempt.
-const isOnline = () => navigator.onLine !== false;
-
-function waitForNetwork(signal: AbortSignal) {
-  return new Promise<void>((resolve, reject) => {
-    if (isOnline()) {
-      resolve();
-      return;
-    }
-
-    const startedAt = Date.now();
-    const stopListening = () => {
-      clearInterval(timer);
-      window.removeEventListener('online', check);
-      document.removeEventListener('visibilitychange', check);
-      signal.removeEventListener('abort', handleAbort);
-    };
-    const check = () => {
-      if (isOnline() || Date.now() - startedAt >= MAX_NETWORK_WAIT_MS) {
-        stopListening();
-        resolve();
-      }
-    };
-    const handleAbort = () => {
-      stopListening();
-      reject(signal.reason);
-    };
-
-    const timer = setInterval(check, NETWORK_RECHECK_MS);
-    window.addEventListener('online', check);
-    document.addEventListener('visibilitychange', check);
-    signal.addEventListener('abort', handleAbort, { once: true });
-    if (signal.aborted) {
-      handleAbort();
-    }
-  });
-}
-
-export const browserTransport: UploadTransport = {
-  register: async (file) => {
-    const [target] = await registerUploads([file]);
-    if (!target) {
-      throw new UploadFailure(FailureKind.Server, 'no upload target returned');
-    }
-    return target;
-  },
-  refresh: refreshUploadUrl,
-  put: putBlob,
-  completeParts,
-  complete: completeUpload,
-  isOnline,
-  waitForNetwork,
-  now: Date.now,
-};

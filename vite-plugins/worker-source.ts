@@ -6,7 +6,7 @@ import type { Plugin } from 'vite';
 const SUFFIX = '?worker-source';
 
 /**
- * `import source from '@/…/image/worker.ts?worker-source'` gives that file bundled with its
+ * `import source from '@/…/image/image-worker-thread.ts?worker-source'` gives that file bundled with its
  * imports into one minified classic script, as a string, to start a worker from a Blob URL.
  *
  * Why not a script URL: inside Zalo the app is served with `base: ''` from a custom origin,

@@ -1,13 +1,15 @@
 /**
  * What the app checks on a picked video: its metadata, read by mediabunny, and whether the
- * server would take the file as it is or it should be converted to 720p first
- * (convert-video.ts).
+ * server would take the file as it is or it should be converted to 720p first (the
+ * conversion itself is convert-video.ts).
  *
  * mediabunny reads only the boxes it needs (a few KB of a 150 MB file), so this is instant
  * and never loads the video into memory. A <video> element cannot do this on iPhone:
  * WebKit does not load one outside a user gesture, so loadedmetadata never fires. The
  * library is imported on demand to keep it out of the main bundle.
  */
+
+import type { InputTrack } from 'mediabunny';
 
 import { MIB, RejectReason } from '@/features/media/media-utils';
 
@@ -18,9 +20,8 @@ const VIDEO_DURATION_TOLERANCE_MS = 500;
 const MAX_VIDEO_LONG_EDGE = 1920;
 export const MAX_VIDEO_SHORT_EDGE = 1080;
 
-/** Conversion target (plans/create-listing.md, "Video on the client"). */
-const CONVERTED_SHORT_EDGE = 720;
-export const CONVERTED_BITRATE = 3_000_000;
+/** Conversion target (plans/create-listing.md, "Video on the client"): 720p. */
+export const CONVERTED_SHORT_EDGE = 720;
 /** A clip already at or below 720p is converted only when its bitrate is above this. */
 const CONVERT_ABOVE_BITRATE = 4_000_000;
 
@@ -35,8 +36,6 @@ export enum VideoFormat {
   Mp4 = 'video/mp4',
   QuickTime = 'video/quicktime',
 }
-
-// ---- Reading ----
 
 export interface VideoMetadata {
   format: VideoFormat;
@@ -60,12 +59,7 @@ export interface VideoMetadata {
   rotation: number;
 }
 
-interface CodecTrack {
-  getCodec(): Promise<string | null>;
-  getInternalCodecId(): Promise<string | number | Uint8Array | null>;
-}
-
-async function codecName(track: CodecTrack | null) {
+async function codecName(track: InputTrack | null) {
   if (!track) {
     return null;
   }
@@ -120,8 +114,6 @@ export async function readVideoMetadata(source: Blob | string): Promise<VideoMet
   }
 }
 
-// ---- Checking ----
-
 /** What the checks below need: the metadata plus the file's size. */
 export type VideoFacts = Pick<
   VideoMetadata,
@@ -129,7 +121,7 @@ export type VideoFacts = Pick<
 > & { bytes: number };
 
 /** A length the file does not state passes; the server measures it. */
-export function checkVideoLength(durationMs: number | null) {
+export function videoLengthProblem(durationMs: number | null) {
   return durationMs !== null && durationMs > MAX_VIDEO_DURATION_MS + VIDEO_DURATION_TOLERANCE_MS
     ? RejectReason.VideoTooLong
     : null;
@@ -187,11 +179,4 @@ export function shouldConvertVideo(video: VideoFacts) {
     return (video.bytes * 8 * 1000) / video.durationMs > CONVERT_ABOVE_BITRATE;
   }
   return false;
-}
-
-/** 720p on the short side, same shape, even sides as H.264 needs. Never upscales. */
-export function convertedVideoSize(width: number, height: number) {
-  const scale = Math.min(1, CONVERTED_SHORT_EDGE / Math.min(width, height));
-  const even = (side: number) => Math.max(2, Math.round((side * scale) / 2) * 2);
-  return { width: even(width), height: even(height) };
 }

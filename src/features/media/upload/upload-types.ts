@@ -1,6 +1,6 @@
 /** Shapes of the media upload endpoints (api-spec.md, "Media"). */
 
-import { type MediaKind } from '@/features/media/media-utils';
+import type { MediaKind } from '@/features/media/media-utils';
 
 export enum ServerMediaStatus {
   Uploading = 'UPLOADING',

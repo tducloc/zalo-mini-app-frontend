@@ -1,12 +1,12 @@
 /**
  * The page's side of the image worker: starts one worker thread and sends it photos.
- * What the thread does with them is in worker.ts; which photo goes when is image-queue.ts.
+ * What the thread does with them is in image-worker-thread.ts; which photo goes when is image-queue.ts.
  *
  * There is no main-thread fallback (decided 2026-09-24): a phone without OffscreenCanvas
  * (iOS 15.1–16.3) uploads the original photo instead, because decoding and scaling a 12 MP
  * photo on the main thread freezes the form on exactly the slowest phones.
  */
-import workerSource from '@/features/media/image/worker.ts?worker-source';
+import workerSource from '@/features/media/image/image-worker-thread.ts?worker-source';
 
 /** Long edge of the uploaded photo. The server scales anything larger to the same size. */
 export const MAX_EDGE = 1280;
@@ -24,7 +24,7 @@ const JOB_TIMEOUT_MS = 30_000;
 export const canOptimizeImages =
   typeof OffscreenCanvas !== 'undefined' && typeof Worker !== 'undefined';
 
-// ---- Messages between the page and the thread (worker.ts imports these as types) ----
+// ---- Messages between the page and the thread (image-worker-thread.ts imports these as types) ----
 
 export type PipelineStep = 'decode' | 'draw' | 'encode';
 

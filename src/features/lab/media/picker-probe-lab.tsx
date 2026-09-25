@@ -17,7 +17,7 @@ import {
 import { createStageBreadcrumb } from '@/features/lab/media/stage-breadcrumb';
 import { MIB, RejectReason } from '@/features/media/media-utils';
 import {
-  checkVideoLength,
+  videoLengthProblem,
   originalVideoProblem,
   readVideoMetadata,
   shouldConvertVideo,
@@ -79,7 +79,7 @@ async function probeVideo(path: string, size: number) {
   const started = Date.now();
   const meta = await readVideoMetadata(path);
   const facts = { ...meta, bytes: size };
-  const problem = checkVideoLength(meta.durationMs) ?? originalVideoProblem(facts);
+  const problem = videoLengthProblem(meta.durationMs) ?? originalVideoProblem(facts);
   const plan = shouldConvertVideo(facts) ? 'chuyển 720p nếu máy làm được' : 'gửi bản gốc';
   return [
     `  ↳ mediabunny · ${Date.now() - started} ms · ${meta.mimeType}`,

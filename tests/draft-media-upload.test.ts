@@ -4,7 +4,7 @@ import type { DraftMedia } from '@/features/listings/draft/media-reducer';
 import { MediaKind } from '@/features/media/media-utils';
 import type { UploadRequestFile } from '@/features/media/upload/upload-types';
 
-// The network, replaced: the real module runs against these.
+// The network, replaced: the real modules run against these.
 const api = vi.hoisted(() => ({
   registerUploads: vi.fn(),
   refreshUploadUrl: vi.fn(),
@@ -15,21 +15,8 @@ const api = vi.hoisted(() => ({
 }));
 const storage = vi.hoisted(() => ({ putBlob: vi.fn() }));
 
-vi.mock('@/features/media/upload/upload-api', () => ({
-  ...api,
-  putBlob: storage.putBlob,
-  // The real transport's shape, over the mocks above.
-  browserTransport: {
-    register: async (file: UploadRequestFile) => (await api.registerUploads([file]))[0],
-    refresh: api.refreshUploadUrl,
-    put: storage.putBlob,
-    completeParts: api.completeParts,
-    complete: api.completeUpload,
-    isOnline: () => true,
-    waitForNetwork: async () => {},
-    now: () => Date.now(),
-  },
-}));
+// Only the HTTP calls are replaced; the real browser transport runs on top of them.
+vi.mock('@/features/media/upload/upload-api', () => ({ ...api, putBlob: storage.putBlob }));
 
 const LATER = '2099-01-01T00:00:00Z';
 const file = new File(['0123456789'], 'photo.jpg');
