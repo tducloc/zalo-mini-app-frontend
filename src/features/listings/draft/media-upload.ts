@@ -12,12 +12,13 @@ import {
   DraftMediaStatus,
   isServerSettled,
   type MediaAction,
+  MediaActionType,
   type ReadyDraftMedia,
   type UploadedDraftMedia,
 } from '@/features/listings/draft/media-reducer';
 import { useListingDraftStore } from '@/features/listings/draft/store';
 import { FileUpload, type UploadListener } from '@/features/media/upload/file-upload';
-import { FailureKind, pollDelayMs } from '@/features/media/upload/retry-policy';
+import { FailureKind } from '@/features/media/upload/retry-policy';
 import {
   browserTransport,
   deleteMedia,
@@ -25,6 +26,7 @@ import {
 } from '@/features/media/upload/upload-api';
 import {
   MediaError,
+  type MediaStatusItem,
   type ServerMedia,
   ServerMediaStatus,
   type UploadRequestFile,
@@ -38,28 +40,27 @@ import { warnInDev } from '@/utils/dev-log';
  */
 const FILES_IN_FLIGHT = 2;
 
-enum Phase {
-  /** In the upload queue, waiting for a free slot or running. */
-  Queued = 'QUEUED',
-  Failed = 'FAILED',
-  Uploaded = 'UPLOADED',
-}
+/**
+ * How often to ask the server about files it is processing: a photo takes a second or
+ * two, a video up to a minute. One request covers every file, so a steady pace is cheap.
+ */
+const POLL_INTERVAL_MS = 3_000;
+
+/** Right after `complete`: no thumbnail or reason yet. */
+const NOTHING_YET: ServerMedia = {
+  status: ServerMediaStatus.Processing,
+  thumbnailUrl: null,
+  placeholder: null,
+  error: null,
+};
 
 interface UploadEntry {
   upload: FileUpload;
+  /** Aborted when the seller removes the file. */
   controller: AbortController;
-  phase: Phase;
   /** Why the last run failed, when it did. */
   failure: FailureKind | null;
 }
-
-/** For a media the server no longer lists, e.g. after the hourly cleanup. */
-const MISSING_ON_SERVER: ServerMedia = {
-  status: ServerMediaStatus.Failed,
-  thumbnailUrl: null,
-  placeholder: null,
-  error: MediaError.Missing,
-};
 
 /** One per draft file that is ready to upload or further on, by draft ID, until removed. */
 const entries = new Map<string, UploadEntry>();
@@ -67,10 +68,11 @@ const entries = new Map<string, UploadEntry>();
 const uploadQueue = new PQueue({ concurrency: FILES_IN_FLIGHT });
 
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
-let pollRound = 0;
 let isPolling = false;
 
 const draftMedia = () => useListingDraftStore.getState().media;
+
+const statusOf = (id: string) => draftMedia().find((item) => item.id === id)?.status;
 
 const dispatch = (action: MediaAction) => useListingDraftStore.getState().dispatchMedia(action);
 
@@ -81,12 +83,7 @@ function deleteQuietly(mediaId: string) {
   deleteMedia(mediaId).catch((error: unknown) => warn('could not delete media', error));
 }
 
-const justUploaded = (status: ServerMediaStatus): ServerMedia => ({
-  status,
-  thumbnailUrl: null,
-  placeholder: null,
-  error: null,
-});
+// ---- Uploading ----
 
 function requestFor(media: ReadyDraftMedia): UploadRequestFile {
   return {
@@ -107,12 +104,11 @@ function requestFor(media: ReadyDraftMedia): UploadRequestFile {
  * is fresh, and the limit of 60 an hour is per seller, far above the 11 a listing needs.
  */
 function queueReady() {
-  for (const item of useListingDraftStore.getState().media) {
+  for (const item of draftMedia()) {
     if (item.status === DraftMediaStatus.ReadyToUpload && !entries.has(item.id)) {
       const entry: UploadEntry = {
         upload: new FileUpload(requestFor(item), item.upload.blob, browserTransport),
         controller: new AbortController(),
-        phase: Phase.Queued,
         failure: null,
       };
       entries.set(item.id, entry);
@@ -138,50 +134,67 @@ function listenerFor(id: string, entry: UploadEntry): UploadListener {
       }
     },
     onProgress: (fraction) => {
-      // XHR reports every few KB; the tile only needs whole percents.
+      // Progress comes every few KB; the tile only needs whole percents.
       const percent = Math.floor(fraction * 100);
       if (percent !== shownPercent) {
         shownPercent = percent;
-        dispatch({ type: 'progressed', id, progress: percent / 100 });
+        dispatch({ type: MediaActionType.UploadProgressed, id, progress: percent / 100 });
       }
     },
-    onWaiting: (waitingFor) => dispatch({ type: 'uploadWaiting', id, waitingFor }),
-    onResumed: () => dispatch({ type: 'uploadResumed', id }),
+    onWaiting: (waitingFor) => dispatch({ type: MediaActionType.UploadWaiting, id, waitingFor }),
+    onResumed: () => dispatch({ type: MediaActionType.UploadResumed, id }),
   };
 }
 
 async function runUpload(id: string, entry: UploadEntry) {
-  dispatch({ type: 'uploadStarted', id });
+  dispatch({ type: MediaActionType.UploadStarted, id });
   try {
     const result = await entry.upload.run(listenerFor(id, entry), entry.controller.signal);
     if (entry.controller.signal.aborted) {
       return;
     }
-    if (result.kind === 'uploaded') {
-      entry.phase = Phase.Uploaded;
-      dispatch({
-        type: 'uploaded',
-        id,
-        mediaId: result.mediaId,
-        server: justUploaded(result.status),
-      });
-      pollSoon();
-    } else {
-      entry.phase = Phase.Failed;
+    if (result.kind === 'failed') {
       entry.failure = result.failure;
-      dispatch({ type: 'uploadFailed', id, isRetryable: result.isRetryable });
+      dispatch({ type: MediaActionType.UploadFailed, id, isRetryable: result.isRetryable });
+      return;
     }
+    const server = { ...NOTHING_YET, status: result.status };
+    dispatch({ type: MediaActionType.Uploaded, id, mediaId: result.mediaId, server });
+    schedulePoll();
   } catch (error) {
     // Rejects only when removed, apart from a bug; the seller can still retry that.
     if (!entry.controller.signal.aborted) {
       warn('upload stopped unexpectedly', error);
-      entry.phase = Phase.Failed;
-      dispatch({ type: 'uploadFailed', id, isRetryable: true });
+      dispatch({ type: MediaActionType.UploadFailed, id, isRetryable: true });
     }
   }
 }
 
+function requeue(id: string, entry: UploadEntry) {
+  entry.failure = null;
+  entry.upload.markUrlsStale();
+  dispatch({ type: MediaActionType.UploadQueued, id });
+  enqueue(id, entry);
+}
+
 // ---- Processing status, until each file is ready or failed ----
+
+const isMediaError = (code: string): code is MediaError =>
+  Object.values<string>(MediaError).includes(code);
+
+/** A FAILED gets a reason the app knows, so it settles and is not asked about forever. */
+function serverMediaFrom(item: MediaStatusItem | undefined): ServerMedia {
+  if (!item) {
+    // No longer listed, e.g. removed by the hourly cleanup.
+    return { ...NOTHING_YET, status: ServerMediaStatus.Failed, error: MediaError.Missing };
+  }
+  const { status, thumbnailUrl, placeholder, error } = item;
+  if (status !== ServerMediaStatus.Failed) {
+    return { status, thumbnailUrl, placeholder, error: null };
+  }
+  const reason = error && isMediaError(error) ? error : MediaError.ProcessingFailed;
+  return { status, thumbnailUrl, placeholder, error: reason };
+}
 
 function mediaToPoll() {
   return draftMedia().filter(
@@ -190,38 +203,26 @@ function mediaToPoll() {
   );
 }
 
+/** One request at a time, every POLL_INTERVAL_MS while some file is still processing. */
 function schedulePoll() {
-  clearTimeout(pollTimer);
-  if (isPolling || mediaToPoll().length === 0) {
+  if (pollTimer !== undefined || isPolling || mediaToPoll().length === 0) {
     return;
   }
-  pollTimer = setTimeout(() => void pollStatuses(), pollDelayMs(pollRound));
-  pollRound += 1;
+  pollTimer = setTimeout(() => {
+    pollTimer = undefined;
+    void pollStatuses();
+  }, POLL_INTERVAL_MS);
 }
 
-/** A file just finished uploading: ask quickly again, then less often. */
-function pollSoon() {
-  pollRound = 0;
-  schedulePoll();
-}
-
-/** One request at a time; the one in flight schedules the next when it answers. */
 async function pollStatuses() {
   const waiting = mediaToPoll();
-  if (waiting.length === 0) {
-    return;
-  }
-
   isPolling = true;
   try {
     const statuses = await fetchMediaStatuses(waiting.map((item) => item.mediaId));
-    const byId = new Map(statuses.map((status) => [status.id, status]));
+    const byId = new Map(statuses.map((item) => [item.id, item]));
     for (const item of waiting) {
-      dispatch({
-        type: 'serverUpdated',
-        id: item.id,
-        server: serverMediaFrom(byId.get(item.mediaId)),
-      });
+      const server = serverMediaFrom(byId.get(item.mediaId));
+      dispatch({ type: MediaActionType.ServerUpdated, id: item.id, server });
     }
   } catch (error) {
     // The next round asks again.
@@ -232,33 +233,12 @@ async function pollStatuses() {
   schedulePoll();
 }
 
-function serverMediaFrom(status: ServerMedia | undefined): ServerMedia {
-  if (!status) {
-    return MISSING_ON_SERVER;
-  }
-  // A FAILED without a reason would be asked about forever; any reason settles it.
-  const isFailedWithoutReason = status.status === ServerMediaStatus.Failed && !status.error;
-  return {
-    status: status.status,
-    thumbnailUrl: status.thumbnailUrl,
-    placeholder: status.placeholder,
-    error: isFailedWithoutReason ? MediaError.ProcessingFailed : status.error,
-  };
-}
-
 // ---- What the draft and the form call ----
 
-function requeue(id: string, entry: UploadEntry) {
-  entry.phase = Phase.Queued;
-  entry.failure = null;
-  entry.upload.markUrlsStale();
-  enqueue(id, entry);
-}
-
-/** The seller tapped Retry on a failed upload. */
+/** The seller tapped Retry on a failed upload; a second tap finds it queued already. */
 export function retryUpload(id: string) {
   const entry = entries.get(id);
-  if (entry?.phase === Phase.Failed) {
+  if (entry && statusOf(id) === DraftMediaStatus.UploadFailed) {
     requeue(id, entry);
   }
 }
@@ -277,12 +257,12 @@ export function cancelUpload(id: string) {
 }
 
 /**
- * Uploads that ran out of attempts for lack of network start again once it is back, e.g.
- * after a lift ride that outlasted the retry waits; the seller need not tap Retry.
+ * Uploads that failed for lack of network start again once it is back, e.g. when the
+ * WebView said online all along; the seller need not tap Retry.
  */
 function retryAfterNetworkLoss() {
   for (const [id, entry] of entries) {
-    if (entry.phase === Phase.Failed && entry.failure === FailureKind.Network) {
+    if (entry.failure === FailureKind.Network && statusOf(id) === DraftMediaStatus.UploadFailed) {
       requeue(id, entry);
     }
   }
@@ -296,5 +276,6 @@ if (typeof window !== 'undefined') {
 // Dev only: a hot reload would otherwise leave the old module uploading the same files too.
 import.meta.hot?.dispose(() => {
   unsubscribe();
+  clearTimeout(pollTimer);
   window.removeEventListener('online', retryAfterNetworkLoss);
 });

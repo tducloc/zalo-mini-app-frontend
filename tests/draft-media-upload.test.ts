@@ -40,7 +40,8 @@ async function loadModules() {
   const { useListingDraftStore } = await import('@/features/listings/draft/store');
   const upload = await import('@/features/listings/draft/media-upload');
   const { FailureKind, UploadFailure } = await import('@/features/media/upload/retry-policy');
-  const { DraftMediaStatus } = await import('@/features/listings/draft/media-reducer');
+  const { DraftMediaStatus, MediaActionType } =
+    await import('@/features/listings/draft/media-reducer');
   const { ServerMediaStatus, MediaError } = await import('@/features/media/upload/upload-types');
   return {
     useListingDraftStore,
@@ -48,6 +49,7 @@ async function loadModules() {
     FailureKind,
     UploadFailure,
     DraftMediaStatus,
+    MediaActionType,
     ServerMediaStatus,
     MediaError,
   };
@@ -61,12 +63,15 @@ const statusOf = (id: string) => find(id)?.status;
 
 function addPhotos(...ids: string[]) {
   const dispatch = modules.useListingDraftStore.getState().dispatchMedia;
-  dispatch({ type: 'added', items: ids.map((id) => ({ id, kind: MediaKind.Image, file })) });
+  dispatch({
+    type: modules.MediaActionType.Added,
+    items: ids.map((id) => ({ id, kind: MediaKind.Image, file })),
+  });
 }
 
 function markReady(id: string) {
   modules.useListingDraftStore.getState().dispatchMedia({
-    type: 'ready',
+    type: modules.MediaActionType.Ready,
     id,
     original: { bytes: 10, width: 800, height: 600 },
     upload: { blob: file, contentType: 'image/jpeg', optimized: true },
@@ -213,8 +218,8 @@ describe('media-upload', () => {
     addPhotos('a', 'b');
     markReady('a');
     markReady('b');
-    // Two rounds: 2 s, then 3 s.
-    await vi.advanceTimersByTimeAsync(5_000);
+    // Two rounds, 3 s apart.
+    await vi.advanceTimersByTimeAsync(6_000);
 
     const item = find('a');
     expect(item.status === modules.DraftMediaStatus.Uploaded && item.server.thumbnailUrl).toBe(
@@ -245,11 +250,11 @@ describe('media-upload', () => {
 
     addPhotos('a');
     markReady('a');
-    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(3_000);
 
     const item = find('a');
     expect(item.status === modules.DraftMediaStatus.Uploaded && item.server.error).toBe(
-      'VIDEO_TOO_LONG',
+      modules.MediaError.VideoTooLong,
     );
     expect(api.fetchMediaStatuses).toHaveBeenCalledTimes(1);
   });

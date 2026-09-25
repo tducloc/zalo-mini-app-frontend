@@ -1,13 +1,17 @@
 /**
- * The client state of each file in the listing draft (diagram 00, client part): checking and
- * optimizing (media-intake.ts), then uploading (media-upload.ts), then the server's status.
+ * The client state of each file in the listing draft (diagram 00, client part). Two flows
+ * move a file forward, each with its own actions:
  *
- * Pure: services dispatch what happened, this decides whether it applies. An event for a
- * file that was removed, or that is no longer in the state the event assumes, is ignored;
- * that is how a result arriving after the seller removed the file is dropped.
+ * - intake (media-intake.ts): Checking → Rejected, or Optimizing → ReadyToUpload;
+ * - upload (media-upload.ts): ReadyToUpload → Uploading ⇄ Retrying → UploadFailed or
+ *   Uploaded, then the server's status until it is READY or FAILED.
+ *
+ * Pure: services dispatch what happened, this decides whether it applies. An action for a
+ * file that was removed, or that is no longer in a state the action starts from, is
+ * ignored; that is how a result arriving after the seller removed the file is dropped.
  */
 
-import { type MediaKind, type RejectReason } from '@/features/media/media-utils';
+import type { MediaKind, RejectReason } from '@/features/media/media-utils';
 import { type ServerMedia, ServerMediaStatus } from '@/features/media/upload/upload-types';
 import type { UploadWait } from '@/features/media/upload/file-upload';
 
@@ -88,27 +92,57 @@ type PreparedDraftMedia = Extract<DraftMedia, PreparedMedia>;
 export type ReadyDraftMedia = Extract<DraftMedia, { status: DraftMediaStatus.ReadyToUpload }>;
 export type UploadedDraftMedia = Extract<DraftMedia, { status: DraftMediaStatus.Uploaded }>;
 
-export type MediaAction =
-  | { type: 'added'; items: BaseMedia[] }
-  | { type: 'rejected'; id: string; reason: RejectReason }
-  | { type: 'optimizing'; id: string; original: OriginalFile }
-  | { type: 'progressed'; id: string; progress: number }
+export enum MediaActionType {
+  // The list
+  Added = 'ADDED',
+  Removed = 'REMOVED',
+  Cleared = 'CLEARED',
+  // Intake
+  Rejected = 'REJECTED',
+  OptimizeStarted = 'OPTIMIZE_STARTED',
+  OptimizeProgressed = 'OPTIMIZE_PROGRESSED',
+  Ready = 'READY',
+  // Upload
+  /** Back in the upload queue after the seller tapped Retry. */
+  UploadQueued = 'UPLOAD_QUEUED',
+  UploadStarted = 'UPLOAD_STARTED',
+  UploadProgressed = 'UPLOAD_PROGRESSED',
+  UploadWaiting = 'UPLOAD_WAITING',
+  /** The next attempt starts after a wait. */
+  UploadResumed = 'UPLOAD_RESUMED',
+  UploadFailed = 'UPLOAD_FAILED',
+  Uploaded = 'UPLOADED',
+  ServerUpdated = 'SERVER_UPDATED',
+}
+
+type ListAction =
+  | { type: MediaActionType.Added; items: BaseMedia[] }
+  | { type: MediaActionType.Removed; id: string }
+  | { type: MediaActionType.Cleared };
+
+type IntakeAction =
+  | { type: MediaActionType.Rejected; id: string; reason: RejectReason }
+  | { type: MediaActionType.OptimizeStarted; id: string; original: OriginalFile }
+  | { type: MediaActionType.OptimizeProgressed; id: string; progress: number }
   | {
-      type: 'ready';
+      type: MediaActionType.Ready;
       id: string;
       original: OriginalFile;
       upload: UploadSource;
       previewUrl: string | null;
-    }
-  | { type: 'uploadStarted'; id: string }
-  | { type: 'uploadWaiting'; id: string; waitingFor: UploadWait }
-  /** The next attempt starts after a wait. */
-  | { type: 'uploadResumed'; id: string }
-  | { type: 'uploadFailed'; id: string; isRetryable: boolean }
-  | { type: 'uploaded'; id: string; mediaId: string; server: ServerMedia }
-  | { type: 'serverUpdated'; id: string; server: ServerMedia }
-  | { type: 'removed'; id: string }
-  | { type: 'cleared' };
+    };
+
+type UploadAction =
+  | { type: MediaActionType.UploadQueued; id: string }
+  | { type: MediaActionType.UploadStarted; id: string }
+  | { type: MediaActionType.UploadProgressed; id: string; progress: number }
+  | { type: MediaActionType.UploadWaiting; id: string; waitingFor: UploadWait }
+  | { type: MediaActionType.UploadResumed; id: string }
+  | { type: MediaActionType.UploadFailed; id: string; isRetryable: boolean }
+  | { type: MediaActionType.Uploaded; id: string; mediaId: string; server: ServerMedia }
+  | { type: MediaActionType.ServerUpdated; id: string; server: ServerMedia };
+
+export type MediaAction = ListAction | IntakeAction | UploadAction;
 
 /**
  * The server is done with the media: READY, or FAILED with its reason. `complete` can answer
@@ -118,130 +152,145 @@ export const isServerSettled = (server: ServerMedia) =>
   server.status === ServerMediaStatus.Ready ||
   (server.status === ServerMediaStatus.Failed && server.error !== null);
 
-type FileEvent = Exclude<MediaAction, { type: 'added' | 'removed' | 'cleared' }>;
+// ---- Intake ----
+
+/** The states each intake action starts from. */
+const INTAKE_FROM: Record<IntakeAction['type'], DraftMediaStatus[]> = {
+  [MediaActionType.Rejected]: [DraftMediaStatus.Checking, DraftMediaStatus.Optimizing],
+  [MediaActionType.OptimizeStarted]: [DraftMediaStatus.Checking],
+  [MediaActionType.OptimizeProgressed]: [DraftMediaStatus.Optimizing],
+  [MediaActionType.Ready]: [DraftMediaStatus.Checking, DraftMediaStatus.Optimizing],
+};
+
+const isIntakeAction = (action: IntakeAction | UploadAction): action is IntakeAction =>
+  action.type in INTAKE_FROM;
+
+// Field by field on purpose: spreading `media` would carry the previous state's fields
+// (progress, reason, …) into the next one.
+const fileOf = ({ id, kind, file }: DraftMedia): BaseMedia => ({ id, kind, file });
+
+function applyIntake(media: DraftMedia, action: IntakeAction): DraftMedia {
+  switch (action.type) {
+    case MediaActionType.Rejected:
+      return { ...fileOf(media), status: DraftMediaStatus.Rejected, reason: action.reason };
+    case MediaActionType.OptimizeStarted:
+      return {
+        ...fileOf(media),
+        status: DraftMediaStatus.Optimizing,
+        original: action.original,
+        progress: null,
+      };
+    case MediaActionType.OptimizeProgressed:
+      return media.status === DraftMediaStatus.Optimizing
+        ? { ...media, progress: action.progress }
+        : media;
+    case MediaActionType.Ready:
+      return {
+        ...fileOf(media),
+        status: DraftMediaStatus.ReadyToUpload,
+        original: action.original,
+        upload: action.upload,
+        previewUrl: action.previewUrl,
+      };
+  }
+}
+
+// ---- Upload ----
 
 const UPLOAD_IN_PROGRESS = [DraftMediaStatus.Uploading, DraftMediaStatus.Retrying];
 
-/** Which states each event may leave; anything else is a stale event. */
-const LEAVES_FROM: Record<FileEvent['type'], DraftMediaStatus[]> = {
-  rejected: [DraftMediaStatus.Checking, DraftMediaStatus.Optimizing],
-  optimizing: [DraftMediaStatus.Checking],
-  progressed: [DraftMediaStatus.Optimizing, DraftMediaStatus.Uploading],
-  ready: [DraftMediaStatus.Checking, DraftMediaStatus.Optimizing],
-  uploadStarted: [DraftMediaStatus.ReadyToUpload, DraftMediaStatus.UploadFailed],
-  uploadWaiting: UPLOAD_IN_PROGRESS,
-  uploadResumed: [DraftMediaStatus.Retrying],
-  uploadFailed: UPLOAD_IN_PROGRESS,
-  uploaded: UPLOAD_IN_PROGRESS,
-  serverUpdated: [DraftMediaStatus.Uploaded],
+/** The states each upload action starts from; all of them are past ReadyToUpload. */
+const UPLOAD_FROM: Record<UploadAction['type'], DraftMediaStatus[]> = {
+  [MediaActionType.UploadQueued]: [DraftMediaStatus.UploadFailed],
+  [MediaActionType.UploadStarted]: [DraftMediaStatus.ReadyToUpload],
+  [MediaActionType.UploadProgressed]: [DraftMediaStatus.Uploading],
+  [MediaActionType.UploadWaiting]: UPLOAD_IN_PROGRESS,
+  [MediaActionType.UploadResumed]: [DraftMediaStatus.Retrying],
+  [MediaActionType.UploadFailed]: UPLOAD_IN_PROGRESS,
+  [MediaActionType.Uploaded]: UPLOAD_IN_PROGRESS,
+  [MediaActionType.ServerUpdated]: [DraftMediaStatus.Uploaded],
 };
 
 const isPrepared = (media: DraftMedia): media is PreparedDraftMedia => 'upload' in media;
 
-/** Upload events, for a file past ready-to-upload (LEAVES_FROM guarantees it). */
-function applyUploadEvent(media: PreparedDraftMedia, action: FileEvent): DraftMedia {
-  // Field by field on purpose: spreading `media` would carry the previous state's fields
-  // (progress, isRetryable, …) into the next one.
-  const prepared = {
-    id: media.id,
-    kind: media.kind,
-    file: media.file,
-    original: media.original,
-    upload: media.upload,
-    previewUrl: media.previewUrl,
-  };
+const preparedOf = (media: PreparedDraftMedia): PreparedMedia => ({
+  ...fileOf(media),
+  original: media.original,
+  upload: media.upload,
+  previewUrl: media.previewUrl,
+});
+
+function applyUpload(media: PreparedDraftMedia, action: UploadAction): DraftMedia {
+  const prepared = preparedOf(media);
   // Kept across a retry, so a video that had half its parts in storage does not start at 0.
   const progress = 'progress' in media ? media.progress : 0;
 
   switch (action.type) {
-    case 'uploadStarted':
-    case 'uploadResumed':
+    case MediaActionType.UploadQueued:
+      return { ...prepared, status: DraftMediaStatus.ReadyToUpload };
+    case MediaActionType.UploadStarted:
+    case MediaActionType.UploadResumed:
       return { ...prepared, status: DraftMediaStatus.Uploading, progress };
-    case 'progressed':
+    case MediaActionType.UploadProgressed:
       return { ...prepared, status: DraftMediaStatus.Uploading, progress: action.progress };
-    case 'uploadWaiting':
+    case MediaActionType.UploadWaiting:
       return {
         ...prepared,
         status: DraftMediaStatus.Retrying,
         progress,
         waitingFor: action.waitingFor,
       };
-    case 'uploadFailed':
+    case MediaActionType.UploadFailed:
       return {
         ...prepared,
         status: DraftMediaStatus.UploadFailed,
         isRetryable: action.isRetryable,
       };
-    case 'uploaded':
+    case MediaActionType.Uploaded:
       return {
         ...prepared,
         status: DraftMediaStatus.Uploaded,
         mediaId: action.mediaId,
         server: action.server,
       };
-    case 'serverUpdated':
+    case MediaActionType.ServerUpdated:
       // A slow poll answering after a newer one must not take a settled tile back.
       return media.status === DraftMediaStatus.Uploaded && !isServerSettled(media.server)
         ? { ...media, server: action.server }
         : media;
-    default:
-      return media;
   }
 }
 
-function applyEvent(media: DraftMedia, action: FileEvent): DraftMedia {
-  const base = { id: media.id, kind: media.kind, file: media.file };
+// ---- The reducer ----
 
-  if (isPrepared(media)) {
-    return applyUploadEvent(media, action);
+function applyToFile(media: DraftMedia, action: IntakeAction | UploadAction): DraftMedia {
+  if (isIntakeAction(action)) {
+    return INTAKE_FROM[action.type].includes(media.status) ? applyIntake(media, action) : media;
   }
-
-  switch (action.type) {
-    case 'rejected':
-      return { ...base, status: DraftMediaStatus.Rejected, reason: action.reason };
-    case 'optimizing':
-      return {
-        ...base,
-        status: DraftMediaStatus.Optimizing,
-        original: action.original,
-        progress: null,
-      };
-    case 'progressed':
-      return media.status === DraftMediaStatus.Optimizing
-        ? { ...media, progress: action.progress }
-        : media;
-    case 'ready':
-      return {
-        ...base,
-        status: DraftMediaStatus.ReadyToUpload,
-        original: action.original,
-        upload: action.upload,
-        previewUrl: action.previewUrl,
-      };
-    default:
-      return media;
-  }
+  return UPLOAD_FROM[action.type].includes(media.status) && isPrepared(media)
+    ? applyUpload(media, action)
+    : media;
 }
 
 export function mediaReducer(state: DraftMedia[], action: MediaAction): DraftMedia[] {
   switch (action.type) {
-    case 'added':
+    case MediaActionType.Added:
       return [
         ...state,
         ...action.items.map((item) => ({ ...item, status: DraftMediaStatus.Checking as const })),
       ];
-    case 'removed':
+    case MediaActionType.Removed:
       return state.filter((media) => media.id !== action.id);
-    case 'cleared':
+    case MediaActionType.Cleared:
       return [];
     default: {
       const index = state.findIndex((media) => media.id === action.id);
-      if (index < 0 || !LEAVES_FROM[action.type].includes(state[index].status)) {
+      const next = index < 0 ? undefined : applyToFile(state[index], action);
+      // Same array when nothing applied, so the store does not notify for a stale action.
+      if (!next || next === state[index]) {
         return state;
       }
-      return state.map((media, position) =>
-        position === index ? applyEvent(media, action) : media,
-      );
+      return state.map((media, position) => (position === index ? next : media));
     }
   }
 }

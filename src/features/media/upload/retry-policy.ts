@@ -1,8 +1,7 @@
 /**
  * What an upload does when something fails (diagram 05): which failures another attempt can
- * fix, how many attempts and how long between them (run by p-retry in file-upload.ts), how
- * often to ask the server about processing, and when a URL counts as expired. Pure, so
- * each decision is unit-tested.
+ * fix, how many attempts and how long between them (run by p-retry in file-upload.ts), and
+ * when a URL counts as expired. Pure, so each decision is unit-tested.
  */
 
 import type { Options as RetryOptions } from 'p-retry';
@@ -14,14 +13,11 @@ export const MAX_UPLOAD_ATTEMPTS = 3;
  * Wait before attempt n+1: doubling from 1 s, times a random 1–2, so phones that lost the
  * network together do not all come back in the same second (1–2 s, then 2–4 s).
  */
-export const RETRY_TIMING: Pick<
-  RetryOptions,
-  'minTimeout' | 'factor' | 'maxTimeout' | 'randomize'
-> = { minTimeout: 1_000, factor: 2, maxTimeout: 8_000, randomize: true };
-
-const FIRST_POLL_DELAY_MS = 2_000;
-const POLL_DELAY_GROWTH = 1.5;
-const MAX_POLL_DELAY_MS = 15_000;
+export const RETRY_TIMING: Pick<RetryOptions, 'minTimeout' | 'factor' | 'randomize'> = {
+  minTimeout: 1_000,
+  factor: 2,
+  randomize: true,
+};
 
 /**
  * How long a presigned URL works (api-spec: 15 minutes). The client counts it on its own
@@ -36,11 +32,6 @@ const URL_EXPIRY_MARGIN_MS = 60_000;
 /** `validUntil` is on the client's clock: arrival time + UPLOAD_URL_LIFETIME_MS. */
 export const isUrlExpiring = (validUntil: number, now: number) =>
   validUntil - now < URL_EXPIRY_MARGIN_MS;
-
-/** Wait before status poll `round` (0-based): quick at first, less often as time passes. */
-export function pollDelayMs(round: number) {
-  return Math.min(MAX_POLL_DELAY_MS, Math.round(FIRST_POLL_DELAY_MS * POLL_DELAY_GROWTH ** round));
-}
 
 // ---- Failures ----
 
@@ -63,7 +54,7 @@ export class UploadFailure extends Error {
   /** `detail` says what happened, or is the error that caused it. */
   constructor(
     readonly kind: FailureKind,
-    detail: string | unknown,
+    detail: unknown,
   ) {
     super(`${kind}: ${detail instanceof Error ? detail.message : String(detail)}`);
     this.name = 'UploadFailure';

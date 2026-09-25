@@ -57,14 +57,18 @@ export enum MediaError {
   Missing = 'MEDIA_MISSING',
 }
 
+/** A media as the app keeps it; see MediaStatusItem for what the server sends. */
 export interface ServerMedia {
   status: ServerMediaStatus;
   thumbnailUrl: string | null;
   placeholder: string | null;
-  /** Set only when FAILED. A string: a newer server may send a code this app does not know. */
-  error: MediaError | string | null;
+  /** Set only when FAILED. */
+  error: MediaError | null;
 }
 
-export interface MediaStatusItem extends ServerMedia {
+/** One item of `GET /media`. */
+export interface MediaStatusItem extends Omit<ServerMedia, 'error'> {
   id: string;
+  /** A string: a newer server may send a code this app does not know. */
+  error: string | null;
 }

@@ -6,7 +6,6 @@ import {
   FailureKind,
   isRetryable,
   isUrlExpiring,
-  pollDelayMs,
 } from '@/features/media/upload/retry-policy';
 
 describe('failureFromApiStatus', () => {
@@ -47,13 +46,6 @@ describe('isRetryable', () => {
     const retryable = Object.values(FailureKind).filter(isRetryable);
     expect(retryable).not.toContain(FailureKind.Rejected);
     expect(retryable).toHaveLength(Object.values(FailureKind).length - 1);
-  });
-});
-
-describe('pollDelayMs', () => {
-  it('asks quickly at first, then less often, up to 15 s', () => {
-    expect([0, 1, 2, 3].map(pollDelayMs)).toEqual([2_000, 3_000, 4_500, 6_750]);
-    expect(pollDelayMs(20)).toBe(15_000);
   });
 });
 

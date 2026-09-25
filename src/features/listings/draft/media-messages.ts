@@ -64,12 +64,6 @@ const mediaErrorMessages: Record<MediaError, string> = {
   [MediaError.Missing]: 'Tệp đã hết hạn trên máy chủ. Hãy xoá và chọn lại.',
 };
 
-const isMediaError = (code: string): code is MediaError =>
-  Object.values<string>(MediaError).includes(code);
-
 /** Under a file the server failed; every failure asks for another file. */
-export function mediaErrorMessage(code: string | null) {
-  return code && isMediaError(code)
-    ? mediaErrorMessages[code]
-    : mediaErrorMessages[MediaError.ProcessingFailed];
-}
+export const mediaErrorMessage = (code: MediaError | null) =>
+  mediaErrorMessages[code ?? MediaError.ProcessingFailed];

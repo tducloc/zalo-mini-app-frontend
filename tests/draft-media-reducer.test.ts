@@ -4,11 +4,12 @@ import {
   type DraftMedia,
   DraftMediaStatus,
   type MediaAction,
+  MediaActionType,
   mediaReducer,
 } from '@/features/listings/draft/media-reducer';
 import { MediaKind, RejectReason } from '@/features/media/media-utils';
 import { UploadWait } from '@/features/media/upload/file-upload';
-import { ServerMediaStatus } from '@/features/media/upload/upload-types';
+import { MediaError, ServerMediaStatus } from '@/features/media/upload/upload-types';
 
 const photo = new File(['x'], 'a.jpg');
 const video = new File(['x'], 'b.mov');
@@ -20,7 +21,7 @@ function run(...actions: MediaAction[]) {
 }
 
 const added: MediaAction = {
-  type: 'added',
+  type: MediaActionType.Added,
   items: [
     { id: 'p1', kind: MediaKind.Image, file: photo },
     { id: 'v1', kind: MediaKind.Video, file: video },
@@ -39,8 +40,8 @@ describe('mediaReducer', () => {
   it('takes a photo through optimizing to ready', () => {
     const state = run(
       added,
-      { type: 'optimizing', id: 'p1', original },
-      { type: 'ready', id: 'p1', original, upload, previewUrl: 'blob:1' },
+      { type: MediaActionType.OptimizeStarted, id: 'p1', original },
+      { type: MediaActionType.Ready, id: 'p1', original, upload, previewUrl: 'blob:1' },
     );
     expect(state[0]).toMatchObject({
       status: DraftMediaStatus.ReadyToUpload,
@@ -50,28 +51,38 @@ describe('mediaReducer', () => {
   });
 
   it('marks a file ready straight from checking, when there is nothing to optimize', () => {
-    const state = run(added, { type: 'ready', id: 'v1', original, upload, previewUrl: null });
+    const state = run(added, {
+      type: MediaActionType.Ready,
+      id: 'v1',
+      original,
+      upload,
+      previewUrl: null,
+    });
     expect(state[1].status).toBe(DraftMediaStatus.ReadyToUpload);
   });
 
   it('tracks conversion progress only while optimizing', () => {
     const converting = run(
       added,
-      { type: 'optimizing', id: 'v1', original },
-      { type: 'progressed', id: 'v1', progress: 0.4 },
+      { type: MediaActionType.OptimizeStarted, id: 'v1', original },
+      { type: MediaActionType.OptimizeProgressed, id: 'v1', progress: 0.4 },
     );
     expect(converting[1]).toMatchObject({ status: DraftMediaStatus.Optimizing, progress: 0.4 });
 
-    const checking = run(added, { type: 'progressed', id: 'v1', progress: 0.4 });
+    const checking = run(added, {
+      type: MediaActionType.OptimizeProgressed,
+      id: 'v1',
+      progress: 0.4,
+    });
     expect(checking).toEqual(run(added));
   });
 
   it('rejects while checking or optimizing, keeping the reason', () => {
     const state = run(
       added,
-      { type: 'rejected', id: 'p1', reason: RejectReason.UnsupportedFormat },
-      { type: 'optimizing', id: 'v1', original },
-      { type: 'rejected', id: 'v1', reason: RejectReason.VideoResolution },
+      { type: MediaActionType.Rejected, id: 'p1', reason: RejectReason.UnsupportedFormat },
+      { type: MediaActionType.OptimizeStarted, id: 'v1', original },
+      { type: MediaActionType.Rejected, id: 'v1', reason: RejectReason.VideoResolution },
     );
     expect(state[0]).toMatchObject({
       status: DraftMediaStatus.Rejected,
@@ -86,37 +97,51 @@ describe('mediaReducer', () => {
   it('ignores a late result for a removed file', () => {
     const state = run(
       added,
-      { type: 'optimizing', id: 'p1', original },
-      { type: 'removed', id: 'p1' },
-      { type: 'ready', id: 'p1', original, upload, previewUrl: 'blob:1' },
+      { type: MediaActionType.OptimizeStarted, id: 'p1', original },
+      { type: MediaActionType.Removed, id: 'p1' },
+      { type: MediaActionType.Ready, id: 'p1', original, upload, previewUrl: 'blob:1' },
     );
     expect(state.map((media) => media.id)).toEqual(['v1']);
   });
 
   it('never moves a finished file back', () => {
-    const ready = run(added, { type: 'ready', id: 'p1', original, upload, previewUrl: null });
+    const ready = run(added, {
+      type: MediaActionType.Ready,
+      id: 'p1',
+      original,
+      upload,
+      previewUrl: null,
+    });
     const rejectedLate = mediaReducer(ready, {
-      type: 'rejected',
+      type: MediaActionType.Rejected,
       id: 'p1',
       reason: RejectReason.UnsupportedFormat,
     });
     expect(rejectedLate).toBe(ready);
 
     const rejected = run(added, {
-      type: 'rejected',
+      type: MediaActionType.Rejected,
       id: 'p1',
       reason: RejectReason.UnsupportedFormat,
     });
-    expect(mediaReducer(rejected, { type: 'optimizing', id: 'p1', original })).toBe(rejected);
+    expect(
+      mediaReducer(rejected, { type: MediaActionType.OptimizeStarted, id: 'p1', original }),
+    ).toBe(rejected);
   });
 
   it('clears the whole draft', () => {
-    expect(run(added, { type: 'cleared' })).toEqual([]);
+    expect(run(added, { type: MediaActionType.Cleared })).toEqual([]);
   });
 });
 
 describe('mediaReducer, uploading', () => {
-  const ready: MediaAction = { type: 'ready', id: 'p1', original, upload, previewUrl: 'blob:1' };
+  const ready: MediaAction = {
+    type: MediaActionType.Ready,
+    id: 'p1',
+    original,
+    upload,
+    previewUrl: 'blob:1',
+  };
   const processing = {
     status: ServerMediaStatus.Processing,
     thumbnailUrl: null,
@@ -128,9 +153,9 @@ describe('mediaReducer, uploading', () => {
     const state = run(
       added,
       ready,
-      { type: 'uploadStarted', id: 'p1' },
-      { type: 'progressed', id: 'p1', progress: 0.5 },
-      { type: 'uploaded', id: 'p1', mediaId: 'm1', server: processing },
+      { type: MediaActionType.UploadStarted, id: 'p1' },
+      { type: MediaActionType.UploadProgressed, id: 'p1', progress: 0.5 },
+      { type: MediaActionType.Uploaded, id: 'p1', mediaId: 'm1', server: processing },
     );
     expect(state[0]).toMatchObject({
       status: DraftMediaStatus.Uploaded,
@@ -145,9 +170,9 @@ describe('mediaReducer, uploading', () => {
     const waiting = run(
       added,
       ready,
-      { type: 'uploadStarted', id: 'p1' },
-      { type: 'progressed', id: 'p1', progress: 0.6 },
-      { type: 'uploadWaiting', id: 'p1', waitingFor: UploadWait.Network },
+      { type: MediaActionType.UploadStarted, id: 'p1' },
+      { type: MediaActionType.UploadProgressed, id: 'p1', progress: 0.6 },
+      { type: MediaActionType.UploadWaiting, id: 'p1', waitingFor: UploadWait.Network },
     );
     expect(waiting[0]).toMatchObject({
       status: DraftMediaStatus.Retrying,
@@ -155,7 +180,7 @@ describe('mediaReducer, uploading', () => {
       waitingFor: UploadWait.Network,
     });
 
-    const resumed = mediaReducer(waiting, { type: 'uploadResumed', id: 'p1' });
+    const resumed = mediaReducer(waiting, { type: MediaActionType.UploadResumed, id: 'p1' });
     expect(resumed[0]).toMatchObject({ status: DraftMediaStatus.Uploading, progress: 0.6 });
   });
 
@@ -163,55 +188,75 @@ describe('mediaReducer, uploading', () => {
     const waiting = run(
       added,
       ready,
-      { type: 'uploadStarted', id: 'p1' },
-      { type: 'uploadWaiting', id: 'p1', waitingFor: UploadWait.Retry },
+      { type: MediaActionType.UploadStarted, id: 'p1' },
+      { type: MediaActionType.UploadWaiting, id: 'p1', waitingFor: UploadWait.Retry },
     );
-    expect(mediaReducer(waiting, { type: 'progressed', id: 'p1', progress: 0.9 })).toBe(waiting);
+    expect(
+      mediaReducer(waiting, { type: MediaActionType.UploadProgressed, id: 'p1', progress: 0.9 }),
+    ).toBe(waiting);
   });
 
-  it('lets the seller retry a failed upload', () => {
+  it('puts a failed upload back in the queue when the seller taps Retry', () => {
     const failed = run(
       added,
       ready,
-      { type: 'uploadStarted', id: 'p1' },
-      { type: 'uploadFailed', id: 'p1', isRetryable: true },
+      { type: MediaActionType.UploadStarted, id: 'p1' },
+      { type: MediaActionType.UploadFailed, id: 'p1', isRetryable: true },
     );
     expect(failed[0]).toMatchObject({ status: DraftMediaStatus.UploadFailed, isRetryable: true });
+    // Only through the queue, so a file waiting for a free slot shows as waiting.
+    expect(mediaReducer(failed, { type: MediaActionType.UploadStarted, id: 'p1' })).toBe(failed);
 
-    const retried = mediaReducer(failed, { type: 'uploadStarted', id: 'p1' });
+    const queued = mediaReducer(failed, { type: MediaActionType.UploadQueued, id: 'p1' });
+    expect(queued[0]).toMatchObject({ status: DraftMediaStatus.ReadyToUpload, upload });
+    expect(queued[0]).not.toHaveProperty('isRetryable');
+
+    const retried = mediaReducer(queued, { type: MediaActionType.UploadStarted, id: 'p1' });
     expect(retried[0].status).toBe(DraftMediaStatus.Uploading);
   });
 
   it('follows the server status only once uploaded', () => {
     const readyState = run(added, ready);
-    const failedServer = { ...processing, status: ServerMediaStatus.Failed, error: 'BLANK_IMAGE' };
+    const failedServer = {
+      ...processing,
+      status: ServerMediaStatus.Failed,
+      error: MediaError.BlankImage,
+    };
     expect(
-      mediaReducer(readyState, { type: 'serverUpdated', id: 'p1', server: failedServer }),
+      mediaReducer(readyState, {
+        type: MediaActionType.ServerUpdated,
+        id: 'p1',
+        server: failedServer,
+      }),
     ).toBe(readyState);
 
     const uploaded = run(
       added,
       ready,
-      { type: 'uploadStarted', id: 'p1' },
-      { type: 'uploaded', id: 'p1', mediaId: 'm1', server: processing },
-      { type: 'serverUpdated', id: 'p1', server: failedServer },
+      { type: MediaActionType.UploadStarted, id: 'p1' },
+      { type: MediaActionType.Uploaded, id: 'p1', mediaId: 'm1', server: processing },
+      { type: MediaActionType.ServerUpdated, id: 'p1', server: failedServer },
     );
     expect(uploaded[0]).toMatchObject({ status: DraftMediaStatus.Uploaded, server: failedServer });
   });
 
   it('never starts uploading a file that is not ready, nor restarts an uploaded one', () => {
-    const optimizing = run(added, { type: 'optimizing', id: 'p1', original });
-    expect(mediaReducer(optimizing, { type: 'uploadStarted', id: 'p1' })).toBe(optimizing);
+    const optimizing = run(added, { type: MediaActionType.OptimizeStarted, id: 'p1', original });
+    expect(mediaReducer(optimizing, { type: MediaActionType.UploadStarted, id: 'p1' })).toBe(
+      optimizing,
+    );
 
     const uploaded = run(
       added,
       ready,
-      { type: 'uploadStarted', id: 'p1' },
-      { type: 'uploaded', id: 'p1', mediaId: 'm1', server: processing },
+      { type: MediaActionType.UploadStarted, id: 'p1' },
+      { type: MediaActionType.Uploaded, id: 'p1', mediaId: 'm1', server: processing },
     );
-    expect(mediaReducer(uploaded, { type: 'uploadStarted', id: 'p1' })).toBe(uploaded);
-    expect(mediaReducer(uploaded, { type: 'uploadFailed', id: 'p1', isRetryable: true })).toBe(
+    expect(mediaReducer(uploaded, { type: MediaActionType.UploadStarted, id: 'p1' })).toBe(
       uploaded,
     );
+    expect(
+      mediaReducer(uploaded, { type: MediaActionType.UploadFailed, id: 'p1', isRetryable: true }),
+    ).toBe(uploaded);
   });
 });

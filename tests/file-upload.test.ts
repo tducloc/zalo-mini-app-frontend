@@ -49,7 +49,7 @@ const videoTarget: UploadTarget = {
 const failure = (kind: FailureKind) => new UploadFailure(kind, 'test');
 
 /** No wait between attempts; the real timing is RETRY_TIMING. */
-const NO_WAIT = { minTimeout: 0, factor: 1, maxTimeout: 0, randomize: false };
+const NO_WAIT = { minTimeout: 0, factor: 1, randomize: false };
 const newUpload = (request: UploadRequestFile, blob: Blob, transport: UploadTransport) =>
   new FileUpload(request, blob, transport, NO_WAIT);
 

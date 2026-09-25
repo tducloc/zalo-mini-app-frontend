@@ -8,6 +8,7 @@ import {
   type DraftMedia,
   DraftMediaStatus,
   type MediaAction,
+  MediaActionType,
   type OriginalFile,
   type UploadSource,
 } from '@/features/listings/draft/media-reducer';
@@ -65,31 +66,31 @@ function acceptedCounts() {
 async function takeImage({ id, file, photo, signal }: PickedFile) {
   if (!photo?.format) {
     // detectPickedFile refuses such a file first; never leave a tile on Checking.
-    dispatch({ type: 'rejected', id, reason: RejectReason.UnsupportedFormat });
+    dispatch({ type: MediaActionType.Rejected, id, reason: RejectReason.UnsupportedFormat });
     return;
   }
   // As stored in the file, before EXIF orientation (api-spec, upload-urls).
   const original = { bytes: file.size, width: photo.width, height: photo.height };
   const asPicked: UploadSource = { blob: file, contentType: photo.format, optimized: false };
   if (!canOptimizeImages) {
-    dispatch({ type: 'ready', id, original, upload: asPicked, previewUrl: null });
+    dispatch({ type: MediaActionType.Ready, id, original, upload: asPicked, previewUrl: null });
     return;
   }
 
-  dispatch({ type: 'optimizing', id, original });
+  dispatch({ type: MediaActionType.OptimizeStarted, id, original });
   const outcome = await imageQueue.optimize(id, file);
   if (outcome.kind === 'cancelled' || signal.aborted) {
     return;
   }
 
   if (outcome.kind === 'original' || outcome.image.keptOriginal) {
-    dispatch({ type: 'ready', id, original, upload: asPicked, previewUrl: null });
+    dispatch({ type: MediaActionType.Ready, id, original, upload: asPicked, previewUrl: null });
     return;
   }
 
   const { blob } = outcome.image;
   dispatch({
-    type: 'ready',
+    type: MediaActionType.Ready,
     id,
     original,
     upload: { blob, contentType: ImageFormat.Jpeg, optimized: true },
@@ -107,7 +108,7 @@ async function convert(
     return null;
   }
 
-  dispatch({ type: 'optimizing', id, original });
+  dispatch({ type: MediaActionType.OptimizeStarted, id, original });
   let shownPercent = 0;
   try {
     return await convertVideo(file, {
@@ -118,7 +119,7 @@ async function convert(
         const percent = Math.floor(progress * 100);
         if (percent > shownPercent) {
           shownPercent = percent;
-          dispatch({ type: 'progressed', id, progress: percent / 100 });
+          dispatch({ type: MediaActionType.OptimizeProgressed, id, progress: percent / 100 });
         }
       },
     });
@@ -137,7 +138,7 @@ async function takeVideo(picked: PickedFile) {
     facts = { ...(await readVideoMetadata(file)), bytes: file.size };
   } catch {
     // Not an MP4 or MOV mediabunny can open: the one check of a video's format.
-    dispatch({ type: 'rejected', id, reason: RejectReason.UnsupportedFormat });
+    dispatch({ type: MediaActionType.Rejected, id, reason: RejectReason.UnsupportedFormat });
     return;
   }
 
@@ -147,7 +148,7 @@ async function takeVideo(picked: PickedFile) {
 
   const tooLong = checkVideoLength(facts.durationMs);
   if (tooLong) {
-    dispatch({ type: 'rejected', id, reason: tooLong });
+    dispatch({ type: MediaActionType.Rejected, id, reason: tooLong });
     return;
   }
 
@@ -161,18 +162,18 @@ async function takeVideo(picked: PickedFile) {
     // Same rule as photos: keep the picked file when converting did not make it smaller.
     if (converted && (problem || converted.size < file.size)) {
       const upload = { blob: converted, contentType: VideoFormat.Mp4, optimized: true };
-      dispatch({ type: 'ready', id, original, upload, previewUrl: null });
+      dispatch({ type: MediaActionType.Ready, id, original, upload, previewUrl: null });
       return;
     }
   }
 
   // Converting was not possible or not worth it: the file as picked, if the server takes it.
   if (problem) {
-    dispatch({ type: 'rejected', id, reason: problem });
+    dispatch({ type: MediaActionType.Rejected, id, reason: problem });
     return;
   }
   const upload = { blob: file, contentType: facts.format, optimized: false };
-  dispatch({ type: 'ready', id, original, upload, previewUrl: null });
+  dispatch({ type: MediaActionType.Ready, id, original, upload, previewUrl: null });
 }
 
 async function take(picked: PickedFile, kind: MediaKind) {
@@ -182,7 +183,7 @@ async function take(picked: PickedFile, kind: MediaKind) {
     // Reading the file failed partway (the picker's copy went away); nothing else throws here.
     if (!picked.signal.aborted) {
       warn('could not read a picked file', error);
-      dispatch({ type: 'rejected', id: picked.id, reason: RejectReason.Unreadable });
+      dispatch({ type: MediaActionType.Rejected, id: picked.id, reason: RejectReason.Unreadable });
     }
   } finally {
     inProgress.delete(picked.id);
@@ -197,7 +198,7 @@ export async function addDraftFiles(files: File[]) {
   const refusals = refusePicked(picked, acceptedCounts());
   const ids = files.map(() => `local-${++fileCount}`);
   dispatch({
-    type: 'added',
+    type: MediaActionType.Added,
     items: picked.map(({ kind }, index) => ({ id: ids[index], file: files[index], kind })),
   });
 
@@ -206,7 +207,7 @@ export async function addDraftFiles(files: File[]) {
     const file = files[index];
     const refusal = refusals[index];
     if (refusal) {
-      dispatch({ type: 'rejected', id, reason: refusal });
+      dispatch({ type: MediaActionType.Rejected, id, reason: refusal });
       return;
     }
 
@@ -236,11 +237,11 @@ export function removeDraftMedia(id: string) {
   if (media) {
     stopWork(media);
   }
-  dispatch({ type: 'removed', id });
+  dispatch({ type: MediaActionType.Removed, id });
 }
 
 /** "Huỷ tin": drops every file, and deletes the ones already on the server. */
 export function clearDraftMedia() {
   useListingDraftStore.getState().media.forEach(stopWork);
-  dispatch({ type: 'cleared' });
+  dispatch({ type: MediaActionType.Cleared });
 }
