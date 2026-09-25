@@ -83,7 +83,7 @@ const LEAVES_FROM: Record<'rejected' | 'optimizing' | 'progressed' | 'ready', Dr
     ready: [DraftMediaStatus.Checking, DraftMediaStatus.Optimizing],
   };
 
-function next(media: DraftMedia, action: MediaAction): DraftMedia {
+function applyEvent(media: DraftMedia, action: MediaAction): DraftMedia {
   const base = { id: media.id, kind: media.kind, file: media.file };
 
   switch (action.type) {
@@ -129,7 +129,9 @@ export function mediaReducer(state: DraftMedia[], action: MediaAction): DraftMed
       if (index < 0 || !LEAVES_FROM[action.type].includes(state[index].status)) {
         return state;
       }
-      return state.map((media, position) => (position === index ? next(media, action) : media));
+      return state.map((media, position) =>
+        position === index ? applyEvent(media, action) : media,
+      );
     }
   }
 }

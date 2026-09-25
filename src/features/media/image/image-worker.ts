@@ -34,7 +34,7 @@ export interface ImageSettings {
   /** Decode straight to this width (createImageBitmap resizeWidth). Media lab only. */
   decodeWidth?: number;
   /** Force the draw to finish before timing it. Media lab only. */
-  flushDraw?: boolean;
+  shouldFlushDraw?: boolean;
 }
 
 export interface ImageJob {
@@ -92,7 +92,7 @@ export class ImageWorker {
     this.worker.onerror = (event) => this.fail(event.message || 'image worker crashed');
   }
 
-  run(file: Blob, labSettings: Pick<ImageSettings, 'decodeWidth' | 'flushDraw'> = {}) {
+  run(file: Blob, labSettings: Pick<ImageSettings, 'decodeWidth' | 'shouldFlushDraw'> = {}) {
     if (this.disposed) {
       return Promise.reject(new PipelineError('image worker is gone'));
     }

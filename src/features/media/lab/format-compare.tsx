@@ -11,15 +11,20 @@ import { sniffBlobFormat } from '@/features/media/file-header';
  * the same quality setting.
  */
 
-type VariantSpec = { key: string; label: string; type: string; quality?: number };
+interface VariantSpec {
+  key: string;
+  label: string;
+  type: string;
+  quality?: number;
+}
 
-type Variant = VariantSpec & {
+interface Variant extends VariantSpec {
   url: string | null;
   bytes: number;
   encodeMs: number;
   /** The format the bytes really are; differs from `type` when the device cannot encode it. */
   actualType: string;
-};
+}
 
 const SPECS: VariantSpec[] = [
   { key: 'png', label: 'Tham chiếu PNG', type: 'image/png' },

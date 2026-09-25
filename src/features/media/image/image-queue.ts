@@ -23,21 +23,21 @@ const BYTES_PER_PIXEL = 4;
 
 // ---- Memory budget: pure, tested on its own ----
 
-export type PoolConfig = {
+export interface PoolConfig {
   workers: number;
   perWorker: number;
   /** Omit to limit by count only. */
   budgetBytes?: number;
-};
+}
 
 /** Starting values from R3; the phone runs in the media lab pick the final ones. */
 export const DEFAULT_POOL_CONFIG: PoolConfig = { workers: 1, perWorker: 2, budgetBytes: 150 * MIB };
 
-export type PoolState = {
+export interface PoolState {
   /** Images in flight on each worker, by worker index. */
   inFlight: number[];
   bytesInFlight: number;
-};
+}
 
 /** Used when the header cannot be read: a 24 MP photo, the iPhone 15+ default. */
 export const UNKNOWN_IMAGE_DIMENSIONS: ImageDimensions = { width: 5712, height: 4284 };

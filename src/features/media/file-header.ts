@@ -97,7 +97,10 @@ export async function sniffBlobFormat(blob: Blob) {
 
 // ---- Photo size ----
 
-export type ImageDimensions = { width: number; height: number };
+export interface ImageDimensions {
+  width: number;
+  height: number;
+}
 
 /** Enough for SOF to follow a full 64 KB EXIF segment plus ICC and MPF segments. */
 export const IMAGE_HEAD_BYTES = 256 * 1024;
@@ -177,14 +180,14 @@ function readWebp(bytes: Uint8Array): ImageDimensions | null {
 }
 
 export function readImageDimensions(head: Uint8Array): ImageDimensions | null {
-  if (head[0] === 0xff && head[1] === 0xd8) {
-    return readJpeg(head);
+  switch (sniffFormat(head)) {
+    case FileFormat.Jpeg:
+      return readJpeg(head);
+    case FileFormat.Png:
+      return readPng(head);
+    case FileFormat.Webp:
+      return readWebp(head);
+    default:
+      return null;
   }
-  if (head[0] === 0x89 && ascii(head, 1, 3) === 'PNG') {
-    return readPng(head);
-  }
-  if (ascii(head, 0, 4) === 'RIFF' && ascii(head, 8, 4) === 'WEBP') {
-    return readWebp(head);
-  }
-  return null;
 }

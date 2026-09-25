@@ -39,7 +39,7 @@ function decode(file: Blob, decodeWidth?: number) {
   return createImageBitmap(file, options);
 }
 
-function draw(bitmap: ImageBitmap, width: number, height: number, flush?: boolean) {
+function draw(bitmap: ImageBitmap, width: number, height: number, shouldFlush?: boolean) {
   const canvas = new OffscreenCanvas(width, height);
   const context = canvas.getContext('2d');
   if (!context) {
@@ -51,7 +51,7 @@ function draw(bitmap: ImageBitmap, width: number, height: number, flush?: boolea
   context.fillStyle = '#fff';
   context.fillRect(0, 0, width, height);
   context.drawImage(bitmap, 0, 0, width, height);
-  if (flush) {
+  if (shouldFlush) {
     // Chrome records drawImage and runs it at encode time; reading one pixel forces it to
     // finish now, so the lab times the real draw. It costs a sync readback.
     context.getImageData(0, 0, 1, 1);
@@ -94,7 +94,7 @@ async function optimizeImage(file: Blob, settings: ImageSettings): Promise<Optim
     const width = Math.round(bitmap.width * scale);
     const height = Math.round(bitmap.height * scale);
 
-    const drawn = await timed('draw', () => draw(bitmap, width, height, settings.flushDraw));
+    const drawn = await timed('draw', () => draw(bitmap, width, height, settings.shouldFlushDraw));
     const encoded = await timed('encode', () => encode(drawn.value, settings.quality)).finally(() =>
       release(drawn.value),
     );

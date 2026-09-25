@@ -14,7 +14,11 @@ import { estimateJobBytes, pickWorker, type PoolState } from '@/features/media/i
 import { MIB } from '@/features/media/media-limits';
 import type { BenchConfig, BenchResult, JobRecord } from '@/features/media/lab/pool-bench-summary';
 
-type QueuedJob = { file: File; record: JobRecord; decodeWidth?: number };
+interface QueuedJob {
+  file: File;
+  record: JobRecord;
+  decodeWidth?: number;
+}
 
 async function prepareJob(file: File, decodeWidth?: number): Promise<QueuedJob> {
   const head = await readHead(file, IMAGE_HEAD_BYTES);
@@ -103,7 +107,7 @@ export async function runPoolBench(files: File[], config: BenchConfig): Promise<
         peakEstimatedBytes = Math.max(peakEstimatedBytes, state.bytesInFlight);
 
         workers[index]
-          .run(job.file, { decodeWidth: job.decodeWidth, flushDraw: true })
+          .run(job.file, { decodeWidth: job.decodeWidth, shouldFlushDraw: true })
           .then((result) => recordSuccess(job.record, result))
           .catch((error: unknown) => recordFailure(job.record, error))
           .finally(() => finish(index, job));

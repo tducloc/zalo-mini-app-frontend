@@ -74,9 +74,11 @@ export function formatProblem(kind: MediaKind, format: FileFormat | null) {
   if (format === null) {
     return RejectReason.Unreadable;
   }
+
   if (kind === MediaKind.Video) {
     return VIDEO_FORMATS.includes(format) ? null : RejectReason.UnsupportedFormat;
   }
+
   if (format === FileFormat.Heic) {
     return RejectReason.Heic;
   }
@@ -193,6 +195,7 @@ export function shouldConvertVideo(video: VideoFacts) {
   if (originalVideoProblem(video) !== null) {
     return true;
   }
+
   if (video.width !== null && video.height !== null) {
     if (Math.min(video.width, video.height) > CONVERTED_SHORT_EDGE) {
       return true;

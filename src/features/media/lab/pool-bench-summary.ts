@@ -6,16 +6,16 @@
 import type { ImageDimensions } from '@/features/media/file-header';
 import { MIB } from '@/features/media/media-limits';
 
-export type BenchConfig = {
+export interface BenchConfig {
   key: string;
   label: string;
   workers: number;
   perWorker: number;
   budgetBytes?: number;
   decodeWidth?: number;
-};
+}
 
-export type JobRecord = {
+export interface JobRecord {
   name: string;
   fileBytes: number;
   dimensions: ImageDimensions | null;
@@ -29,9 +29,9 @@ export type JobRecord = {
   encodeMs?: number;
   outputBytes?: number;
   keptOriginal?: boolean;
-};
+}
 
-export type BenchResult = {
+export interface BenchResult {
   config: BenchConfig;
   totalMs: number;
   longestFrameMs: number;
@@ -39,9 +39,9 @@ export type BenchResult = {
   peakEstimatedBytes: number;
   workerCrashes: number;
   jobs: JobRecord[];
-};
+}
 
-export type BenchSummary = {
+export interface BenchSummary {
   images: number;
   failed: number;
   msPerImage: number;
@@ -51,7 +51,7 @@ export type BenchSummary = {
   /** Share of the pipeline time spent in drawImage, the only step two workers can parallelise. */
   drawShare: number;
   outputBytes: number;
-};
+}
 
 export function median(values: number[]): number {
   if (values.length === 0) {
@@ -62,16 +62,16 @@ export function median(values: number[]): number {
   return sorted.length % 2 === 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-function pick(jobs: JobRecord[], key: 'decodeMs' | 'drawMs' | 'encodeMs') {
+function stepTimes(jobs: JobRecord[], key: 'decodeMs' | 'drawMs' | 'encodeMs') {
   return jobs.flatMap((job) => (job[key] === undefined ? [] : [job[key]]));
 }
 
 export function summarizeBench(result: BenchResult): BenchSummary {
   const succeeded = result.jobs.filter((job) => job.ok);
 
-  const medianDecodeMs = median(pick(succeeded, 'decodeMs'));
-  const medianDrawMs = median(pick(succeeded, 'drawMs'));
-  const medianEncodeMs = median(pick(succeeded, 'encodeMs'));
+  const medianDecodeMs = median(stepTimes(succeeded, 'decodeMs'));
+  const medianDrawMs = median(stepTimes(succeeded, 'drawMs'));
+  const medianEncodeMs = median(stepTimes(succeeded, 'encodeMs'));
   const stepTotal = medianDecodeMs + medianDrawMs + medianEncodeMs;
 
   return {
