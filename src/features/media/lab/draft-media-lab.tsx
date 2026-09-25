@@ -1,33 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from 'zmp-ui';
 
-import {
-  addDraftFiles,
-  clearDraftMedia,
-  removeDraftMedia,
-} from '@/features/listings/draft/media-intake';
+import { addDraftFiles, clearDraftMedia } from '@/features/listings/draft/media-intake';
 import { type DraftMedia, DraftMediaStatus } from '@/features/listings/draft/media-reducer';
-import { rejectMessages } from '@/features/listings/draft/reject-messages';
 import { useListingDraftStore } from '@/features/listings/draft/store';
 import { canConvertVideos } from '@/features/media/convert-video';
 import { startFrameMeter } from '@/features/media/lab/frame-meter';
+import DraftMediaRow, { type RowTimes } from '@/features/media/lab/draft-media-row';
 import { createStageBreadcrumb } from '@/features/media/lab/stage-breadcrumb';
-import { MediaKind, MIB } from '@/features/media/media-limits';
 import { canOptimizeImages } from '@/features/media/image/image-worker';
 
 /**
- * The real create-listing pipeline (draft store + intake service, L4) on files picked here,
- * to check it on the phone: each file's state, sizes, time to ready, and the longest
- * main-thread frame while anything works. L4 gate: 10 × 24 MP photos without a crash.
- * It shares the draft with the sell page, as the form will.
+ * The real create-listing pipeline (draft store, intake L4, uploads L5) on files picked
+ * here, to check it on the phone: each file's state, sizes, time to ready and to upload,
+ * and the longest main-thread frame while anything works. L4 gate: 10 × 24 MP photos
+ * without a crash; L5 gate: turn the network off mid-upload and on again. Uploads go to
+ * the API in VITE_API_BASE_URL, signed in as the current Zalo user. It shares the draft
+ * with the sell page, as the form will.
  */
 
 const breadcrumb = createStageBreadcrumb('medialab.draftStage');
 
 interface Timing {
-  startedAt: number;
-  finishedAt?: number;
+  pickedAt: number;
+  readyAt?: number;
+  uploadStartedAt?: number;
+  uploadedAt?: number;
 }
+
+const secondsBetween = (from?: number, to?: number) =>
+  from !== undefined && to !== undefined ? ((to - from) / 1000).toFixed(1) : null;
 
 const isWorking = (media: DraftMedia) =>
   media.status === DraftMediaStatus.Checking || media.status === DraftMediaStatus.Optimizing;
@@ -38,24 +40,6 @@ function describeDevice() {
     `Chuyển video ${canConvertVideos ? 'có' : 'KHÔNG (gửi video gốc)'}`,
     `cores ${navigator.hardwareConcurrency ?? '?'}`,
   ].join(' · ');
-}
-
-function describeStatus(media: DraftMedia) {
-  switch (media.status) {
-    case DraftMediaStatus.Checking:
-      return 'Đang kiểm tra';
-    case DraftMediaStatus.Rejected:
-      return `Từ chối: ${rejectMessages[media.reason]}`;
-    case DraftMediaStatus.Optimizing:
-      return media.progress === null
-        ? 'Đang tối ưu'
-        : `Đang chuyển 720p ${Math.round(media.progress * 100)}%`;
-    case DraftMediaStatus.ReadyToUpload: {
-      const { upload } = media;
-      const size = `${(upload.blob.size / MIB).toFixed(2)} MB ${upload.contentType}`;
-      return `Sẵn sàng · ${size} · ${upload.optimized ? 'đã tối ưu' : 'bản gốc'}`;
-    }
-  }
 }
 
 export default function DraftMediaLab() {
@@ -73,11 +57,16 @@ export default function DraftMediaLab() {
   useEffect(() => {
     const now = performance.now();
     for (const item of media) {
-      const timing = timings.current.get(item.id);
-      if (!timing) {
-        timings.current.set(item.id, { startedAt: now });
-      } else if (!timing.finishedAt && !isWorking(item)) {
-        timing.finishedAt = now;
+      const timing = timings.current.get(item.id) ?? { pickedAt: now };
+      timings.current.set(item.id, timing);
+      if (timing.readyAt === undefined && !isWorking(item)) {
+        timing.readyAt = now;
+      }
+      if (timing.uploadStartedAt === undefined && item.status === DraftMediaStatus.Uploading) {
+        timing.uploadStartedAt = now;
+      }
+      if (timing.uploadedAt === undefined && item.status === DraftMediaStatus.Uploaded) {
+        timing.uploadedAt = now;
       }
     }
   }, [media]);
@@ -106,14 +95,17 @@ export default function DraftMediaLab() {
     event.target.value = '';
   };
 
-  const secondsFor = (id: string) => {
+  const timesFor = (id: string): RowTimes => {
     const timing = timings.current.get(id);
-    return timing?.finishedAt ? ((timing.finishedAt - timing.startedAt) / 1000).toFixed(1) : null;
+    return {
+      preparing: secondsBetween(timing?.pickedAt, timing?.readyAt),
+      uploading: secondsBetween(timing?.uploadStartedAt, timing?.uploadedAt),
+    };
   };
 
   return (
     <section className="marketplace-card mt-3 p-4">
-      <p className="field-heading m-0">Quy trình đăng tin thật (L4)</p>
+      <p className="field-heading m-0">Quy trình đăng tin thật (L4 + L5)</p>
       <p className="m-0 mt-1 text-sm text-slate-500">{describeDevice()}</p>
       {crashedStage && (
         <p className="m-0 mt-2 text-sm font-semibold text-red-600">
@@ -156,41 +148,9 @@ export default function DraftMediaLab() {
 
       <ul className="m-0 mt-3 list-none p-0">
         {media.map((item) => (
-          <DraftMediaRow key={item.id} media={item} seconds={secondsFor(item.id)} />
+          <DraftMediaRow key={item.id} media={item} times={timesFor(item.id)} />
         ))}
       </ul>
     </section>
-  );
-}
-
-function DraftMediaRow({ media, seconds }: { media: DraftMedia; seconds: string | null }) {
-  const previewUrl = media.status === DraftMediaStatus.ReadyToUpload ? media.previewUrl : null;
-  const original =
-    media.status === DraftMediaStatus.Optimizing || media.status === DraftMediaStatus.ReadyToUpload
-      ? media.original
-      : null;
-
-  return (
-    <li className="flex items-start gap-2 border-t border-slate-100 py-2 text-xs">
-      <div className="h-12 w-12 flex-none overflow-hidden rounded bg-slate-100">
-        {previewUrl && <img src={previewUrl} alt="" className="h-full w-full object-cover" />}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="m-0 break-all font-semibold">
-          {media.kind === MediaKind.Video ? 'Video' : 'Ảnh'} · {media.file.name}
-        </p>
-        <p className="m-0 text-slate-500">
-          Gốc {(media.file.size / MIB).toFixed(2)} MB
-          {original?.width && ` · ${original.width}×${original.height}`}
-          {seconds && ` · ${seconds} s`}
-        </p>
-        <p className={media.status === DraftMediaStatus.Rejected ? 'm-0 text-red-600' : 'm-0'}>
-          {describeStatus(media)}
-        </p>
-      </div>
-      <Button size="small" variant="tertiary" onClick={() => removeDraftMedia(media.id)}>
-        Xoá
-      </Button>
-    </li>
   );
 }
