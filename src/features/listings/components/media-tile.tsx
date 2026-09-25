@@ -43,9 +43,7 @@ export default function MediaTile({
         type="button"
         aria-label={`${name}, ${state}. Chạm để xem`}
         onClick={onOpen}
-        className={`relative block h-full w-full overflow-hidden rounded-[10px] border-0 bg-marketplace-pale p-0 ${
-          isError ? 'ring-2 ring-inset ring-marketplace-danger' : ''
-        }`}
+        className="relative block h-full w-full overflow-hidden rounded-[10px] border-0 bg-marketplace-pale p-0"
       >
         {view.imageUrl && <img src={view.imageUrl} alt="" className="h-full w-full object-cover" />}
         {!view.imageUrl && localUrl && isVideo && (
@@ -81,18 +79,21 @@ export default function MediaTile({
           </span>
         )}
 
-        {/* Just the mark: the viewer gives the reason, so there is one message per error. */}
-        {isError && (
-          <span className="absolute inset-0 grid place-items-center bg-black/40">
-            <span className="grid h-7 w-7 place-items-center rounded-full bg-marketplace-danger text-base font-bold text-white shadow">
-              !
-            </span>
-          </span>
-        )}
-
         {view.label && <TileStatus view={view} />}
       </button>
 
+      {/* A badge, as photo libraries mark a failed sync: the picture stays as it is. The
+          viewer gives the reason, so there is one message per error. */}
+      {isError && (
+        <span
+          aria-hidden="true"
+          className={`pointer-events-none absolute right-1 grid h-5 w-5 place-items-center rounded-full bg-marketplace-danger text-xs font-bold text-white ring-2 ring-white ${
+            isCover ? 'bottom-6' : 'bottom-1'
+          }`}
+        >
+          !
+        </span>
+      )}
       <CornerButton
         icon="zi-close"
         label={`Xoá ${name}`}
