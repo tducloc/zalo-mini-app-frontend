@@ -11,7 +11,7 @@
  * ignored; that is how a result arriving after the seller removed the file is dropped.
  */
 
-import type { MediaKind, RejectReason } from '@/features/media/media-utils';
+import { MediaKind, type RejectReason } from '@/features/media/media-utils';
 import { type ServerMedia, ServerMediaStatus } from '@/features/media/upload/upload-types';
 import type { UploadWait } from '@/features/media/upload/file-upload';
 
@@ -97,6 +97,8 @@ export enum MediaActionType {
   Added = 'ADDED',
   Removed = 'REMOVED',
   Cleared = 'CLEARED',
+  /** The seller made this photo the cover: it moves to the front. */
+  CoverChosen = 'COVER_CHOSEN',
   // Intake
   Rejected = 'REJECTED',
   OptimizeStarted = 'OPTIMIZE_STARTED',
@@ -118,7 +120,8 @@ export enum MediaActionType {
 type ListAction =
   | { type: MediaActionType.Added; items: BaseMedia[] }
   | { type: MediaActionType.Removed; id: string }
-  | { type: MediaActionType.Cleared };
+  | { type: MediaActionType.Cleared }
+  | { type: MediaActionType.CoverChosen; id: string };
 
 type IntakeAction =
   | { type: MediaActionType.Rejected; id: string; reason: RejectReason }
@@ -272,6 +275,15 @@ function applyToFile(media: DraftMedia, action: IntakeAction | UploadAction): Dr
     : media;
 }
 
+/** Only a photo the app kept can be the cover (api-spec: the first media is an image). */
+function chooseCover(state: DraftMedia[], id: string) {
+  const cover = state.find((media) => media.id === id);
+  if (!cover || cover.kind !== MediaKind.Image || cover.status === DraftMediaStatus.Rejected) {
+    return state;
+  }
+  return [cover, ...state.filter((media) => media !== cover)];
+}
+
 export function mediaReducer(state: DraftMedia[], action: MediaAction): DraftMedia[] {
   switch (action.type) {
     case MediaActionType.Added:
@@ -283,6 +295,8 @@ export function mediaReducer(state: DraftMedia[], action: MediaAction): DraftMed
       return state.filter((media) => media.id !== action.id);
     case MediaActionType.Cleared:
       return [];
+    case MediaActionType.CoverChosen:
+      return chooseCover(state, action.id);
     default: {
       const index = state.findIndex((media) => media.id === action.id);
       const next = index < 0 ? undefined : applyToFile(state[index], action);

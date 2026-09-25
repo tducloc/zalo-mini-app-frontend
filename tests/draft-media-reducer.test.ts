@@ -129,6 +129,25 @@ describe('mediaReducer', () => {
     ).toBe(rejected);
   });
 
+  it('moves the photo the seller chose as cover to the front', () => {
+    const photos: MediaAction = {
+      type: MediaActionType.Added,
+      items: ['p1', 'p2', 'p3'].map((id) => ({ id, kind: MediaKind.Image, file: photo })),
+    };
+    const state = run(photos, { type: MediaActionType.CoverChosen, id: 'p3' });
+    expect(state.map((media) => media.id)).toEqual(['p3', 'p1', 'p2']);
+  });
+
+  it('never makes a video or a refused photo the cover', () => {
+    const state = run(added, {
+      type: MediaActionType.Rejected,
+      id: 'p1',
+      reason: RejectReason.ImageTooSmall,
+    });
+    expect(mediaReducer(state, { type: MediaActionType.CoverChosen, id: 'v1' })).toBe(state);
+    expect(mediaReducer(state, { type: MediaActionType.CoverChosen, id: 'p1' })).toBe(state);
+  });
+
   it('clears the whole draft', () => {
     expect(run(added, { type: MediaActionType.Cleared })).toEqual([]);
   });
