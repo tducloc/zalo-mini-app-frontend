@@ -14,6 +14,13 @@ export const MAX_EDGE = 1280;
 /** JPEG only, decided 2026-09-24: WebP was not smaller at the quality product photos need. */
 export const JPEG_QUALITY = 0.85;
 
+/**
+ * A photo takes well under a few seconds even on a slow phone. A worker that has not
+ * answered by then never started or died without an error event; it is treated as a
+ * crash, so the queue's crash rules take over instead of the photo waiting forever.
+ */
+const JOB_TIMEOUT_MS = 30_000;
+
 export const canOptimizeImages =
   typeof OffscreenCanvas !== 'undefined' && typeof Worker !== 'undefined';
 
@@ -63,6 +70,7 @@ export class PipelineError extends Error {
 interface Pending {
   resolve: (result: OptimizedImage) => void;
   reject: (error: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
 }
 
 /** One worker thread. Each instance is a separate thread. */
@@ -81,10 +89,7 @@ export class ImageWorker {
     this.worker = new Worker(this.url);
     this.worker.onmessage = (event: MessageEvent<ImageReply>) => this.handleReply(event.data);
     // Fires when the thread dies, for example out of memory; nothing in it survives.
-    this.worker.onerror = (event) => {
-      this.rejectAll(new PipelineError(event.message || 'image worker crashed'));
-      this.dispose();
-    };
+    this.worker.onerror = (event) => this.fail(event.message || 'image worker crashed');
   }
 
   run(file: Blob, labSettings: Pick<ImageSettings, 'decodeWidth' | 'flushDraw'> = {}) {
@@ -97,7 +102,8 @@ export class ImageWorker {
       settings: { maxEdge: MAX_EDGE, quality: JPEG_QUALITY, ...labSettings },
     };
     return new Promise<OptimizedImage>((resolve, reject) => {
-      this.pending.set(job.id, { resolve, reject });
+      const timer = setTimeout(() => this.fail('image worker did not answer'), JOB_TIMEOUT_MS);
+      this.pending.set(job.id, { resolve, reject, timer });
       this.worker.postMessage(job);
     });
   }
@@ -118,11 +124,18 @@ export class ImageWorker {
     return this.disposed;
   }
 
+  /** The thread is gone or stuck: every photo it had fails as a crash. */
+  private fail(message: string) {
+    this.rejectAll(new PipelineError(message));
+    this.dispose();
+  }
+
   private handleReply(reply: ImageReply) {
     const entry = this.pending.get(reply.id);
     if (!entry) {
       return;
     }
+    clearTimeout(entry.timer);
     this.pending.delete(reply.id);
 
     if (reply.ok) {
@@ -134,6 +147,7 @@ export class ImageWorker {
 
   private rejectAll(error: Error) {
     for (const entry of this.pending.values()) {
+      clearTimeout(entry.timer);
       entry.reject(error);
     }
     this.pending.clear();

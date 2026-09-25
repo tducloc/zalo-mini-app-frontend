@@ -208,6 +208,51 @@ describe('image queue', () => {
   });
 });
 
+describe('image queue, failures on top of failures', () => {
+  it('uses the originals when the WebView will not start a worker at all', async () => {
+    const queue = new ImageQueue(
+      () => {
+        throw new Error('blob: workers are blocked');
+      },
+      { workers: 1, perWorker: 2 },
+    );
+    const crashed = { kind: 'original', reason: FallbackReason.WorkerCrashed };
+
+    await expect(queue.optimize('a', new Blob(['a']), PHOTO_12MP)).resolves.toEqual(crashed);
+    await expect(queue.optimize('b', new Blob(['b']), PHOTO_12MP)).resolves.toEqual(crashed);
+  });
+
+  it('gives a retry that crashed its worker one more go on the new worker', async () => {
+    const { add, workers, current, sentIds, outcomes } = setup();
+    add('a');
+    workers[0].fail();
+    await flush();
+    expect(await sentIds(workers[0])).toEqual(['a']);
+
+    workers[0].crash();
+    await flush();
+    expect(await sentIds(current())).toEqual(['a']);
+    current().succeed();
+    await flush();
+
+    expect(outcomes.get('a')?.kind).toBe('optimized');
+  });
+
+  it('does not bring back a removed photo when its worker crashes', async () => {
+    const { queue, add, workers, current, sentIds, outcomes } = setup();
+    add('a');
+    add('b');
+    queue.cancel('a');
+    await flush();
+
+    workers[0].crash();
+    await flush();
+
+    expect(await sentIds(current())).toEqual(['b']);
+    expect(outcomes.get('a')).toEqual({ kind: 'cancelled' });
+  });
+});
+
 describe('estimateJobBytes', () => {
   it('counts the full decoded bitmap plus the 1280 px canvas', () => {
     // 4032 × 3024 × 4 = 48.8 MB, plus 1280 × 960 × 4 = 4.9 MB.

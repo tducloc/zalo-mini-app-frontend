@@ -118,7 +118,7 @@ async function probeVideo(path: string, size: number) {
   const plan = shouldConvertVideo(facts) ? 'chuyển 720p nếu máy làm được' : 'gửi bản gốc';
   return [
     `  ↳ mediabunny · ${Date.now() - started} ms · ${meta.mimeType}`,
-    `  ↳ codec · ${describeCodec(meta.videoCodec)} · audio ${meta.audioCodec ?? 'không có'}`,
+    `  ↳ codec · ${describeCodec(meta.videoCodec)} · audio ${meta.audioCodecs.join(', ') || 'không có'}`,
     `  ↳ khung hình · ${meta.width ?? '?'} × ${meta.height ?? '?'} · ${
       meta.durationMs === null ? '? s' : `${(meta.durationMs / 1000).toFixed(1)} s`
     } · xoay ${meta.rotation}°`,

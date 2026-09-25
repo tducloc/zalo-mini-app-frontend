@@ -5,6 +5,7 @@
  */
 
 import {
+  type DraftMedia,
   DraftMediaStatus,
   type MediaAction,
   type OriginalFile,
@@ -14,8 +15,8 @@ import { useListingDraftStore } from '@/features/listings/draft/store';
 import { canConvertVideos, convertVideo } from '@/features/media/convert-video';
 import {
   FileFormat,
-  FORMAT_HEAD_BYTES,
   IMAGE_HEAD_BYTES,
+  type ImageDimensions,
   readHead,
   readImageDimensions,
   sniffFormat,
@@ -23,14 +24,12 @@ import {
 import { ImageQueue } from '@/features/media/image/image-queue';
 import { canOptimizeImages } from '@/features/media/image/image-worker';
 import {
-  admitByCount,
-  checkImage,
   checkVideoLength,
   convertedVideoSize,
-  formatProblem,
   MediaKind,
   mediaKindOf,
   originalVideoProblem,
+  refusePicked,
   RejectReason,
   shouldConvertVideo,
   type VideoFacts,
@@ -41,10 +40,15 @@ interface PickedFile {
   id: string;
   file: File;
   format: FileFormat;
+  /** Photos only, from the header read when the file was picked. */
+  dimensions: ImageDimensions | null;
+  /** Aborted when the seller removes the file, at whatever step it has reached. */
+  signal: AbortSignal;
 }
 
 const imageQueue = new ImageQueue();
-const conversions = new Map<string, AbortController>();
+/** One per file still being worked on. */
+const inProgress = new Map<string, AbortController>();
 let fileCount = 0;
 
 const dispatch = (action: MediaAction) => useListingDraftStore.getState().dispatchMedia(action);
@@ -52,9 +56,16 @@ const dispatch = (action: MediaAction) => useListingDraftStore.getState().dispat
 const findMedia = (id: string) =>
   useListingDraftStore.getState().media.find((media) => media.id === id);
 
-async function readFormat(file: File) {
+function warnInDev(message: string, error: unknown) {
+  if (import.meta.env.DEV) {
+    console.warn(`[media] ${message}`, error);
+  }
+}
+
+/** Enough for the format and a photo's size; null when the file cannot be read. */
+async function readPickedHead(file: File) {
   try {
-    return sniffFormat(await readHead(file, FORMAT_HEAD_BYTES));
+    return await readHead(file, IMAGE_HEAD_BYTES);
   } catch {
     // iOS can hand over a file it no longer lets us read, e.g. an iCloud photo not downloaded.
     return null;
@@ -71,14 +82,7 @@ function acceptedCounts() {
   return counts;
 }
 
-async function takeImage({ id, file, format }: PickedFile) {
-  const dimensions = readImageDimensions(await readHead(file, IMAGE_HEAD_BYTES));
-  const reason = checkImage(file.size, dimensions);
-  if (reason) {
-    dispatch({ type: 'rejected', id, reason });
-    return;
-  }
-
+async function takeImage({ id, file, format, dimensions, signal }: PickedFile) {
   // As stored in the file, before EXIF orientation (api-spec, upload-urls).
   const original = {
     bytes: file.size,
@@ -93,9 +97,10 @@ async function takeImage({ id, file, format }: PickedFile) {
 
   dispatch({ type: 'optimizing', id, original });
   const outcome = await imageQueue.optimize(id, file, dimensions);
-  if (outcome.kind === 'cancelled' || findMedia(id)?.status !== DraftMediaStatus.Optimizing) {
+  if (outcome.kind === 'cancelled' || signal.aborted) {
     return;
   }
+
   if (outcome.kind === 'original' || outcome.image.keptOriginal) {
     dispatch({ type: 'ready', id, original, upload: asPicked, previewUrl: null });
     return;
@@ -112,19 +117,21 @@ async function takeImage({ id, file, format }: PickedFile) {
 }
 
 /** Resolves with the converted clip, or null to fall back to the picked file. */
-async function convert(id: string, file: File, original: OriginalFile, facts: VideoFacts) {
+async function convert(
+  { id, file, signal }: PickedFile,
+  original: OriginalFile,
+  facts: VideoFacts,
+) {
   if (!canConvertVideos || !facts.width || !facts.height) {
     return null;
   }
 
-  const controller = new AbortController();
-  conversions.set(id, controller);
   dispatch({ type: 'optimizing', id, original });
   let shownPercent = 0;
   try {
     return await convertVideo(file, {
       ...convertedVideoSize(facts.width, facts.height),
-      signal: controller.signal,
+      signal,
       onProgress: (progress) => {
         // mediabunny reports every frame; the tile only needs whole percents.
         const percent = Math.floor(progress * 100);
@@ -135,24 +142,28 @@ async function convert(id: string, file: File, original: OriginalFile, facts: Vi
       },
     });
   } catch (error) {
-    if (!controller.signal.aborted) {
-      console.warn('[media] video conversion failed, trying the original', error);
+    if (!signal.aborted) {
+      warnInDev('video conversion failed, trying the original', error);
     }
     return null;
-  } finally {
-    conversions.delete(id);
   }
 }
 
-async function takeVideo({ id, file, format }: PickedFile) {
+async function takeVideo(picked: PickedFile) {
+  const { id, file, format, signal } = picked;
   let facts: VideoFacts;
   try {
-    const { videoCodec, audioCodec, durationMs, width, height } = await readVideoMetadata(file);
-    facts = { bytes: file.size, videoCodec, audioCodec, durationMs, width, height };
+    const metadata = await readVideoMetadata(file);
+    facts = { ...metadata, bytes: file.size };
   } catch {
     dispatch({ type: 'rejected', id, reason: RejectReason.Unreadable });
     return;
   }
+
+  if (signal.aborted) {
+    return;
+  }
+
   const tooLong = checkVideoLength(facts.durationMs);
   if (tooLong) {
     dispatch({ type: 'rejected', id, reason: tooLong });
@@ -160,20 +171,21 @@ async function takeVideo({ id, file, format }: PickedFile) {
   }
 
   const original = { bytes: file.size, width: facts.width, height: facts.height };
+  const problem = originalVideoProblem(facts);
   if (shouldConvertVideo(facts)) {
-    const converted = await convert(id, file, original, facts);
-    if (!findMedia(id)) {
+    const converted = await convert(picked, original, facts);
+    if (signal.aborted) {
       return;
     }
-    if (converted) {
+    // Same rule as photos: keep the picked file when converting did not make it smaller.
+    if (converted && (problem || converted.size < file.size)) {
       const upload = { blob: converted, contentType: FileFormat.Mp4, optimized: true };
       dispatch({ type: 'ready', id, original, upload, previewUrl: null });
       return;
     }
   }
 
-  // Same rule as photos: when converting is not possible, the file as picked, if the server takes it.
-  const problem = originalVideoProblem(facts);
+  // Converting was not possible or not worth it: the file as picked, if the server takes it.
   if (problem) {
     dispatch({ type: 'rejected', id, reason: problem });
     return;
@@ -187,56 +199,68 @@ async function take(picked: PickedFile, kind: MediaKind) {
     await (kind === MediaKind.Image ? takeImage(picked) : takeVideo(picked));
   } catch (error) {
     // Reading the file failed partway (the picker's copy went away); nothing else throws here.
-    console.warn('[media] could not read a picked file', error);
-    dispatch({ type: 'rejected', id: picked.id, reason: RejectReason.Unreadable });
+    if (!picked.signal.aborted) {
+      warnInDev('could not read a picked file', error);
+      dispatch({ type: 'rejected', id: picked.id, reason: RejectReason.Unreadable });
+    }
+  } finally {
+    inProgress.delete(picked.id);
   }
 }
 
 /** Adds the picked files to the draft, in order, and starts checking them. */
 export async function addDraftFiles(files: File[]) {
-  const formats = await Promise.all(files.map(readFormat));
+  const heads = await Promise.all(files.map(readPickedHead));
 
   // No await from here to the dispatch, so two quick picks cannot both take the last slot.
-  const kinds = files.map((file, index) =>
-    mediaKindOf(formats[index] ?? FileFormat.Unknown, file.type),
-  );
-  const formatProblems = kinds.map((kind, index) => formatProblem(kind, formats[index]));
-  const countProblems = admitByCount(
-    kinds.filter((_, index) => !formatProblems[index]),
-    acceptedCounts(),
-  );
-  let counted = 0;
-  const refusals = formatProblems.map((problem) => problem ?? countProblems[counted++]);
-
+  const picked = files.map((file, index) => {
+    const head = heads[index];
+    const format = head ? sniffFormat(head) : null;
+    const kind = mediaKindOf(format ?? FileFormat.Unknown, file.type);
+    const dimensions = head && kind === MediaKind.Image ? readImageDimensions(head) : null;
+    return { file, kind, format, bytes: file.size, dimensions };
+  });
+  const refusals = refusePicked(picked, acceptedCounts());
   const ids = files.map(() => `local-${++fileCount}`);
   dispatch({
     type: 'added',
-    items: files.map((file, index) => ({ id: ids[index], file, kind: kinds[index] })),
+    items: picked.map(({ file, kind }, index) => ({ id: ids[index], file, kind })),
   });
 
-  files.forEach((file, index) => {
+  picked.forEach(({ file, kind, format, dimensions }, index) => {
+    const id = ids[index];
     const refusal = refusals[index];
-    const format = formats[index];
     if (refusal || !format) {
-      dispatch({ type: 'rejected', id: ids[index], reason: refusal ?? RejectReason.Unreadable });
-    } else {
-      void take({ id: ids[index], file, format }, kinds[index]);
+      dispatch({ type: 'rejected', id, reason: refusal ?? RejectReason.Unreadable });
+      return;
     }
+
+    const controller = new AbortController();
+    inProgress.set(id, controller);
+    void take({ id, file, format, dimensions, signal: controller.signal }, kind);
   });
 }
 
-/** Stops any work on the file, drops its result when it still arrives, and forgets it. */
-export function removeDraftMedia(id: string) {
-  imageQueue.cancel(id);
-  conversions.get(id)?.abort();
-
-  const media = findMedia(id);
-  if (media?.status === DraftMediaStatus.ReadyToUpload && media.previewUrl) {
+/** Stops the file's work at whatever step it is, and frees its preview. */
+function stopWork(media: DraftMedia) {
+  imageQueue.cancel(media.id);
+  inProgress.get(media.id)?.abort();
+  inProgress.delete(media.id);
+  if (media.status === DraftMediaStatus.ReadyToUpload && media.previewUrl) {
     URL.revokeObjectURL(media.previewUrl);
+  }
+}
+
+/** Removes the file from the draft; a result that still arrives is dropped. */
+export function removeDraftMedia(id: string) {
+  const media = findMedia(id);
+  if (media) {
+    stopWork(media);
   }
   dispatch({ type: 'removed', id });
 }
 
 export function clearDraftMedia() {
-  useListingDraftStore.getState().media.forEach((media) => removeDraftMedia(media.id));
+  useListingDraftStore.getState().media.forEach(stopWork);
+  dispatch({ type: 'cleared' });
 }

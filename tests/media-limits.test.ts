@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { FileFormat } from '@/features/media/file-header';
 import {
-  admitByCount,
   checkImage,
   checkVideoLength,
   convertedVideoSize,
@@ -12,6 +11,8 @@ import {
   MediaKind,
   mediaKindOf,
   originalVideoProblem,
+  type PickedMedia,
+  refusePicked,
   RejectReason,
   shouldConvertVideo,
   type VideoFacts,
@@ -29,12 +30,24 @@ describe('mediaKindOf', () => {
   });
 });
 
-describe('admitByCount', () => {
+describe('refusePicked', () => {
   const none = { [MediaKind.Image]: 0, [MediaKind.Video]: 0 };
+  const photo = (overrides: Partial<PickedMedia> = {}): PickedMedia => ({
+    kind: MediaKind.Image,
+    format: FileFormat.Jpeg,
+    bytes: 3 * MB,
+    dimensions: PHOTO,
+    ...overrides,
+  });
+  const video: PickedMedia = {
+    kind: MediaKind.Video,
+    format: FileFormat.QuickTime,
+    bytes: 90 * MB,
+    dimensions: null,
+  };
 
   it('takes photos up to ten and one video, in the order picked', () => {
-    const kinds = [MediaKind.Video, ...Array(11).fill(MediaKind.Image), MediaKind.Video];
-    const reasons = admitByCount(kinds, none);
+    const reasons = refusePicked([video, ...Array(11).fill(photo()), video], none);
 
     expect(reasons.slice(0, 11)).toEqual(Array(11).fill(null));
     expect(reasons[11]).toBe(RejectReason.TooManyImages);
@@ -42,11 +55,28 @@ describe('admitByCount', () => {
   });
 
   it('counts what the draft already holds', () => {
-    const reasons = admitByCount([MediaKind.Image, MediaKind.Image], {
+    const reasons = refusePicked([photo(), photo()], {
       [MediaKind.Image]: 9,
       [MediaKind.Video]: 1,
     });
     expect(reasons).toEqual([null, RejectReason.TooManyImages]);
+  });
+
+  it('refuses what the first bytes rule out before counting, so it takes no slot', () => {
+    const picked = [
+      ...Array(9).fill(photo()),
+      photo({ format: FileFormat.Heic }),
+      photo({ bytes: MAX_IMAGE_BYTES + 1 }),
+      photo({ dimensions: { width: 400, height: 300 } }),
+      photo(),
+    ];
+
+    expect(refusePicked(picked, none).slice(9)).toEqual([
+      RejectReason.Heic,
+      RejectReason.ImageTooLarge,
+      RejectReason.ImageTooSmall,
+      null,
+    ]);
   });
 });
 
@@ -85,7 +115,8 @@ describe('checkImage', () => {
 const IPHONE_1080P: VideoFacts = {
   bytes: 108 * MB,
   videoCodec: 'avc',
-  audioCodec: 'aac',
+  videoCodecString: 'avc1.640028',
+  audioCodecs: ['aac'],
   durationMs: 60_000,
   width: 1080,
   height: 1920,
@@ -103,14 +134,28 @@ describe('originalVideoProblem', () => {
   it('accepts H.264 up to 1080p in either orientation, with AAC or no sound', () => {
     expect(originalVideoProblem(IPHONE_1080P)).toBeNull();
     expect(originalVideoProblem({ ...IPHONE_1080P, width: 1920, height: 1080 })).toBeNull();
-    expect(originalVideoProblem({ ...IPHONE_1080P, audioCodec: null })).toBeNull();
+    expect(originalVideoProblem({ ...IPHONE_1080P, audioCodecs: [] })).toBeNull();
+    expect(originalVideoProblem({ ...IPHONE_1080P, videoCodecString: 'avc1.42E01E' })).toBeNull();
+  });
+
+  it('names HEVC on its own: iPhones record it by default and a setting changes that', () => {
+    expect(originalVideoProblem({ ...IPHONE_1080P, videoCodec: 'hevc' })).toBe(
+      RejectReason.VideoHevc,
+    );
   });
 
   it('refuses what buyers’ phones may not play', () => {
-    expect(originalVideoProblem({ ...IPHONE_1080P, videoCodec: 'hevc' })).toBe(
+    expect(originalVideoProblem({ ...IPHONE_1080P, videoCodec: 'mp4v' })).toBe(
       RejectReason.VideoNotPlayable,
     );
-    expect(originalVideoProblem({ ...IPHONE_1080P, audioCodec: 'opus' })).toBe(
+    // High 10 and 4:4:4 H.264 are valid files many phone decoders cannot play.
+    for (const codecString of ['avc1.6E0028', 'avc1.F40028']) {
+      expect(originalVideoProblem({ ...IPHONE_1080P, videoCodecString: codecString })).toBe(
+        RejectReason.VideoNotPlayable,
+      );
+    }
+    // The server refuses the file if any audio track is not AAC, not just the first.
+    expect(originalVideoProblem({ ...IPHONE_1080P, audioCodecs: ['aac', 'opus'] })).toBe(
       RejectReason.VideoNotPlayable,
     );
   });

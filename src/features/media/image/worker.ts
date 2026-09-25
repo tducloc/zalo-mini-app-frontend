@@ -46,6 +46,10 @@ function draw(bitmap: ImageBitmap, width: number, height: number, flush?: boolea
     throw new Error('2d context unavailable');
   }
   context.imageSmoothingQuality = 'high';
+  // JPEG has no transparency: the encoder would turn transparent pixels black. White
+  // matches what the server does with a transparent original.
+  context.fillStyle = '#fff';
+  context.fillRect(0, 0, width, height);
   context.drawImage(bitmap, 0, 0, width, height);
   if (flush) {
     // Chrome records drawImage and runs it at encode time; reading one pixel forces it to

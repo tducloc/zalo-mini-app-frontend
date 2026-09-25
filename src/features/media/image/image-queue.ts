@@ -178,11 +178,13 @@ export class ImageQueue {
         this.fallBackWaiting();
         return;
       }
-      const workerIndex = this.nextSlot(this.waiting[0]);
+      const [next] = this.waiting;
+      const workerIndex = this.nextSlot(next);
       if (workerIndex === null) {
         return;
       }
-      this.start(this.waiting.shift() as Job, workerIndex);
+      this.waiting.shift();
+      this.start(next, workerIndex);
     }
   }
 
