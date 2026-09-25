@@ -64,7 +64,7 @@ export default function MediaTile({
         {/* Just the mark: the viewer gives the reason, so there is one message per error. */}
         {isError && (
           <span className="absolute inset-0 grid place-items-center">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-marketplace-danger text-lg font-bold text-white shadow">
+            <span className="grid h-7 w-7 place-items-center rounded-full bg-marketplace-danger text-base font-bold text-white shadow">
               !
             </span>
           </span>
