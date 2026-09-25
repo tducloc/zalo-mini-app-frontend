@@ -4,10 +4,10 @@ import { Button } from 'zmp-ui';
 import { addDraftFiles, clearDraftMedia } from '@/features/listings/draft/media-intake';
 import { type DraftMedia, DraftMediaStatus } from '@/features/listings/draft/media-reducer';
 import { useListingDraftStore } from '@/features/listings/draft/store';
-import { canConvertVideos } from '@/features/media/convert-video';
-import { startFrameMeter } from '@/features/media/lab/frame-meter';
-import DraftMediaRow, { type RowTimes } from '@/features/media/lab/draft-media-row';
-import { createStageBreadcrumb } from '@/features/media/lab/stage-breadcrumb';
+import { canConvertVideos } from '@/features/media/video/convert-video';
+import { startFrameMeter } from '@/features/lab/media/frame-meter';
+import DraftMediaRow, { type RowTimes } from '@/features/lab/media/draft-media-row';
+import { createStageBreadcrumb } from '@/features/lab/media/stage-breadcrumb';
 import { canOptimizeImages } from '@/features/media/image/image-worker';
 
 /**

@@ -13,38 +13,34 @@ import {
 } from '@/features/listings/draft/media-reducer';
 import { cancelUpload } from '@/features/listings/draft/media-upload';
 import { useListingDraftStore } from '@/features/listings/draft/store';
-import { canConvertVideos, convertVideo } from '@/features/media/convert-video';
-import {
-  FileFormat,
-  IMAGE_FORMATS,
-  IMAGE_HEAD_BYTES,
-  type ImageDimensions,
-  readHead,
-  readImageDimensions,
-  sniffFormat,
-} from '@/features/media/file-header';
 import { ImageQueue } from '@/features/media/image/image-queue';
+import {
+  IMAGE_HEAD_BYTES,
+  ImageFormat,
+  type PhotoHeader,
+  photoProblem,
+  readPhotoHeader,
+} from '@/features/media/image/image-utils';
 import { canOptimizeImages } from '@/features/media/image/image-worker';
+import { MediaKind, readHead, refusePicked, RejectReason } from '@/features/media/media-utils';
+import { canConvertVideos, convertVideo } from '@/features/media/video/convert-video';
 import {
   checkVideoLength,
   convertedVideoSize,
-  MediaKind,
-  mediaKindOf,
   originalVideoProblem,
-  refusePicked,
-  RejectReason,
+  readVideoMetadata,
   shouldConvertVideo,
   type VideoFacts,
-} from '@/features/media/media-limits';
-import { readVideoMetadata } from '@/features/media/video-metadata';
+  VideoFormat,
+  type VideoMetadata,
+} from '@/features/media/video/video-utils';
 import { warnInDev } from '@/utils/dev-log';
 
 interface PickedFile {
   id: string;
   file: File;
-  format: FileFormat;
-  /** Photos only, from the header read when the file was picked. */
-  dimensions: ImageDimensions | null;
+  /** Photos only: format and size from the header read when the file was picked. */
+  photo: PhotoHeader | null;
   /** Aborted when the seller removes the file, at whatever step it has reached. */
   signal: AbortSignal;
 }
@@ -61,7 +57,7 @@ const findMedia = (id: string) =>
 
 const warn = (message: string, error: unknown) => warnInDev('media', message, error);
 
-/** Enough for the format and a photo's size; null when the file cannot be read. */
+/** Enough for a photo's format and size; null when the file cannot be read. */
 async function readPickedHead(file: File) {
   try {
     return await readHead(file, IMAGE_HEAD_BYTES);
@@ -81,14 +77,13 @@ function acceptedCounts() {
   return counts;
 }
 
-async function takeImage({ id, file, format, dimensions, signal }: PickedFile) {
+async function takeImage({ id, file, photo, signal }: PickedFile) {
+  if (!photo?.format) {
+    return;
+  }
   // As stored in the file, before EXIF orientation (api-spec, upload-urls).
-  const original = {
-    bytes: file.size,
-    width: dimensions?.width ?? null,
-    height: dimensions?.height ?? null,
-  };
-  const asPicked: UploadSource = { blob: file, contentType: format, optimized: false };
+  const original = { bytes: file.size, width: photo.width, height: photo.height };
+  const asPicked: UploadSource = { blob: file, contentType: photo.format, optimized: false };
   if (!canOptimizeImages) {
     dispatch({ type: 'ready', id, original, upload: asPicked, previewUrl: null });
     return;
@@ -110,7 +105,7 @@ async function takeImage({ id, file, format, dimensions, signal }: PickedFile) {
     type: 'ready',
     id,
     original,
-    upload: { blob, contentType: FileFormat.Jpeg, optimized: true },
+    upload: { blob, contentType: ImageFormat.Jpeg, optimized: true },
     previewUrl: URL.createObjectURL(blob),
   });
 }
@@ -149,13 +144,13 @@ async function convert(
 }
 
 async function takeVideo(picked: PickedFile) {
-  const { id, file, format, signal } = picked;
-  let facts: VideoFacts;
+  const { id, file, signal } = picked;
+  let facts: VideoMetadata & VideoFacts;
   try {
-    const metadata = await readVideoMetadata(file);
-    facts = { ...metadata, bytes: file.size };
+    facts = { ...(await readVideoMetadata(file)), bytes: file.size };
   } catch {
-    dispatch({ type: 'rejected', id, reason: RejectReason.Unreadable });
+    // Not an MP4 or MOV mediabunny can open: the one check of a video's format.
+    dispatch({ type: 'rejected', id, reason: RejectReason.UnsupportedFormat });
     return;
   }
 
@@ -178,7 +173,7 @@ async function takeVideo(picked: PickedFile) {
     }
     // Same rule as photos: keep the picked file when converting did not make it smaller.
     if (converted && (problem || converted.size < file.size)) {
-      const upload = { blob: converted, contentType: FileFormat.Mp4, optimized: true };
+      const upload = { blob: converted, contentType: VideoFormat.Mp4, optimized: true };
       dispatch({ type: 'ready', id, original, upload, previewUrl: null });
       return;
     }
@@ -189,7 +184,7 @@ async function takeVideo(picked: PickedFile) {
     dispatch({ type: 'rejected', id, reason: problem });
     return;
   }
-  const upload = { blob: file, contentType: format, optimized: false };
+  const upload = { blob: file, contentType: facts.format, optimized: false };
   dispatch({ type: 'ready', id, original, upload, previewUrl: null });
 }
 
@@ -207,19 +202,28 @@ async function take(picked: PickedFile, kind: MediaKind) {
   }
 }
 
+/**
+ * What a picked file is, by its first bytes: a photo when image-size can read it, else a
+ * video, which mediabunny checks next (it opens only MP4 and MOV). `file.type` only breaks
+ * the tie for a header nothing can read: it is empty for some files on Android.
+ */
+function describePicked(file: File, head: Uint8Array | null) {
+  const photo = head && readPhotoHeader(head);
+  if (photo) {
+    return { file, kind: MediaKind.Image, photo, problem: photoProblem(photo, file.size) };
+  }
+
+  const kind = file.type.startsWith('image/') ? MediaKind.Image : MediaKind.Video;
+  const isReadable = head !== null && kind === MediaKind.Video;
+  return { file, kind, photo: null, problem: isReadable ? null : RejectReason.Unreadable };
+}
+
 /** Adds the picked files to the draft, in order, and starts checking them. */
 export async function addDraftFiles(files: File[]) {
   const heads = await Promise.all(files.map(readPickedHead));
 
   // No await from here to the dispatch, so two quick picks cannot both take the last slot.
-  const picked = files.map((file, index) => {
-    const head = heads[index];
-    const format = head ? sniffFormat(head) : null;
-    const kind = mediaKindOf(format ?? FileFormat.Unknown, file.type);
-    const isPhoto = format !== null && IMAGE_FORMATS.includes(format);
-    const dimensions = head && isPhoto ? readImageDimensions(head) : null;
-    return { file, kind, format, bytes: file.size, dimensions };
-  });
+  const picked = files.map((file, index) => describePicked(file, heads[index]));
   const refusals = refusePicked(picked, acceptedCounts());
   const ids = files.map(() => `local-${++fileCount}`);
   dispatch({
@@ -227,17 +231,17 @@ export async function addDraftFiles(files: File[]) {
     items: picked.map(({ file, kind }, index) => ({ id: ids[index], file, kind })),
   });
 
-  picked.forEach(({ file, kind, format, dimensions }, index) => {
+  picked.forEach(({ file, kind, photo }, index) => {
     const id = ids[index];
     const refusal = refusals[index];
-    if (refusal || !format) {
-      dispatch({ type: 'rejected', id, reason: refusal ?? RejectReason.Unreadable });
+    if (refusal) {
+      dispatch({ type: 'rejected', id, reason: refusal });
       return;
     }
 
     const controller = new AbortController();
     inProgress.set(id, controller);
-    void take({ id, file, format, dimensions, signal: controller.signal }, kind);
+    void take({ id, file, photo, signal: controller.signal }, kind);
   });
 }
 

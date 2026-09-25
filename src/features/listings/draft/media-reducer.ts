@@ -7,7 +7,7 @@
  * that is how a result arriving after the seller removed the file is dropped.
  */
 
-import type { MediaKind, RejectReason } from '@/features/media/media-limits';
+import { type MediaKind, type RejectReason } from '@/features/media/media-utils';
 import { type ServerMedia, ServerMediaStatus } from '@/features/media/upload/upload-types';
 import type { UploadWait } from '@/features/media/upload/file-upload';
 

@@ -4,7 +4,7 @@ import {
   estimateJobBytes,
   pickWorker,
   UNKNOWN_IMAGE_DIMENSIONS,
-} from '@/features/media/lab/pool-budget';
+} from '@/features/lab/media/pool-budget';
 
 const MB = 1024 * 1024;
 

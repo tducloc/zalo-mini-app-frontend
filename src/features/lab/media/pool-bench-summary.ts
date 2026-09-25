@@ -3,8 +3,8 @@
  * plans/create-listing.md). Kept apart from the runner so they can be unit tested.
  */
 
-import type { ImageDimensions } from '@/features/media/file-header';
-import { MIB } from '@/features/media/media-limits';
+import { type ImageDimensions } from '@/features/media/image/image-utils';
+import { MIB } from '@/features/media/media-utils';
 
 export interface BenchConfig {
   key: string;

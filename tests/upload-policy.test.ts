@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { isUrlExpiring, pollDelayMs, retryDelayMs } from '@/features/media/upload/retry-policy';
 import {
   failureFromApiStatus,
   failureFromStorageStatus,
   FailureKind,
   isRetryable,
-} from '@/features/media/upload/upload-failure';
+  isUrlExpiring,
+  pollDelayMs,
+} from '@/features/media/upload/retry-policy';
 
 describe('failureFromApiStatus', () => {
   it.each([
@@ -46,18 +47,6 @@ describe('isRetryable', () => {
     const retryable = Object.values(FailureKind).filter(isRetryable);
     expect(retryable).not.toContain(FailureKind.Rejected);
     expect(retryable).toHaveLength(Object.values(FailureKind).length - 1);
-  });
-});
-
-describe('retryDelayMs', () => {
-  it('doubles after each failed attempt, jittered over the upper half', () => {
-    expect([retryDelayMs(1, 0), retryDelayMs(1, 1)]).toEqual([500, 1_000]);
-    expect([retryDelayMs(2, 0), retryDelayMs(2, 1)]).toEqual([1_000, 2_000]);
-    expect([retryDelayMs(3, 0), retryDelayMs(3, 1)]).toEqual([2_000, 4_000]);
-  });
-
-  it('stops growing at 8 s', () => {
-    expect(retryDelayMs(10, 1)).toBe(8_000);
   });
 });
 

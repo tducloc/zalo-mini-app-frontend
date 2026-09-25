@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DraftMedia } from '@/features/listings/draft/media-reducer';
-import { MediaKind } from '@/features/media/media-limits';
+import { MediaKind } from '@/features/media/media-utils';
 import type { UploadRequestFile } from '@/features/media/upload/upload-types';
 
 // The network, replaced: the real module runs against these.
@@ -15,8 +15,21 @@ const api = vi.hoisted(() => ({
 }));
 const storage = vi.hoisted(() => ({ putBlob: vi.fn() }));
 
-vi.mock('@/features/media/upload/upload-api', () => api);
-vi.mock('@/features/media/upload/put-blob', () => storage);
+vi.mock('@/features/media/upload/upload-api', () => ({
+  ...api,
+  putBlob: storage.putBlob,
+  // The real transport's shape, over the mocks above.
+  browserTransport: {
+    register: async (file: UploadRequestFile) => (await api.registerUploads([file]))[0],
+    refresh: api.refreshUploadUrl,
+    put: storage.putBlob,
+    completeParts: api.completeParts,
+    complete: api.completeUpload,
+    isOnline: () => true,
+    waitForNetwork: async () => {},
+    now: () => Date.now(),
+  },
+}));
 
 const LATER = '2099-01-01T00:00:00Z';
 const file = new File(['0123456789'], 'photo.jpg');
@@ -26,7 +39,7 @@ type Modules = Awaited<ReturnType<typeof loadModules>>;
 async function loadModules() {
   const { useListingDraftStore } = await import('@/features/listings/draft/store');
   const upload = await import('@/features/listings/draft/media-upload');
-  const { FailureKind, UploadFailure } = await import('@/features/media/upload/upload-failure');
+  const { FailureKind, UploadFailure } = await import('@/features/media/upload/retry-policy');
   const { DraftMediaStatus } = await import('@/features/listings/draft/media-reducer');
   const { ServerMediaStatus, MediaError } = await import('@/features/media/upload/upload-types');
   return {
@@ -170,8 +183,8 @@ describe('media-upload', () => {
 
     addPhotos('a');
     markReady('a');
-    // Three attempts with their waits (at most 1 s, then 2 s).
-    await vi.advanceTimersByTimeAsync(5_000);
+    // Three attempts with their waits (at most 2 s, then 4 s).
+    await vi.advanceTimersByTimeAsync(10_000);
     expect(statusOf('a')).toBe(modules.DraftMediaStatus.UploadFailed);
 
     storage.putBlob.mockResolvedValue('"etag"');

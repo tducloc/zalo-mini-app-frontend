@@ -7,7 +7,7 @@
  * between them. Whether that stays smooth on the main thread is a device check (media lab).
  */
 
-import { CONVERTED_BITRATE } from '@/features/media/media-limits';
+import { CONVERTED_BITRATE } from '@/features/media/video/video-utils';
 
 /** Faster clips are converted at this rate: product clips do not need 60 fps, and it halves the work. */
 const MAX_FRAME_RATE = 30;

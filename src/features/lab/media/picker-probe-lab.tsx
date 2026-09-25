@@ -2,30 +2,26 @@ import { useState } from 'react';
 import { openMediaPicker } from 'zmp-sdk';
 import { Button } from 'zmp-ui';
 
-import { rejectMessages } from '@/features/listings/draft/reject-messages';
+import { rejectMessages } from '@/features/listings/draft/media-messages';
 import {
-  FileFormat,
   IMAGE_HEAD_BYTES,
-  readImageDimensions,
-  sniffFormat,
-} from '@/features/media/file-header';
+  photoProblem,
+  readPhotoHeader,
+} from '@/features/media/image/image-utils';
 import {
   type ByteReader,
   describeCodec,
   pickedPaths,
   rangeReaderFor,
-} from '@/features/media/lab/byte-access';
-import { createStageBreadcrumb } from '@/features/media/lab/stage-breadcrumb';
+} from '@/features/lab/media/byte-access';
+import { createStageBreadcrumb } from '@/features/lab/media/stage-breadcrumb';
+import { MIB, RejectReason } from '@/features/media/media-utils';
 import {
-  checkImage,
   checkVideoLength,
-  formatProblem,
-  MediaKind,
-  MIB,
   originalVideoProblem,
+  readVideoMetadata,
   shouldConvertVideo,
-} from '@/features/media/media-limits';
-import { readVideoMetadata } from '@/features/media/video-metadata';
+} from '@/features/media/video/video-utils';
 
 /**
  * openMediaPicker for a photo or a video, with or without silentRequest, then reads what it
@@ -70,12 +66,11 @@ const errorText = (error: unknown) => (error instanceof Error ? error.message : 
 async function probePhoto(read: ByteReader, size: number) {
   const started = Date.now();
   const head = new Uint8Array(await read(0, IMAGE_HEAD_BYTES));
-  const format = sniffFormat(head);
-  const dimensions = readImageDimensions(head);
-  const problem = formatProblem(MediaKind.Image, format) ?? checkImage(size, dimensions);
+  const photo = readPhotoHeader(head);
+  const problem = photo ? photoProblem(photo, size) : RejectReason.Unreadable;
   return [
-    `  ↳ header · ${Date.now() - started} ms · ${format === FileFormat.Unknown ? 'không rõ định dạng' : format}`,
-    `  ↳ kích thước · ${dimensions ? `${dimensions.width} × ${dimensions.height}` : 'không đọc được'}`,
+    `  ↳ header · ${Date.now() - started} ms · ${photo?.format ?? 'định dạng không nhận'}`,
+    `  ↳ kích thước · ${photo ? `${photo.width} × ${photo.height}` : 'không đọc được'}`,
     `  ↳ L4 sẽ · ${problem ? `từ chối: ${rejectMessages[problem]}` : 'nhận, tối ưu trong worker'}`,
   ];
 }

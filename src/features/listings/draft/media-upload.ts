@@ -6,8 +6,9 @@
  * bottom of the file.
  */
 
+import PQueue from 'p-queue';
+
 import {
-  type DraftMedia,
   DraftMediaStatus,
   isServerSettled,
   type MediaAction,
@@ -15,11 +16,13 @@ import {
   type UploadedDraftMedia,
 } from '@/features/listings/draft/media-reducer';
 import { useListingDraftStore } from '@/features/listings/draft/store';
-import { browserTransport } from '@/features/media/upload/browser-transport';
 import { FileUpload, type UploadListener } from '@/features/media/upload/file-upload';
-import { pollDelayMs } from '@/features/media/upload/retry-policy';
-import { deleteMedia, fetchMediaStatuses } from '@/features/media/upload/upload-api';
-import { FailureKind } from '@/features/media/upload/upload-failure';
+import { FailureKind, pollDelayMs } from '@/features/media/upload/retry-policy';
+import {
+  browserTransport,
+  deleteMedia,
+  fetchMediaStatuses,
+} from '@/features/media/upload/upload-api';
 import {
   MediaError,
   type ServerMedia,
@@ -30,14 +33,14 @@ import { warnInDev } from '@/utils/dev-log';
 
 /**
  * Files uploading at once. On a phone's uplink more would only split the bandwidth, and
- * finishing files one after another lets the server start processing the first sooner.
+ * finishing files one after another lets the server start processing the first sooner;
+ * fewer requests at once also means a dropped connection fails fewer of them.
  */
 const FILES_IN_FLIGHT = 2;
 
 enum Phase {
-  /** Waiting for a free slot. */
+  /** In the upload queue, waiting for a free slot or running. */
   Queued = 'QUEUED',
-  Running = 'RUNNING',
   Failed = 'FAILED',
   Uploaded = 'UPLOADED',
 }
@@ -60,6 +63,8 @@ const MISSING_ON_SERVER: ServerMedia = {
 
 /** One per draft file that is ready to upload or further on, by draft ID, until removed. */
 const entries = new Map<string, UploadEntry>();
+/** Files start in the order they became ready; a retried file joins the end. */
+const uploadQueue = new PQueue({ concurrency: FILES_IN_FLIGHT });
 
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let pollRound = 0;
@@ -97,53 +102,30 @@ function requestFor(media: ReadyDraftMedia): UploadRequestFile {
 }
 
 /**
- * Starts whatever can start: queues new ready files, then fills the free slots. Runs on
- * every store change and when an upload ends; it can run again from inside itself,
- * because starting an upload dispatches.
+ * Queues each file that became ready. It asks for its own upload URL when it starts
+ * (FileUpload), not all together: the call is quick, a URL taken right before the upload
+ * is fresh, and the limit of 60 an hour is per seller, far above the 11 a listing needs.
  */
-function pump() {
-  const media = draftMedia();
-  queueReady(media);
-  startQueued(media);
-}
-
-/**
- * Each file asks for its own upload URL when it starts (FileUpload), not all together:
- * the call is quick, a URL taken right before the upload is fresh, and the limit of 60 an
- * hour is per seller, far above the 11 a listing needs.
- */
-function queueReady(media: DraftMedia[]) {
-  for (const item of media) {
+function queueReady() {
+  for (const item of useListingDraftStore.getState().media) {
     if (item.status === DraftMediaStatus.ReadyToUpload && !entries.has(item.id)) {
-      entries.set(item.id, {
+      const entry: UploadEntry = {
         upload: new FileUpload(requestFor(item), item.upload.blob, browserTransport),
         controller: new AbortController(),
         phase: Phase.Queued,
         failure: null,
-      });
+      };
+      entries.set(item.id, entry);
+      enqueue(item.id, entry);
     }
   }
 }
 
-function startQueued(media: DraftMedia[]) {
-  const runningCount = [...entries.values()].filter(
-    (entry) => entry.phase === Phase.Running,
-  ).length;
-  const toStart = media
-    .map((item) => ({ id: item.id, entry: entries.get(item.id) }))
-    .filter(
-      (item): item is { id: string; entry: UploadEntry } => item.entry?.phase === Phase.Queued,
-    )
-    .slice(0, Math.max(0, FILES_IN_FLIGHT - runningCount));
-
-  // All marked running before any starts: starting dispatches, which runs pump again, and
-  // that inner pump must count them.
-  for (const { entry } of toStart) {
-    entry.phase = Phase.Running;
-  }
-  for (const { id, entry } of toStart) {
-    void runUpload(id, entry);
-  }
+function enqueue(id: string, entry: UploadEntry) {
+  // A file removed while waiting gives up its turn at once.
+  void uploadQueue.add(() =>
+    entry.controller.signal.aborted ? Promise.resolve() : runUpload(id, entry),
+  );
 }
 
 function listenerFor(id: string, entry: UploadEntry): UploadListener {
@@ -172,6 +154,9 @@ async function runUpload(id: string, entry: UploadEntry) {
   dispatch({ type: 'uploadStarted', id });
   try {
     const result = await entry.upload.run(listenerFor(id, entry), entry.controller.signal);
+    if (entry.controller.signal.aborted) {
+      return;
+    }
     if (result.kind === 'uploaded') {
       entry.phase = Phase.Uploaded;
       dispatch({
@@ -193,8 +178,6 @@ async function runUpload(id: string, entry: UploadEntry) {
       entry.phase = Phase.Failed;
       dispatch({ type: 'uploadFailed', id, isRetryable: true });
     }
-  } finally {
-    pump();
   }
 }
 
@@ -265,18 +248,18 @@ function serverMediaFrom(status: ServerMedia | undefined): ServerMedia {
 
 // ---- What the draft and the form call ----
 
-function requeue(entry: UploadEntry) {
+function requeue(id: string, entry: UploadEntry) {
   entry.phase = Phase.Queued;
   entry.failure = null;
   entry.upload.markUrlsStale();
+  enqueue(id, entry);
 }
 
 /** The seller tapped Retry on a failed upload. */
 export function retryUpload(id: string) {
   const entry = entries.get(id);
   if (entry?.phase === Phase.Failed) {
-    requeue(entry);
-    pump();
+    requeue(id, entry);
   }
 }
 
@@ -298,19 +281,14 @@ export function cancelUpload(id: string) {
  * after a lift ride that outlasted the retry waits; the seller need not tap Retry.
  */
 function retryAfterNetworkLoss() {
-  let hasRequeued = false;
-  for (const entry of entries.values()) {
+  for (const [id, entry] of entries) {
     if (entry.phase === Phase.Failed && entry.failure === FailureKind.Network) {
-      requeue(entry);
-      hasRequeued = true;
+      requeue(id, entry);
     }
-  }
-  if (hasRequeued) {
-    pump();
   }
 }
 
-const unsubscribe = useListingDraftStore.subscribe(pump);
+const unsubscribe = useListingDraftStore.subscribe(queueReady);
 if (typeof window !== 'undefined') {
   window.addEventListener('online', retryAfterNetworkLoss);
 }

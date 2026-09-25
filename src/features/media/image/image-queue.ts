@@ -1,6 +1,6 @@
 /**
  * Sends photos to the image worker one at a time, in the order they were picked (diagrams
- * 02 and 02b).
+ * 02 and 02b). p-queue keeps the line; this class keeps the worker.
  *
  * - One at a time, decided 2026-09-25: only one full-size photo is ever decoded, so ten
  *   12 MP photos cannot run the WebView out of memory (P1), with no memory budget to
@@ -10,6 +10,8 @@
  *   uses its original.
  * - Nothing ever falls back to the main thread (decided 2026-09-24).
  */
+
+import PQueue from 'p-queue';
 
 import {
   ImageWorker,
@@ -30,58 +32,44 @@ export type ImageOutcome =
   | { kind: 'original'; reason: FallbackReason }
   | { kind: 'cancelled' };
 
-interface Job {
-  id: string;
-  file: Blob;
-  settle: (outcome: ImageOutcome) => void;
-}
+const CANCELLED: ImageOutcome = { kind: 'cancelled' };
 
 /** What the queue needs from a worker; tests pass a fake. */
 export type QueueWorker = Pick<ImageWorker, 'run' | 'dispose' | 'isDisposed'>;
 
 export class ImageQueue {
-  private readonly waiting: Job[] = [];
-  private current: Job | null = null;
+  private readonly queue = new PQueue({ concurrency: 1 });
+  /** One per photo not yet settled, to cancel it. */
+  private readonly controllers = new Map<string, AbortController>();
   private worker: QueueWorker | null = null;
   private crashes = 0;
 
-  constructor(private readonly createWorker: () => QueueWorker = () => new ImageWorker()) {}
-
-  optimize(id: string, file: Blob) {
-    return new Promise<ImageOutcome>((settle) => {
-      this.waiting.push({ id, file, settle });
-      void this.runNext();
+  constructor(private readonly createWorker: () => QueueWorker = () => new ImageWorker()) {
+    // A worker holds a few MB even when idle; the next photo starts a fresh one.
+    this.queue.on('idle', () => {
+      this.worker?.dispose();
+      this.worker = null;
     });
+  }
+
+  optimize(id: string, file: Blob): Promise<ImageOutcome> {
+    const controller = new AbortController();
+    this.controllers.set(id, controller);
+
+    // Not given to p-queue as its signal: p-queue would free the slot at once, and the
+    // next photo would be decoded while the worker still has the cancelled one.
+    const cancelled = new Promise<ImageOutcome>((resolve) => {
+      controller.signal.addEventListener('abort', () => resolve(CANCELLED), { once: true });
+    });
+    const done = this.queue.add(() =>
+      controller.signal.aborted ? Promise.resolve(CANCELLED) : this.process(file),
+    );
+    return Promise.race([done, cancelled]).finally(() => this.controllers.delete(id));
   }
 
   /** Settles the photo as cancelled; a result that still arrives is dropped. */
   cancel(id: string) {
-    const index = this.waiting.findIndex((job) => job.id === id);
-    if (index >= 0) {
-      this.waiting.splice(index, 1)[0].settle({ kind: 'cancelled' });
-    }
-    if (this.current?.id === id) {
-      this.current.settle({ kind: 'cancelled' });
-    }
-  }
-
-  private async runNext() {
-    const job = this.current ? undefined : this.waiting.shift();
-    if (!job) {
-      return;
-    }
-
-    this.current = job;
-    job.settle(await this.process(job.file));
-    this.current = null;
-
-    if (this.waiting.length > 0) {
-      void this.runNext();
-    } else {
-      // A worker holds a few MB even when idle; the next photo starts a fresh one.
-      this.worker?.dispose();
-      this.worker = null;
-    }
+    this.controllers.get(id)?.abort();
   }
 
   private async process(file: Blob): Promise<ImageOutcome> {

@@ -7,12 +7,12 @@
  * chrome://inspect while the run is going.
  */
 
-import { IMAGE_HEAD_BYTES, readHead, readImageDimensions } from '@/features/media/file-header';
-import { startFrameMeter } from '@/features/media/lab/frame-meter';
+import { IMAGE_HEAD_BYTES, readPhotoHeader } from '@/features/media/image/image-utils';
+import { MIB, readHead } from '@/features/media/media-utils';
+import { startFrameMeter } from '@/features/lab/media/frame-meter';
 import { ImageWorker, MAX_EDGE, PipelineError } from '@/features/media/image/image-worker';
-import { estimateJobBytes, pickWorker, type PoolState } from '@/features/media/lab/pool-budget';
-import { MIB } from '@/features/media/media-limits';
-import type { BenchConfig, BenchResult, JobRecord } from '@/features/media/lab/pool-bench-summary';
+import { estimateJobBytes, pickWorker, type PoolState } from '@/features/lab/media/pool-budget';
+import type { BenchConfig, BenchResult, JobRecord } from '@/features/lab/media/pool-bench-summary';
 
 interface QueuedJob {
   file: File;
@@ -22,7 +22,7 @@ interface QueuedJob {
 
 async function prepareJob(file: File, decodeWidth?: number): Promise<QueuedJob> {
   const head = await readHead(file, IMAGE_HEAD_BYTES);
-  const dimensions = readImageDimensions(head);
+  const dimensions = readPhotoHeader(head);
 
   // Only shrink at decode when the stored width is larger; resizeWidth would upscale.
   const effectiveWidth =

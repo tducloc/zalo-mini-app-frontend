@@ -1,114 +1,73 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
-import { FileFormat } from '@/features/media/file-header';
+import { RejectReason } from '@/features/media/media-utils';
 import {
-  checkImage,
   checkVideoLength,
   convertedVideoSize,
-  formatProblem,
-  MAX_IMAGE_BYTES,
   MAX_VIDEO_BYTES,
-  MediaKind,
-  mediaKindOf,
   originalVideoProblem,
-  type PickedMedia,
-  refusePicked,
-  RejectReason,
+  readVideoMetadata,
   shouldConvertVideo,
   type VideoFacts,
-} from '@/features/media/media-limits';
+  VideoFormat,
+} from '@/features/media/video/video-utils';
 
 const MB = 1024 * 1024;
-const PHOTO = { width: 4032, height: 3024 };
 
-describe('mediaKindOf', () => {
-  it('goes by the bytes, and by the declared type only when the bytes are unknown', () => {
-    expect(mediaKindOf(FileFormat.QuickTime, '')).toBe(MediaKind.Video);
-    expect(mediaKindOf(FileFormat.Jpeg, 'video/mp4')).toBe(MediaKind.Image);
-    expect(mediaKindOf(FileFormat.Unknown, 'video/x-matroska')).toBe(MediaKind.Video);
-    expect(mediaKindOf(FileFormat.Unknown, '')).toBe(MediaKind.Image);
-  });
-});
+// Half-second 96×64 clips made with the backend's ffmpeg-static (testsrc2): H.264 + AAC,
+// the same stored landscape with a 90° flag as MOV, MPEG-4 Part 2, H.264 High 10, HEVC,
+// and H.264 with an AAC and an Opus track.
+function fixture(name: string) {
+  const path = fileURLToPath(new URL(`./fixtures/videos/${name}`, import.meta.url));
+  return new Blob([readFileSync(path)]);
+}
 
-describe('refusePicked', () => {
-  const none = { [MediaKind.Image]: 0, [MediaKind.Video]: 0 };
-  const photo = (overrides: Partial<PickedMedia> = {}): PickedMedia => ({
-    kind: MediaKind.Image,
-    format: FileFormat.Jpeg,
-    bytes: 3 * MB,
-    dimensions: PHOTO,
-    ...overrides,
-  });
-  const video: PickedMedia = {
-    kind: MediaKind.Video,
-    format: FileFormat.QuickTime,
-    bytes: 90 * MB,
-    dimensions: null,
-  };
+describe('readVideoMetadata', () => {
+  it('reads codecs, length and size of a phone-style clip', async () => {
+    const meta = await readVideoMetadata(fixture('h264-aac.mp4'));
 
-  it('takes photos up to ten and one video, in the order picked', () => {
-    const reasons = refusePicked([video, ...Array(11).fill(photo()), video], none);
-
-    expect(reasons.slice(0, 11)).toEqual(Array(11).fill(null));
-    expect(reasons[11]).toBe(RejectReason.TooManyImages);
-    expect(reasons[12]).toBe(RejectReason.TooManyVideos);
-  });
-
-  it('counts what the draft already holds', () => {
-    const reasons = refusePicked([photo(), photo()], {
-      [MediaKind.Image]: 9,
-      [MediaKind.Video]: 1,
+    expect(meta).toMatchObject({
+      format: VideoFormat.Mp4,
+      videoCodec: 'avc',
+      audioCodecs: ['aac'],
+      width: 96,
+      height: 64,
+      rotation: 0,
     });
-    expect(reasons).toEqual([null, RejectReason.TooManyImages]);
+    expect(meta.videoCodecString).toMatch(/^avc1\./);
+    expect(meta.durationMs).toBeGreaterThan(400);
+    expect(meta.durationMs).toBeLessThan(700);
   });
 
-  it('refuses what the first bytes rule out before counting, so it takes no slot', () => {
-    const picked = [
-      ...Array(9).fill(photo()),
-      photo({ format: FileFormat.Unknown }),
-      photo({ bytes: MAX_IMAGE_BYTES + 1 }),
-      photo({ dimensions: { width: 400, height: 300 } }),
-      photo(),
-    ];
+  it('gives the size as played for a clip stored sideways', async () => {
+    const meta = await readVideoMetadata(fixture('rotated.mov'));
 
-    expect(refusePicked(picked, none).slice(9)).toEqual([
-      RejectReason.UnsupportedFormat,
-      RejectReason.ImageTooLarge,
-      RejectReason.ImageTooSmall,
-      null,
-    ]);
-  });
-});
-
-describe('formatProblem', () => {
-  it('takes JPEG, PNG and WebP photos, MP4 and MOV videos', () => {
-    expect(formatProblem(MediaKind.Image, FileFormat.Webp)).toBeNull();
-    expect(formatProblem(MediaKind.Video, FileFormat.QuickTime)).toBeNull();
+    expect(meta.format).toBe(VideoFormat.QuickTime);
+    // ffmpeg's -display_rotation 90 turns counter-clockwise, which is 270° clockwise.
+    expect(meta).toMatchObject({ width: 64, height: 96, rotation: 270 });
   });
 
-  it('refuses anything else, including a photo format picked as a video', () => {
-    expect(formatProblem(MediaKind.Image, FileFormat.Unknown)).toBe(RejectReason.UnsupportedFormat);
-    expect(formatProblem(MediaKind.Video, FileFormat.Unknown)).toBe(RejectReason.UnsupportedFormat);
-    expect(formatProblem(MediaKind.Video, FileFormat.Jpeg)).toBe(RejectReason.UnsupportedFormat);
+  it('names a codec mediabunny does not decode by its container code', async () => {
+    expect((await readVideoMetadata(fixture('mp4v.mp4'))).videoCodec).toBe('mp4v');
   });
 
-  it('reports a file that could not be read', () => {
-    expect(formatProblem(MediaKind.Image, null)).toBe(RejectReason.Unreadable);
-  });
-});
+  it('gives what the upload checks need to refuse a file the server would refuse', async () => {
+    const problemOf = async (name: string) => {
+      const meta = await readVideoMetadata(fixture(name));
+      return originalVideoProblem({ ...meta, bytes: 10_000 });
+    };
 
-describe('checkImage', () => {
-  it('accepts a normal phone photo', () => {
-    expect(checkImage(3 * MB, PHOTO)).toBeNull();
-  });
-
-  it('refuses what the server would refuse', () => {
-    expect(checkImage(MAX_IMAGE_BYTES + 1, PHOTO)).toBe(RejectReason.ImageTooLarge);
-    expect(checkImage(MB, { width: 800, height: 499 })).toBe(RejectReason.ImageTooSmall);
+    expect(await problemOf('h264-aac.mp4')).toBeNull();
+    expect(await problemOf('hevc.mp4')).toBe(RejectReason.VideoHevc);
+    expect(await problemOf('high10.mp4')).toBe(RejectReason.VideoNotPlayable);
+    expect(await problemOf('two-audio.mp4')).toBe(RejectReason.VideoNotPlayable);
   });
 
-  it('leaves a photo with an unreadable header to the server', () => {
-    expect(checkImage(MB, null)).toBeNull();
+  it('rejects a file that is not MP4 or MOV', async () => {
+    await expect(readVideoMetadata(new Blob(['not a video']))).rejects.toThrow();
   });
 });
 

@@ -6,7 +6,7 @@ import {
   type MediaAction,
   mediaReducer,
 } from '@/features/listings/draft/media-reducer';
-import { MediaKind, RejectReason } from '@/features/media/media-limits';
+import { MediaKind, RejectReason } from '@/features/media/media-utils';
 import { UploadWait } from '@/features/media/upload/file-upload';
 import { ServerMediaStatus } from '@/features/media/upload/upload-types';
 

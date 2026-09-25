@@ -6,10 +6,10 @@ import {
   type BenchResult,
   formatBenchTsv,
   summarizeBench,
-} from '@/features/media/lab/pool-bench-summary';
-import { ALL_AT_ONCE, BENCH_CONFIGS, runPoolBench } from '@/features/media/lab/run-pool-bench';
-import { createStageBreadcrumb } from '@/features/media/lab/stage-breadcrumb';
-import { MIB } from '@/features/media/media-limits';
+} from '@/features/lab/media/pool-bench-summary';
+import { ALL_AT_ONCE, BENCH_CONFIGS, runPoolBench } from '@/features/lab/media/run-pool-bench';
+import { createStageBreadcrumb } from '@/features/lab/media/stage-breadcrumb';
+import { MIB } from '@/features/media/media-utils';
 import { canOptimizeImages } from '@/features/media/image/image-worker';
 
 const breadcrumb = createStageBreadcrumb('medialab.poolStage');

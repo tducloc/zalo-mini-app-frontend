@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from 'zmp-ui';
 
-import { readHead, sniffFormat } from '@/features/media/file-header';
+import { readPhotoHeader } from '@/features/media/image/image-utils';
+import { readHead } from '@/features/media/media-utils';
 
-/** Enough for every signature sniffFormat reads. */
-const FORMAT_HEAD_BYTES = 16;
+/** Enough for image-size to read what a canvas encoder wrote (no EXIF before the size). */
+const FORMAT_HEAD_BYTES = 4096;
 
 /**
  * Encodes one photo with this device's own canvas encoders and lets you flip
@@ -67,7 +68,8 @@ async function encodeVariants(file: File, edge: Edge): Promise<Variant[]> {
     const started = performance.now();
     const blob = await toBlob(canvas, spec.type, spec.quality);
     const encodeMs = performance.now() - started;
-    const actualType = blob ? sniffFormat(await readHead(blob, FORMAT_HEAD_BYTES)) : 'none';
+    const header = blob && readPhotoHeader(await readHead(blob, FORMAT_HEAD_BYTES));
+    const actualType = header?.format ?? 'none';
     const isReal = actualType === spec.type;
     variants.push({
       ...spec,

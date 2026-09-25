@@ -2,12 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { openMediaPicker } from 'zmp-sdk';
 import { Button, Page } from 'zmp-ui';
 import MobilePageHeader from '@/components/mobile-page-header';
-import DraftMediaLab from '@/features/media/lab/draft-media-lab';
-import PickerProbeLab from '@/features/media/lab/picker-probe-lab';
-import FormatCompare from '@/features/media/lab/format-compare';
-import ImagePoolBench from '@/features/media/lab/image-pool-bench';
-import { type ByteReader, describeCodec, rangeReaderFor } from '@/features/media/lab/byte-access';
-import { readVideoMetadata } from '@/features/media/video-metadata';
+import DraftMediaLab from '@/features/lab/media/draft-media-lab';
+import PickerProbeLab from '@/features/lab/media/picker-probe-lab';
+import FormatCompare from '@/features/lab/media/format-compare';
+import ImagePoolBench from '@/features/lab/media/image-pool-bench';
+import { type ByteReader, describeCodec, rangeReaderFor } from '@/features/lab/media/byte-access';
+import { readVideoMetadata } from '@/features/media/video/video-utils';
 
 /**
  * Measures the two ways to pick a video: Zalo's openMediaPicker and <input type="file">.

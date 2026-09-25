@@ -1,13 +1,21 @@
 /**
- * The media upload endpoints (api-spec.md, "Media"). The ones an upload retries turn a
- * failed request into an UploadFailure, so the retry rules see one kind of error whatever
- * went wrong; `deleteMedia` is best effort and throws the plain axios error.
+ * The network side of uploads: the media endpoints (api-spec.md, "Media"), the presigned
+ * PUT to storage, and the online/offline signals, put together as the transport FileUpload
+ * runs on. Every call an upload retries turns a failure into an UploadFailure, so the retry
+ * rules see one kind of error whatever went wrong; `deleteMedia` is best effort and throws
+ * the plain axios error.
  */
 
 import axios from 'axios';
 
 import { http } from '@/lib/http';
-import { failureFromApiStatus, UploadFailure } from '@/features/media/upload/upload-failure';
+import type { PutOptions, UploadTransport } from '@/features/media/upload/file-upload';
+import {
+  failureFromApiStatus,
+  failureFromStorageStatus,
+  FailureKind,
+  UploadFailure,
+} from '@/features/media/upload/retry-policy';
 import { getApiErrorStatus } from '@/utils/api-error';
 import type {
   CompletedPart,
@@ -69,9 +77,7 @@ export function completeUpload(mediaId: string, signal?: AbortSignal) {
     http.post<{ data: { status: ServerMediaStatus } }>(
       `${mediaPath(mediaId)}/complete`,
       undefined,
-      {
-        signal,
-      },
+      { signal },
     ),
   ).then((data) => data.status);
 }
@@ -86,3 +92,137 @@ export function fetchMediaStatuses(mediaIds: string[]) {
 export function deleteMedia(mediaId: string) {
   return http.delete(mediaPath(mediaId));
 }
+
+// ---- Storage ----
+
+/**
+ * No byte sent for this long means the connection is dead even if the socket is not: a
+ * weak signal can stall a request for minutes. A whole-request timeout would instead cut
+ * off a slow but moving 8 MB part.
+ */
+const STALL_TIMEOUT_MS = 30_000;
+/**
+ * Once the last byte is sent no progress comes: this long for storage's answer, so a PUT
+ * that got through is not cut off while S3 writes it.
+ */
+const RESPONSE_TIMEOUT_MS = 60_000;
+
+/**
+ * One presigned PUT, with the plain axios instance: the URL carries its own signature and
+ * must not get the API's Authorization header. axios reports upload progress (fetch
+ * cannot). Resolves with the ETag storage gave the object or part, null when CORS hides it.
+ */
+export async function putBlob(
+  url: string,
+  body: Blob,
+  { contentType, onProgress, signal }: PutOptions,
+) {
+  const controller = new AbortController();
+  let stallTimer: ReturnType<typeof setTimeout> | undefined;
+  let hasStalled = false;
+  const watchForStall = (timeoutMs: number) => {
+    clearTimeout(stallTimer);
+    stallTimer = setTimeout(() => {
+      hasStalled = true;
+      controller.abort();
+    }, timeoutMs);
+  };
+  const stop = () => controller.abort(signal?.reason);
+  signal?.addEventListener('abort', stop);
+
+  try {
+    signal?.throwIfAborted();
+    watchForStall(STALL_TIMEOUT_MS);
+    const response = await axios.put(url, body, {
+      headers: contentType ? { 'Content-Type': contentType } : {},
+      signal: controller.signal,
+      onUploadProgress: ({ loaded, total }) => {
+        watchForStall(loaded === total ? RESPONSE_TIMEOUT_MS : STALL_TIMEOUT_MS);
+        onProgress?.(loaded);
+      },
+    });
+    const etag: unknown = response.headers.etag;
+    return typeof etag === 'string' ? etag : null;
+  } catch (error) {
+    if (signal?.aborted) {
+      throw signal.reason;
+    }
+    if (hasStalled) {
+      throw new UploadFailure(FailureKind.Network, 'upload stalled');
+    }
+    const status = axios.isAxiosError(error) ? (error.response?.status ?? 0) : 0;
+    throw new UploadFailure(failureFromStorageStatus(status), error);
+  } finally {
+    clearTimeout(stallTimer);
+    signal?.removeEventListener('abort', stop);
+  }
+}
+
+// ---- Network state ----
+
+/**
+ * While offline, look again this often: a WebView can miss the `online` event, or come
+ * back from the background without one.
+ */
+const NETWORK_RECHECK_MS = 5_000;
+/**
+ * Stop waiting after this long and let an attempt find out: `onLine` can stay false in a
+ * WebView that is online. If it really is offline, the attempt fails as offline and the
+ * wait starts again, still using up no attempt.
+ */
+const MAX_NETWORK_WAIT_MS = 60_000;
+
+// A WebView that does not know says true, which only means a lost network costs an attempt.
+const isOnline = () => navigator.onLine !== false;
+
+function waitForNetwork(signal: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    if (isOnline()) {
+      resolve();
+      return;
+    }
+
+    const startedAt = Date.now();
+    const stopListening = () => {
+      clearInterval(timer);
+      window.removeEventListener('online', check);
+      document.removeEventListener('visibilitychange', check);
+      signal.removeEventListener('abort', handleAbort);
+    };
+    const check = () => {
+      if (isOnline() || Date.now() - startedAt >= MAX_NETWORK_WAIT_MS) {
+        stopListening();
+        resolve();
+      }
+    };
+    const handleAbort = () => {
+      stopListening();
+      reject(signal.reason);
+    };
+
+    const timer = setInterval(check, NETWORK_RECHECK_MS);
+    window.addEventListener('online', check);
+    document.addEventListener('visibilitychange', check);
+    signal.addEventListener('abort', handleAbort, { once: true });
+    if (signal.aborted) {
+      handleAbort();
+    }
+  });
+}
+
+export const browserTransport: UploadTransport = {
+  register: async (file) => {
+    const [target] = await registerUploads([file]);
+    if (!target) {
+      throw new UploadFailure(FailureKind.Server, 'no upload target returned');
+    }
+    return target;
+  },
+  refresh: refreshUploadUrl,
+  put: putBlob,
+  completeParts,
+  complete: completeUpload,
+  isOnline,
+  waitForNetwork,
+  now: Date.now,
+};

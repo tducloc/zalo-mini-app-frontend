@@ -1,25 +1,31 @@
 /**
  * Uploads one file and follows diagram 05 when it fails: photo in one PUT, video in parts of
- * the server's part size, PARTS_IN_FLIGHT at a time, then `complete`. Remembers what already reached storage, so another
- * attempt, or the seller's Retry, sends only what is missing.
+ * the server's part size, PARTS_IN_FLIGHT at a time (p-limit), then `complete`. p-retry
+ * runs the attempts. Remembers what already reached storage, so another attempt, or the
+ * seller's Retry, sends only what is missing.
  *
  * The network comes in through UploadTransport, so the tests drive every failure.
  */
 
-import { MediaKind } from '@/features/media/media-limits';
+import pLimit from 'p-limit';
+import pRetry, { type RetryContext } from 'p-retry';
+
+import { MediaKind } from '@/features/media/media-utils';
+import {
+  FailureKind,
+  isRetryable,
+  isUrlExpiring,
+  MAX_UPLOAD_ATTEMPTS,
+  RETRY_TIMING,
+  UPLOAD_URL_LIFETIME_MS,
+  UploadFailure,
+} from '@/features/media/upload/retry-policy';
 import type {
   CompletedPart,
   ServerMediaStatus,
   UploadRequestFile,
   UploadTarget,
 } from '@/features/media/upload/upload-types';
-import { FailureKind, isRetryable, UploadFailure } from '@/features/media/upload/upload-failure';
-import {
-  isUrlExpiring,
-  MAX_UPLOAD_ATTEMPTS,
-  retryDelayMs,
-  UPLOAD_URL_LIFETIME_MS,
-} from '@/features/media/upload/retry-policy';
 
 /** Parts of one video in flight at once (api-spec: "at most 3 at once"). */
 const PARTS_IN_FLIGHT = 3;
@@ -49,8 +55,6 @@ export interface UploadTransport {
   isOnline: () => boolean;
   /** Resolves when the device is back online. */
   waitForNetwork: (signal: AbortSignal) => Promise<void>;
-  sleep: (ms: number, signal: AbortSignal) => Promise<void>;
-  random: () => number;
   now: () => number;
 }
 
@@ -97,6 +101,8 @@ export class FileUpload {
     private readonly request: UploadRequestFile,
     private readonly blob: Blob,
     private readonly transport: UploadTransport,
+    /** The waits between attempts; tests pass none. */
+    private readonly retryTiming = RETRY_TIMING,
   ) {}
 
   /** The server's ID once registered; it changes if the server lost the first one. */
@@ -111,43 +117,54 @@ export class FileUpload {
 
   /** Attempts until uploaded, refused for good, or out of attempts. Rejects only on abort. */
   async run(listener: UploadListener, signal: AbortSignal): Promise<UploadResult> {
-    let attempt = 0;
-    for (;;) {
-      await this.waitWhileOffline(listener, signal);
-      try {
-        return await this.attempt(listener, signal);
-      } catch (error) {
-        if (signal.aborted || !(error instanceof UploadFailure)) {
-          throw error;
-        }
-
-        // The network went away mid-request: a pause like the one above, not an attempt.
-        if (error.kind === FailureKind.Network && !this.transport.isOnline()) {
-          continue;
-        }
-
-        attempt += 1;
-        this.recover(error.kind);
-
-        if (!isRetryable(error.kind) || attempt >= MAX_UPLOAD_ATTEMPTS) {
-          return { kind: 'failed', failure: error.kind, isRetryable: isRetryable(error.kind) };
-        }
-
-        listener.onWaiting(UploadWait.Retry);
-        await this.transport.sleep(retryDelayMs(attempt, this.transport.random()), signal);
+    let isWaiting = false;
+    const attempt = async () => {
+      if (isWaiting) {
+        isWaiting = false;
         listener.onResumed();
       }
-    }
-  }
+      if (!this.transport.isOnline()) {
+        throw new UploadFailure(FailureKind.Network, 'offline');
+      }
+      return this.attempt(listener, signal);
+    };
 
-  /** Offline is a pause, not a failure: it uses up no attempt (diagram 05). */
-  private async waitWhileOffline(listener: UploadListener, signal: AbortSignal) {
-    if (this.transport.isOnline()) {
-      return;
+    // Offline is a pause, not a failure: it uses up no attempt (diagram 05).
+    const isOfflineFailure = (error: Error) =>
+      error instanceof UploadFailure &&
+      error.kind === FailureKind.Network &&
+      !this.transport.isOnline();
+
+    const handleFailure = async ({ error, retriesLeft }: RetryContext) => {
+      if (!(error instanceof UploadFailure)) {
+        return;
+      }
+      this.recover(error.kind);
+      if (isOfflineFailure(error)) {
+        isWaiting = true;
+        listener.onWaiting(UploadWait.Network);
+        await this.transport.waitForNetwork(signal);
+      } else if (isRetryable(error.kind) && retriesLeft > 0) {
+        isWaiting = true;
+        listener.onWaiting(UploadWait.Retry);
+      }
+    };
+
+    try {
+      return await pRetry(attempt, {
+        ...this.retryTiming,
+        retries: MAX_UPLOAD_ATTEMPTS - 1,
+        signal,
+        shouldConsumeRetry: ({ error }) => !isOfflineFailure(error),
+        shouldRetry: ({ error }) => error instanceof UploadFailure && isRetryable(error.kind),
+        onFailedAttempt: handleFailure,
+      });
+    } catch (error) {
+      if (signal.aborted || !(error instanceof UploadFailure)) {
+        throw error;
+      }
+      return { kind: 'failed', failure: error.kind, isRetryable: isRetryable(error.kind) };
     }
-    listener.onWaiting(UploadWait.Network);
-    await this.transport.waitForNetwork(signal);
-    listener.onResumed();
   }
 
   private async attempt(listener: UploadListener, signal: AbortSignal): Promise<UploadResult> {
@@ -233,8 +250,6 @@ export class FileUpload {
 
   /** PARTS_IN_FLIGHT at a time; one failed part stops the others and fails the attempt. */
   private async sendUnsentParts(listener: UploadListener, signal: AbortSignal) {
-    signal.throwIfAborted();
-    const queue = this.unsentParts();
     const inFlight = new Map<number, number>();
     const reportProgress = () => listener.onProgress(this.storedBytes(inFlight) / this.blob.size);
 
@@ -244,28 +259,31 @@ export class FileUpload {
     signal.addEventListener('abort', stopAll);
     let firstFailure: unknown = null;
 
-    const sendNext = async () => {
-      let partNumber = queue.shift();
-      while (partNumber !== undefined && !attemptController.signal.aborted) {
-        const current = partNumber;
-        try {
-          await this.sendPart(current, attemptController.signal, (sent) => {
-            inFlight.set(current, sent);
-            reportProgress();
-          });
-        } catch (error) {
-          firstFailure ??= error;
+    // Never rejects, so the others keep their place in line until they see the abort.
+    const sendOne = async (partNumber: number) => {
+      if (attemptController.signal.aborted) {
+        return;
+      }
+      try {
+        await this.sendPart(partNumber, attemptController.signal, (sent) => {
+          inFlight.set(partNumber, sent);
+          reportProgress();
+        });
+      } catch (error) {
+        if (!attemptController.signal.aborted) {
+          firstFailure = error;
           attemptController.abort();
-        } finally {
-          inFlight.delete(current);
         }
+      } finally {
+        inFlight.delete(partNumber);
         reportProgress();
-        partNumber = queue.shift();
       }
     };
-    await Promise.all(Array.from({ length: PARTS_IN_FLIGHT }, sendNext));
+
+    await pLimit(PARTS_IN_FLIGHT).map(this.unsentParts(), sendOne);
     signal.removeEventListener('abort', stopAll);
 
+    signal.throwIfAborted();
     if (firstFailure) {
       throw firstFailure;
     }

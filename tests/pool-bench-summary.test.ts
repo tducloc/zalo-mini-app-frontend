@@ -5,7 +5,7 @@ import {
   formatBenchTsv,
   median,
   summarizeBench,
-} from '@/features/media/lab/pool-bench-summary';
+} from '@/features/lab/media/pool-bench-summary';
 
 const MB = 1024 * 1024;
 
