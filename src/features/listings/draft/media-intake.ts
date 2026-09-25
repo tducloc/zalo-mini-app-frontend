@@ -94,7 +94,7 @@ async function takeImage({ id, file, format, dimensions, signal }: PickedFile) {
   }
 
   dispatch({ type: 'optimizing', id, original });
-  const outcome = await imageQueue.optimize(id, file, dimensions);
+  const outcome = await imageQueue.optimize(id, file);
   if (outcome.kind === 'cancelled' || signal.aborted) {
     return;
   }

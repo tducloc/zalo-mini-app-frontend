@@ -4,12 +4,13 @@
  * - The format: `file.type` cannot be trusted. It is empty for some files on Android,
  *   depends on the file name, and Safari has been seen labelling PNG bytes as the type a
  *   canvas was asked for.
- * - A photo's pixel size: decoding is what costs memory (width × height × 4 bytes), so the
- *   image queue needs the size BEFORE it lets a photo start. PNG and WebP store it in the
- *   first bytes; JPEG in the SOF segment after any EXIF/ICC segments, hence the larger
- *   head. The size is as stored, before EXIF orientation: rotation swaps width and height
- *   but not the memory they cost.
+ * - A photo's pixel size, so one under 500 px is refused at once instead of after the
+ *   worker, and the server gets the original size. Read by image-size from the header;
+ *   JPEG keeps it after the EXIF/ICC segments, hence the larger head. The size is as
+ *   stored, before EXIF orientation.
  */
+
+import { imageSize } from 'image-size';
 
 function ascii(bytes: Uint8Array, start: number, length: number) {
   return String.fromCharCode(...Array.from(bytes.subarray(start, start + length)));
@@ -93,92 +94,19 @@ export interface ImageDimensions {
   height: number;
 }
 
-/** Enough for SOF to follow a full 64 KB EXIF segment plus ICC and MPF segments. */
+/** Enough for a JPEG's size to follow a full 64 KB EXIF segment plus ICC and MPF. */
 export const IMAGE_HEAD_BYTES = 256 * 1024;
 
-// SOF0–SOF15 carry the frame size, except DHT (C4), JPG (C8) and DAC (CC).
-const JPEG_NON_SOF_MARKERS = new Set([0xc4, 0xc8, 0xcc]);
-
-function readJpeg(bytes: Uint8Array): ImageDimensions | null {
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  let offset = 2;
-
-  while (offset + 9 < bytes.length) {
-    if (bytes[offset] !== 0xff) {
-      return null;
-    }
-
-    const marker = bytes[offset + 1];
-    // Fill bytes and standalone markers (RSTn, TEM) have no length field.
-    if (marker === 0xff) {
-      offset += 1;
-      continue;
-    }
-    if ((marker >= 0xd0 && marker <= 0xd7) || marker === 0x01) {
-      offset += 2;
-      continue;
-    }
-
-    const segmentLength = view.getUint16(offset + 2);
-    if (marker >= 0xc0 && marker <= 0xcf && !JPEG_NON_SOF_MARKERS.has(marker)) {
-      // Segment body: precision (1 byte), height (2), width (2).
-      return { height: view.getUint16(offset + 5), width: view.getUint16(offset + 7) };
-    }
-    offset += 2 + segmentLength;
-  }
-
-  return null;
-}
-
-function readPng(bytes: Uint8Array): ImageDimensions | null {
-  if (bytes.length < 24 || ascii(bytes, 12, 4) !== 'IHDR') {
-    return null;
-  }
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  return { width: view.getUint32(16), height: view.getUint32(20) };
-}
-
-function readUint24LE(bytes: Uint8Array, offset: number) {
-  return bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16);
-}
-
-function readWebp(bytes: Uint8Array): ImageDimensions | null {
-  if (bytes.length < 30) {
-    return null;
-  }
-  const chunk = ascii(bytes, 12, 4);
-  const data = 20;
-
-  if (chunk === 'VP8X') {
-    // Flags (4 bytes), then canvas width − 1 and height − 1 as 24-bit little endian.
-    return { width: readUint24LE(bytes, data + 4) + 1, height: readUint24LE(bytes, data + 7) + 1 };
-  }
-  if (chunk === 'VP8L') {
-    // Signature 0x2f, then 14 bits of width − 1 and 14 bits of height − 1.
-    const bits =
-      bytes[data + 1] | (bytes[data + 2] << 8) | (bytes[data + 3] << 16) | (bytes[data + 4] << 24);
-    return { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1 };
-  }
-  if (chunk === 'VP8 ') {
-    // Frame tag (3 bytes), start code 9D 01 2A, then 14-bit width and height.
-    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    return {
-      width: view.getUint16(data + 6, true) & 0x3fff,
-      height: view.getUint16(data + 8, true) & 0x3fff,
-    };
-  }
-  return null;
-}
-
+/** Null when the header does not say, e.g. cut short or damaged; the server then decides. */
 export function readImageDimensions(head: Uint8Array): ImageDimensions | null {
-  switch (sniffFormat(head)) {
-    case FileFormat.Jpeg:
-      return readJpeg(head);
-    case FileFormat.Png:
-      return readPng(head);
-    case FileFormat.Webp:
-      return readWebp(head);
-    default:
-      return null;
+  if (!IMAGE_FORMATS.includes(sniffFormat(head))) {
+    return null;
+  }
+  try {
+    const { width, height } = imageSize(head);
+    return { width, height };
+  } catch {
+    // image-size throws on a header it cannot follow.
+    return null;
   }
 }

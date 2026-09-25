@@ -104,23 +104,12 @@ afterEach(() => {
 });
 
 describe('media-upload', () => {
-  it('uploads at most 2 files at once, even when a batch of 3 lands while idle', async () => {
-    // The review's case: the first batch holds only a; b, c and d wait for the next one,
-    // which answers after a is done, so 3 files become startable with nothing running.
-    const firstBatch = deferred<unknown>();
-    const secondBatch = deferred<unknown>();
-    api.registerUploads
-      .mockImplementationOnce(async (files: UploadRequestFile[]) => {
-        await firstBatch.promise;
-        return files.map(targetFor);
-      })
-      .mockImplementationOnce(async (files: UploadRequestFile[]) => {
-        await secondBatch.promise;
-        return files.map(targetFor);
-      });
+  it('uploads at most 2 files at once, in the order picked', async () => {
     let inFlight = 0;
     let maxInFlight = 0;
-    storage.putBlob.mockImplementation(async () => {
+    const started: string[] = [];
+    storage.putBlob.mockImplementation(async (url: string) => {
+      started.push(url);
       inFlight += 1;
       maxInFlight = Math.max(maxInFlight, inFlight);
       await new Promise((resolve) => setTimeout(resolve, 5));
@@ -129,40 +118,18 @@ describe('media-upload', () => {
     });
 
     addPhotos('a', 'b', 'c', 'd');
-    markReady('a');
-    ['b', 'c', 'd'].forEach(markReady);
-    firstBatch.resolve(null);
-    await vi.waitFor(() => expect(statusOf('a')).toBe(modules.DraftMediaStatus.Uploaded));
-    secondBatch.resolve(null);
+    ['a', 'b', 'c', 'd'].forEach(markReady);
 
     await vi.waitFor(() =>
       expect(media().every((item) => item.status === modules.DraftMediaStatus.Uploaded)).toBe(true),
     );
     expect(maxInFlight).toBe(2);
+    expect(started).toEqual(['put://a', 'put://b', 'put://c', 'put://d']);
+    // One URL request per file, right before its upload.
+    expect(api.registerUploads).toHaveBeenCalledTimes(4);
   });
 
-  it('deletes a file removed while its batch registration was on its way, once', async () => {
-    const batch = deferred<unknown>();
-    api.registerUploads.mockImplementationOnce(async (files: UploadRequestFile[]) => {
-      await batch.promise;
-      return files.map(targetFor);
-    });
-
-    addPhotos('a', 'b');
-    markReady('a');
-    markReady('b');
-    modules.upload.cancelUpload('a');
-    batch.resolve(null);
-
-    await vi.waitFor(() => expect(statusOf('b')).toBe(modules.DraftMediaStatus.Uploaded));
-    expect(api.deleteMedia).toHaveBeenCalledTimes(1);
-    expect(api.deleteMedia).toHaveBeenCalledWith('m-a');
-  });
-
-  it('deletes a file removed while it registered on its own', async () => {
-    api.registerUploads.mockRejectedValueOnce(
-      new modules.UploadFailure(modules.FailureKind.Server, 'batch failed'),
-    );
+  it('deletes a file removed while it was asking for its upload URL', async () => {
     const single = deferred<unknown>();
     api.registerUploads.mockImplementationOnce(async (files: UploadRequestFile[]) => {
       await single.promise;
@@ -171,26 +138,12 @@ describe('media-upload', () => {
 
     addPhotos('a');
     markReady('a');
-    await vi.waitFor(() => expect(api.registerUploads).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(api.registerUploads).toHaveBeenCalledTimes(1));
     modules.upload.cancelUpload('a');
     single.resolve(null);
 
     await vi.waitFor(() => expect(api.deleteMedia).toHaveBeenCalledWith('m-a'));
     expect(storage.putBlob).not.toHaveBeenCalled();
-  });
-
-  it('registers each file on its own when the batch fails', async () => {
-    api.registerUploads.mockRejectedValueOnce(
-      new modules.UploadFailure(modules.FailureKind.Server, 'batch failed'),
-    );
-
-    addPhotos('a', 'b');
-    markReady('a');
-    markReady('b');
-
-    await vi.waitFor(() => expect(statusOf('b')).toBe(modules.DraftMediaStatus.Uploaded));
-    // The batch, then one each.
-    expect(api.registerUploads).toHaveBeenCalledTimes(3);
   });
 
   it('uploads again on Retry, and ignores a second tap', async () => {

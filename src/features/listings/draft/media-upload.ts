@@ -18,11 +18,7 @@ import { useListingDraftStore } from '@/features/listings/draft/store';
 import { browserTransport } from '@/features/media/upload/browser-transport';
 import { FileUpload, type UploadListener } from '@/features/media/upload/file-upload';
 import { pollDelayMs } from '@/features/media/upload/retry-policy';
-import {
-  deleteMedia,
-  fetchMediaStatuses,
-  registerUploads,
-} from '@/features/media/upload/upload-api';
+import { deleteMedia, fetchMediaStatuses } from '@/features/media/upload/upload-api';
 import { FailureKind } from '@/features/media/upload/upload-failure';
 import {
   MediaError,
@@ -39,8 +35,6 @@ import { warnInDev } from '@/utils/dev-log';
 const FILES_IN_FLIGHT = 2;
 
 enum Phase {
-  /** In a registration request with other files. */
-  Registering = 'REGISTERING',
   /** Waiting for a free slot. */
   Queued = 'QUEUED',
   Running = 'RUNNING',
@@ -64,9 +58,8 @@ const MISSING_ON_SERVER: ServerMedia = {
   error: MediaError.Missing,
 };
 
-/** One per draft file that has started uploading, by draft ID, until it is removed. */
+/** One per draft file that is ready to upload or further on, by draft ID, until removed. */
 const entries = new Map<string, UploadEntry>();
-let isRegistering = false;
 
 let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let pollRound = 0;
@@ -104,63 +97,31 @@ function requestFor(media: ReadyDraftMedia): UploadRequestFile {
 }
 
 /**
- * Starts whatever can start: registers new ready files, then fills the free slots. Runs on
- * every store change, when a batch registration answers, and when an upload ends; it can
- * run again from inside itself, because starting an upload dispatches.
+ * Starts whatever can start: queues new ready files, then fills the free slots. Runs on
+ * every store change and when an upload ends; it can run again from inside itself,
+ * because starting an upload dispatches.
  */
 function pump() {
   const media = draftMedia();
-  void registerReady(media);
+  queueReady(media);
   startQueued(media);
 }
 
 /**
- * One `upload-urls` request for every file that became ready meanwhile, rather than one
- * each: the endpoint is rate limited, and one round trip is faster on a phone.
+ * Each file asks for its own upload URL when it starts (FileUpload), not all together:
+ * the call is quick, a URL taken right before the upload is fresh, and the limit of 60 an
+ * hour is per seller, far above the 11 a listing needs.
  */
-async function registerReady(media: DraftMedia[]) {
-  const ready = media.filter(
-    (item): item is ReadyDraftMedia =>
-      item.status === DraftMediaStatus.ReadyToUpload && !entries.has(item.id),
-  );
-  if (isRegistering || ready.length === 0) {
-    return;
-  }
-
-  isRegistering = true;
-  const batch = ready.map((item) => {
-    const request = requestFor(item);
-    const entry: UploadEntry = {
-      upload: new FileUpload(request, item.upload.blob, browserTransport),
-      controller: new AbortController(),
-      phase: Phase.Registering,
-      failure: null,
-    };
-    entries.set(item.id, entry);
-    return { entry, request };
-  });
-
-  try {
-    const targets = await registerUploads(batch.map(({ request }) => request));
-    for (const target of targets) {
-      const entry = entries.get(target.clientFileId);
-      if (entry) {
-        entry.upload.assign(target);
-      } else {
-        // Removed while the request was on its way.
-        deleteQuietly(target.mediaId);
-      }
+function queueReady(media: DraftMedia[]) {
+  for (const item of media) {
+    if (item.status === DraftMediaStatus.ReadyToUpload && !entries.has(item.id)) {
+      entries.set(item.id, {
+        upload: new FileUpload(requestFor(item), item.upload.blob, browserTransport),
+        controller: new AbortController(),
+        phase: Phase.Queued,
+        failure: null,
+      });
     }
-  } catch (error) {
-    // Each file then registers on its own when it starts, with the usual retries. If the
-    // server created the rows before the answer was lost, the hourly cleanup removes them.
-    warn('registering the batch failed', error);
-  } finally {
-    isRegistering = false;
-    for (const { entry } of batch) {
-      entry.phase = Phase.Queued;
-    }
-    pump();
   }
 }
 
@@ -189,7 +150,7 @@ function listenerFor(id: string, entry: UploadEntry): UploadListener {
   let shownPercent = -1;
   return {
     onRegistered: (mediaId) => {
-      // Removed while registering: the server made it anyway.
+      // Removed while asking for the URL: the server made the media anyway.
       if (entries.get(id) !== entry) {
         deleteQuietly(mediaId);
       }

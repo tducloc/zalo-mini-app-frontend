@@ -123,17 +123,6 @@ describe('FileUpload, photo', () => {
     expect(events).toEqual([]);
   });
 
-  it('uses URLs from a batch registration instead of registering again', async () => {
-    const transport = fakeTransport();
-    const upload = new FileUpload(photoRequest, photoBlob, transport);
-    upload.assign(photoTarget);
-
-    await run(upload);
-
-    expect(transport.register).not.toHaveBeenCalled();
-    expect(upload.mediaId).toBe('m1');
-  });
-
   it('retries a network error after a growing wait, then succeeds', async () => {
     const transport = fakeTransport({ put: failing(2, FailureKind.Network, async () => '"e"') });
     const { events, listener } = recordingListener();
@@ -187,12 +176,11 @@ describe('FileUpload, photo', () => {
 
   it('refreshes a URL about to expire before using it, by the phone’s own clock', async () => {
     const transport = fakeTransport();
-    const upload = new FileUpload(photoRequest, photoBlob, transport);
-    upload.assign(photoTarget);
-    // The URL arrived almost 15 minutes ago; the server's expiresAt is never compared.
-    transport.now.mockReturnValue(NOW + UPLOAD_URL_LIFETIME_MS - 30_000);
+    // The URL arrives at NOW; by the time the PUT starts, almost 15 minutes have passed.
+    // The server's expiresAt is never compared.
+    transport.now.mockReturnValueOnce(NOW).mockReturnValue(NOW + UPLOAD_URL_LIFETIME_MS - 30_000);
 
-    await run(upload);
+    await run(new FileUpload(photoRequest, photoBlob, transport));
 
     expect(transport.put.mock.calls.map(([url]) => url)).toEqual(['put://photo-fresh']);
   });
@@ -443,11 +431,9 @@ describe('FileUpload, video', () => {
 
   it('shares one URL refresh between the parts in flight', async () => {
     const transport = fakeTransport();
-    const upload = new FileUpload(videoRequest, videoBlob, transport);
-    upload.assign(videoTarget);
-    transport.now.mockReturnValue(NOW + UPLOAD_URL_LIFETIME_MS);
+    transport.now.mockReturnValueOnce(NOW).mockReturnValue(NOW + UPLOAD_URL_LIFETIME_MS);
 
-    await run(upload);
+    await run(new FileUpload(videoRequest, videoBlob, transport));
 
     expect(transport.refresh).toHaveBeenCalledTimes(1);
     expect(transport.refresh).toHaveBeenCalledWith('m2', [1, 2, 3], expect.anything());

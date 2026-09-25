@@ -104,11 +104,6 @@ export class FileUpload {
     return this.#mediaId;
   }
 
-  /** Takes URLs from a registration made for several files at once. */
-  assign(target: UploadTarget) {
-    this.applyTarget(target);
-  }
-
   /** The seller taps Retry: start with fresh URLs, as diagram 05 draws it. */
   markUrlsStale() {
     this.hasStaleUrls = true;

@@ -10,7 +10,7 @@
 import { IMAGE_HEAD_BYTES, readHead, readImageDimensions } from '@/features/media/file-header';
 import { startFrameMeter } from '@/features/media/lab/frame-meter';
 import { ImageWorker, MAX_EDGE, PipelineError } from '@/features/media/image/image-worker';
-import { estimateJobBytes, pickWorker, type PoolState } from '@/features/media/image/image-queue';
+import { estimateJobBytes, pickWorker, type PoolState } from '@/features/media/lab/pool-budget';
 import { MIB } from '@/features/media/media-limits';
 import type { BenchConfig, BenchResult, JobRecord } from '@/features/media/lab/pool-bench-summary';
 

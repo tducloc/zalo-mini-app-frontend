@@ -34,7 +34,8 @@ async function requestData<T>(request: () => Promise<{ data: { data: T } }>) {
 
 /**
  * Not abortable on purpose: the server may create the media before a cancelled request
- * would be dropped, and the caller needs its ID to delete it.
+ * would be dropped, and the caller needs its ID to delete it. The endpoint takes up to 11
+ * files; the app sends one at a time.
  */
 export function registerUploads(files: UploadRequestFile[]) {
   return requestData(() =>
