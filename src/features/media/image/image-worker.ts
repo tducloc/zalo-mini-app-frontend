@@ -7,8 +7,12 @@
  * photo on the main thread freezes the form on exactly the slowest phones.
  */
 import workerSource from '@/features/media/image/image-worker-thread.ts?worker-source';
+import { MIN_IMAGE_EDGE } from '@/features/media/image/image-utils';
 
-/** Long edge of the uploaded photo. The server scales anything larger to the same size. */
+/**
+ * Long edge of the uploaded photo; the server scales anything larger to the same size. A
+ * panorama keeps a short edge of MIN_IMAGE_EDGE instead, which the server requires.
+ */
 export const MAX_EDGE = 1280;
 
 /** JPEG only, decided 2026-09-24: WebP was not smaller at the quality product photos need. */
@@ -30,6 +34,8 @@ export type PipelineStep = 'decode' | 'draw' | 'encode';
 
 export interface ImageSettings {
   maxEdge: number;
+  /** The short edge is kept at least this long, even when that leaves the long one over maxEdge. */
+  minEdge: number;
   quality: number;
   /** Decode straight to this width (createImageBitmap resizeWidth). Media lab only. */
   decodeWidth?: number;
@@ -99,7 +105,12 @@ export class ImageWorker {
     const job: ImageJob = {
       id: ++this.jobCount,
       file,
-      settings: { maxEdge: MAX_EDGE, quality: JPEG_QUALITY, ...labSettings },
+      settings: {
+        maxEdge: MAX_EDGE,
+        minEdge: MIN_IMAGE_EDGE,
+        quality: JPEG_QUALITY,
+        ...labSettings,
+      },
     };
     return new Promise<OptimizedImage>((resolve, reject) => {
       const timer = setTimeout(() => this.fail('image worker did not answer'), JOB_TIMEOUT_MS);
