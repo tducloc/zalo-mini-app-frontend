@@ -1,6 +1,6 @@
 /**
- * The client state of each file in the listing draft (diagram 00, client part), up to
- * "ready to upload". The upload states arrive with the upload manager (L5).
+ * The client state of each file in the listing draft (diagram 00, client part): checking and
+ * optimizing (media-intake.ts), then uploading (media-upload.ts), then the server's status.
  *
  * Pure: services dispatch what happened, this decides whether it applies. An event for a
  * file that was removed, or that is no longer in the state the event assumes, is ignored;
@@ -8,12 +8,19 @@
  */
 
 import type { MediaKind, RejectReason } from '@/features/media/media-limits';
+import type { ServerMedia } from '@/features/media/upload/upload-types';
+import type { UploadWait } from '@/features/media/upload/file-upload';
 
 export enum DraftMediaStatus {
   Checking = 'CHECKING',
   Rejected = 'REJECTED',
   Optimizing = 'OPTIMIZING',
   ReadyToUpload = 'READY_TO_UPLOAD',
+  Uploading = 'UPLOADING',
+  Retrying = 'RETRYING',
+  UploadFailed = 'UPLOAD_FAILED',
+  /** In storage and confirmed; the server's status takes over. */
+  Uploaded = 'UPLOADED',
 }
 
 /** The picked file as the server's provenance fields describe it (api-spec, upload-urls). */
@@ -38,6 +45,18 @@ interface BaseMedia {
   file: File;
 }
 
+/** What a file carries from ready-to-upload on. */
+interface PreparedMedia extends BaseMedia {
+  original: OriginalFile;
+  upload: UploadSource;
+  /**
+   * Object URL of the optimized photo. Null for originals: decoding a full-size photo
+   * for an <img> is what the worker exists to keep off the main thread, so the tile
+   * waits for the server's thumbnail.
+   */
+  previewUrl: string | null;
+}
+
 export type DraftMedia =
   | (BaseMedia & { status: DraftMediaStatus.Checking })
   | (BaseMedia & { status: DraftMediaStatus.Rejected; reason: RejectReason })
@@ -47,17 +66,23 @@ export type DraftMedia =
       /** 0–1 for a video being converted; null for a photo, which has no progress to show. */
       progress: number | null;
     })
-  | (BaseMedia & {
-      status: DraftMediaStatus.ReadyToUpload;
-      original: OriginalFile;
-      upload: UploadSource;
-      /**
-       * Object URL of the optimized photo. Null for originals: decoding a full-size photo
-       * for an <img> is what the worker exists to keep off the main thread, so the tile
-       * waits for the server's thumbnail.
-       */
-      previewUrl: string | null;
-    });
+  | (PreparedMedia & { status: DraftMediaStatus.ReadyToUpload })
+  | (PreparedMedia & {
+      status: DraftMediaStatus.Uploading;
+      /** Share of the bytes in storage, 0–1. */
+      progress: number;
+    })
+  | (PreparedMedia & {
+      status: DraftMediaStatus.Retrying;
+      progress: number;
+      waitingFor: UploadWait;
+    })
+  | (PreparedMedia & {
+      status: DraftMediaStatus.UploadFailed;
+      /** False when retrying cannot help, so the seller is offered remove only (diagram 05). */
+      isRetryable: boolean;
+    })
+  | (PreparedMedia & { status: DraftMediaStatus.Uploaded; mediaId: string; server: ServerMedia });
 
 export type MediaAction =
   | { type: 'added'; items: BaseMedia[] }
@@ -71,20 +96,94 @@ export type MediaAction =
       upload: UploadSource;
       previewUrl: string | null;
     }
+  | { type: 'uploadStarted'; id: string }
+  | { type: 'uploadWaiting'; id: string; waitingFor: UploadWait }
+  | { type: 'uploadFailed'; id: string; isRetryable: boolean }
+  | { type: 'uploaded'; id: string; mediaId: string; server: ServerMedia }
+  | { type: 'serverUpdated'; id: string; server: ServerMedia }
   | { type: 'removed'; id: string }
   | { type: 'cleared' };
 
-/** Which states each event may leave; anything else is a stale event. */
-const LEAVES_FROM: Record<'rejected' | 'optimizing' | 'progressed' | 'ready', DraftMediaStatus[]> =
-  {
-    rejected: [DraftMediaStatus.Checking, DraftMediaStatus.Optimizing],
-    optimizing: [DraftMediaStatus.Checking],
-    progressed: [DraftMediaStatus.Optimizing],
-    ready: [DraftMediaStatus.Checking, DraftMediaStatus.Optimizing],
-  };
+type FileEvent = Exclude<MediaAction, { type: 'added' | 'removed' | 'cleared' }>;
 
-function applyEvent(media: DraftMedia, action: MediaAction): DraftMedia {
+const UPLOAD_IN_PROGRESS = [DraftMediaStatus.Uploading, DraftMediaStatus.Retrying];
+
+/** Which states each event may leave; anything else is a stale event. */
+const LEAVES_FROM: Record<FileEvent['type'], DraftMediaStatus[]> = {
+  rejected: [DraftMediaStatus.Checking, DraftMediaStatus.Optimizing],
+  optimizing: [DraftMediaStatus.Checking],
+  progressed: [DraftMediaStatus.Optimizing, DraftMediaStatus.Uploading],
+  ready: [DraftMediaStatus.Checking, DraftMediaStatus.Optimizing],
+  uploadStarted: [
+    DraftMediaStatus.ReadyToUpload,
+    DraftMediaStatus.Retrying,
+    DraftMediaStatus.UploadFailed,
+  ],
+  uploadWaiting: UPLOAD_IN_PROGRESS,
+  uploadFailed: UPLOAD_IN_PROGRESS,
+  uploaded: UPLOAD_IN_PROGRESS,
+  serverUpdated: [DraftMediaStatus.Uploaded],
+};
+
+const isPrepared = (media: DraftMedia): media is Extract<DraftMedia, PreparedMedia> =>
+  'upload' in media;
+
+/** Upload events, for a file past ready-to-upload (LEAVES_FROM guarantees it). */
+function applyUploadEvent(
+  media: Extract<DraftMedia, PreparedMedia>,
+  action: FileEvent,
+): DraftMedia {
+  const prepared = {
+    id: media.id,
+    kind: media.kind,
+    file: media.file,
+    original: media.original,
+    upload: media.upload,
+    previewUrl: media.previewUrl,
+  };
+  // Kept across a retry, so a video that had half its parts in storage does not start at 0.
+  const progress = 'progress' in media ? media.progress : 0;
+
+  switch (action.type) {
+    case 'uploadStarted':
+      return { ...prepared, status: DraftMediaStatus.Uploading, progress };
+    case 'progressed':
+      return { ...prepared, status: DraftMediaStatus.Uploading, progress: action.progress };
+    case 'uploadWaiting':
+      return {
+        ...prepared,
+        status: DraftMediaStatus.Retrying,
+        progress,
+        waitingFor: action.waitingFor,
+      };
+    case 'uploadFailed':
+      return {
+        ...prepared,
+        status: DraftMediaStatus.UploadFailed,
+        isRetryable: action.isRetryable,
+      };
+    case 'uploaded':
+      return {
+        ...prepared,
+        status: DraftMediaStatus.Uploaded,
+        mediaId: action.mediaId,
+        server: action.server,
+      };
+    case 'serverUpdated':
+      return media.status === DraftMediaStatus.Uploaded
+        ? { ...media, server: action.server }
+        : media;
+    default:
+      return media;
+  }
+}
+
+function applyEvent(media: DraftMedia, action: FileEvent): DraftMedia {
   const base = { id: media.id, kind: media.kind, file: media.file };
+
+  if (isPrepared(media)) {
+    return applyUploadEvent(media, action);
+  }
 
   switch (action.type) {
     case 'rejected':

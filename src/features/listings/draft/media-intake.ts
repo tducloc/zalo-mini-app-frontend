@@ -11,6 +11,7 @@ import {
   type OriginalFile,
   type UploadSource,
 } from '@/features/listings/draft/media-reducer';
+import { cancelUpload } from '@/features/listings/draft/media-upload';
 import { useListingDraftStore } from '@/features/listings/draft/store';
 import { canConvertVideos, convertVideo } from '@/features/media/convert-video';
 import {
@@ -241,12 +242,16 @@ export async function addDraftFiles(files: File[]) {
   });
 }
 
-/** Stops the file's work at whatever step it is, and frees its preview. */
+/**
+ * Stops the file's work at whatever step it is, deletes what reached the server, and
+ * frees its preview.
+ */
 function stopWork(media: DraftMedia) {
   imageQueue.cancel(media.id);
   inProgress.get(media.id)?.abort();
   inProgress.delete(media.id);
-  if (media.status === DraftMediaStatus.ReadyToUpload && media.previewUrl) {
+  cancelUpload(media.id);
+  if ('previewUrl' in media && media.previewUrl) {
     URL.revokeObjectURL(media.previewUrl);
   }
 }
@@ -260,6 +265,7 @@ export function removeDraftMedia(id: string) {
   dispatch({ type: 'removed', id });
 }
 
+/** "Huỷ tin": drops every file, and deletes the ones already on the server. */
 export function clearDraftMedia() {
   useListingDraftStore.getState().media.forEach(stopWork);
   dispatch({ type: 'cleared' });
