@@ -363,29 +363,38 @@ describe('FileUpload, photo', () => {
 describe('FileUpload, waits between attempts', () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
-  it('waits 1–2 s before the second attempt and 2–4 s before the third', async () => {
-    vi.useFakeTimers();
-    const transport = fakeTransport({ put: failing(ALWAYS, FailureKind.Server, async () => '') });
+  // p-retry multiplies each wait by 1 + Math.random(): the shortest and the longest waits.
+  it.each([
+    [0, 1_000, 2_000],
+    [0.999, 1_999, 3_998],
+  ])(
+    'waits 1–2 s before the second attempt and 2–4 s before the third (random %s)',
+    async (random, firstWait, secondWait) => {
+      vi.useFakeTimers();
+      vi.spyOn(Math, 'random').mockReturnValue(random);
+      const transport = fakeTransport({ put: failing(ALWAYS, FailureKind.Server, async () => '') });
 
-    const result = new FileUpload(photoRequest, photoBlob, transport).run(
-      recordingListener().listener,
-      new AbortController().signal,
-    );
+      const result = new FileUpload(photoRequest, photoBlob, transport).run(
+        recordingListener().listener,
+        new AbortController().signal,
+      );
 
-    await vi.advanceTimersByTimeAsync(999);
-    expect(transport.put).toHaveBeenCalledTimes(1);
-    await vi.advanceTimersByTimeAsync(1_001);
-    expect(transport.put).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(firstWait - 1);
+      expect(transport.put).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(transport.put).toHaveBeenCalledTimes(2);
 
-    await vi.advanceTimersByTimeAsync(1_999);
-    expect(transport.put).toHaveBeenCalledTimes(2);
-    await vi.advanceTimersByTimeAsync(2_001);
-    expect(transport.put).toHaveBeenCalledTimes(3);
+      await vi.advanceTimersByTimeAsync(secondWait - 1);
+      expect(transport.put).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(transport.put).toHaveBeenCalledTimes(3);
 
-    await expect(result).resolves.toMatchObject({ kind: 'failed', failure: FailureKind.Server });
-  });
+      await expect(result).resolves.toMatchObject({ kind: 'failed', failure: FailureKind.Server });
+    },
+  );
 
   it('rejects at once when removed during a wait', async () => {
     vi.useFakeTimers();
