@@ -63,13 +63,13 @@ export class MediaDetector {
     const brand = ftypBrand(head);
     if (brand && PHOTO_BRANDS.has(brand)) {
       // Usually image-size reads these already; this catches one whose header it cannot.
-      return { kind: MediaKind.Image, photo: null, problem: RejectReason.UnsupportedFormat };
+      return { kind: MediaKind.Image, photo: null, problem: RejectReason.UnsupportedImageFormat };
     }
     if (brand) {
       return { kind: MediaKind.Video, photo: null, problem: null };
     }
     if (this.file.size <= head.length) {
-      return this.refused(RejectReason.UnsupportedFormat);
+      return this.unsupported();
     }
     return this.detectLongPhoto();
   }
@@ -81,7 +81,7 @@ export class MediaDetector {
   private async detectLongPhoto() {
     try {
       const photo = readPhotoHeader(await readHead(this.file, MAX_IMAGE_BYTES));
-      return photo ? this.asPhoto(photo) : this.refused(RejectReason.UnsupportedFormat);
+      return photo ? this.asPhoto(photo) : this.unsupported();
     } catch {
       return this.refused(RejectReason.Unreadable);
     }
@@ -91,8 +91,20 @@ export class MediaDetector {
     return { kind: MediaKind.Image, photo, problem: photoProblem(photo, this.file.size) };
   }
 
+  /** The picker's type only says whether the seller meant a photo or a video. */
+  private get kind() {
+    return this.file.type.startsWith('video/') ? MediaKind.Video : MediaKind.Image;
+  }
+
+  private unsupported(): DetectedFile {
+    const problem =
+      this.kind === MediaKind.Video
+        ? RejectReason.UnsupportedVideoFormat
+        : RejectReason.UnsupportedImageFormat;
+    return this.refused(problem);
+  }
+
   private refused(problem: RejectReason): DetectedFile {
-    const kind = this.file.type.startsWith('video/') ? MediaKind.Video : MediaKind.Image;
-    return { kind, photo: null, problem };
+    return { kind: this.kind, photo: null, problem };
   }
 }

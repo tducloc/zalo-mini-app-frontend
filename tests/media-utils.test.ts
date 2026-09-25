@@ -28,13 +28,13 @@ describe('refusePicked', () => {
   it('refuses a file for its own reason before counting, so it takes no slot', () => {
     const picked = [
       ...Array(9).fill(photo),
-      { kind: MediaKind.Image, problem: RejectReason.UnsupportedFormat },
+      { kind: MediaKind.Image, problem: RejectReason.UnsupportedImageFormat },
       { kind: MediaKind.Image, problem: RejectReason.ImageTooSmall },
       photo,
     ];
 
     expect(refusePicked(picked, none).slice(9)).toEqual([
-      RejectReason.UnsupportedFormat,
+      RejectReason.UnsupportedImageFormat,
       RejectReason.ImageTooSmall,
       null,
     ]);

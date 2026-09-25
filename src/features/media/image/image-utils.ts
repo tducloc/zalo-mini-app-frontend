@@ -60,7 +60,7 @@ export function readPhotoHeader(head: Uint8Array): PhotoHeader | null {
 /** Why the photo is refused before anything else happens to it, or null. */
 export function photoProblem(photo: PhotoHeader, bytes: number) {
   if (!photo.format) {
-    return RejectReason.UnsupportedFormat;
+    return RejectReason.UnsupportedImageFormat;
   }
   if (bytes > MAX_IMAGE_BYTES) {
     return RejectReason.ImageTooLarge;

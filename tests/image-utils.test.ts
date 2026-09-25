@@ -66,7 +66,7 @@ describe('photoProblem', () => {
   });
 
   it('refuses what the server would refuse', () => {
-    expect(photoProblem({ ...phone, format: null }, MB)).toBe(RejectReason.UnsupportedFormat);
+    expect(photoProblem({ ...phone, format: null }, MB)).toBe(RejectReason.UnsupportedImageFormat);
     expect(photoProblem(phone, MAX_IMAGE_BYTES + 1)).toBe(RejectReason.ImageTooLarge);
     expect(photoProblem({ ...phone, width: 800, height: 499 }, MB)).toBe(
       RejectReason.ImageTooSmall,

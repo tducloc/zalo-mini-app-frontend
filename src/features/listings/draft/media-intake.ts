@@ -65,7 +65,7 @@ function acceptedCounts() {
 async function takeImage({ id, file, photo, signal }: PickedFile) {
   if (!photo?.format) {
     // MediaDetector refuses such a file first; never leave a tile on Checking.
-    dispatch({ type: MediaActionType.Rejected, id, reason: RejectReason.UnsupportedFormat });
+    dispatch({ type: MediaActionType.Rejected, id, reason: RejectReason.UnsupportedImageFormat });
     return;
   }
   // As stored in the file, before EXIF orientation (api-spec, upload-urls).
@@ -132,7 +132,7 @@ async function takeVideo(picked: PickedFile) {
     facts = { ...(await readVideoMetadata(file)), bytes: file.size };
   } catch {
     // Not an MP4 or MOV mediabunny can open: the one check of a video's format.
-    dispatch({ type: MediaActionType.Rejected, id, reason: RejectReason.UnsupportedFormat });
+    dispatch({ type: MediaActionType.Rejected, id, reason: RejectReason.UnsupportedVideoFormat });
     return;
   }
 

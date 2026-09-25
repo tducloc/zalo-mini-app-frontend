@@ -65,14 +65,12 @@ describe('MediaDetector', () => {
   it('refuses anything else without taking a video slot: WebM, PDF, an unknown file', async () => {
     const webm = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0, 0, 0, 0]);
     const pdf = new TextEncoder().encode('%PDF-1.7');
-    for (const [bytes, type] of [
-      [webm, 'video/webm'],
-      [pdf, 'application/pdf'],
-      [new Uint8Array(300 * 1024), ''],
+    for (const [bytes, type, problem] of [
+      [webm, 'video/webm', RejectReason.UnsupportedVideoFormat],
+      [pdf, 'application/pdf', RejectReason.UnsupportedImageFormat],
+      [new Uint8Array(300 * 1024), '', RejectReason.UnsupportedImageFormat],
     ] as const) {
-      expect((await new MediaDetector(pick(bytes, type)).detect()).problem).toBe(
-        RejectReason.UnsupportedFormat,
-      );
+      expect((await new MediaDetector(pick(bytes, type)).detect()).problem).toBe(problem);
     }
   });
 
@@ -81,7 +79,7 @@ describe('MediaDetector', () => {
       expect(await new MediaDetector(pick(mp4Head(brand))).detect()).toEqual({
         kind: MediaKind.Image,
         photo: null,
-        problem: RejectReason.UnsupportedFormat,
+        problem: RejectReason.UnsupportedImageFormat,
       });
     }
   });
@@ -90,7 +88,7 @@ describe('MediaDetector', () => {
     const gif = new TextEncoder().encode('GIF89a\x0a\x00\x14\x00\x00\x00\x00');
     expect(await new MediaDetector(pick(gif, 'image/gif')).detect()).toMatchObject({
       kind: MediaKind.Image,
-      problem: RejectReason.UnsupportedFormat,
+      problem: RejectReason.UnsupportedImageFormat,
     });
   });
 });

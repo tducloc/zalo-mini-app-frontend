@@ -16,19 +16,24 @@ export enum MediaKind {
 }
 
 export enum RejectReason {
-  UnsupportedFormat = 'UNSUPPORTED_FORMAT',
+  // Photos
+  UnsupportedImageFormat = 'UNSUPPORTED_IMAGE_FORMAT',
   ImageTooLarge = 'IMAGE_TOO_LARGE',
   ImageTooSmall = 'IMAGE_TOO_SMALL',
   TooManyImages = 'TOO_MANY_IMAGES',
+  // Videos
+  /** Not an MP4 or MOV mediabunny can open. */
+  UnsupportedVideoFormat = 'UNSUPPORTED_VIDEO_FORMAT',
   TooManyVideos = 'TOO_MANY_VIDEOS',
-  /** The file could not be read, or is not a video mediabunny can open. */
-  Unreadable = 'UNREADABLE',
   VideoTooLong = 'VIDEO_TOO_LONG',
   VideoTooLarge = 'VIDEO_TOO_LARGE',
   VideoResolution = 'VIDEO_RESOLUTION',
   /** HEVC this phone could not convert: iPhones record it by default. */
   VideoHevc = 'VIDEO_HEVC',
   VideoNotPlayable = 'VIDEO_NOT_PLAYABLE',
+  // Any file
+  /** The phone would not let the app read the file, e.g. an iCloud photo not downloaded. */
+  Unreadable = 'UNREADABLE',
 }
 
 export async function readHead(blob: Blob, bytes: number) {
