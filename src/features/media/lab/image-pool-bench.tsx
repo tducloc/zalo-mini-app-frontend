@@ -7,37 +7,14 @@ import {
   formatBenchTsv,
   summarizeBench,
 } from '@/features/media/lab/pool-bench-summary';
-import { BENCH_CONFIGS, runPoolBench } from '@/features/media/lab/run-pool-bench';
+import { ALL_AT_ONCE, BENCH_CONFIGS, runPoolBench } from '@/features/media/lab/run-pool-bench';
+import { createStageBreadcrumb } from '@/features/media/lab/stage-breadcrumb';
+import { MIB } from '@/features/media/media-limits';
 import { canOptimizeImages } from '@/features/media/image/image-worker';
 
-// Survives the page reload that WKWebView does when it runs out of memory.
-const STAGE_KEY = 'medialab.poolStage';
+const breadcrumb = createStageBreadcrumb('medialab.poolStage');
 // Lets the previous run's memory be released before the next one starts.
 const PAUSE_BETWEEN_RUNS_MS = 1500;
-const MB = 1024 * 1024;
-
-const TABLE_CONFIGS = BENCH_CONFIGS.filter((config) => config.key !== 'all');
-const ALL_AT_ONCE = BENCH_CONFIGS.find((config) => config.key === 'all') as BenchConfig;
-
-function writeStage(value: string | null) {
-  try {
-    if (value) {
-      sessionStorage.setItem(STAGE_KEY, value);
-    } else {
-      sessionStorage.removeItem(STAGE_KEY);
-    }
-  } catch {
-    // Private mode: the crash marker is a convenience, the benchmark still runs.
-  }
-}
-
-function readStage() {
-  try {
-    return sessionStorage.getItem(STAGE_KEY);
-  } catch {
-    return null;
-  }
-}
 
 function describeDevice() {
   const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
@@ -56,25 +33,32 @@ export default function ImagePoolBench() {
   const [files, setFiles] = useState<File[]>([]);
   const [results, setResults] = useState<BenchResult[]>([]);
   const [running, setRunning] = useState<string | null>(null);
-  const [crashedStage] = useState(readStage);
+  const [runError, setRunError] = useState<string | null>(null);
+  const [crashedStage] = useState(breadcrumb.read);
 
   const handlePick = (event: React.ChangeEvent<HTMLInputElement>) => {
     setFiles(Array.from(event.target.files ?? []));
     setResults([]);
+    setRunError(null);
   };
 
   const runConfigs = async (configs: BenchConfig[]) => {
-    for (const config of configs) {
-      setRunning(config.label);
-      writeStage(`${config.label} · ${files.length} ảnh · ${new Date().toLocaleTimeString()}`);
-
-      const result = await runPoolBench(files, config);
-      setResults((current) => [...current, result]);
-
-      writeStage(null);
-      await wait(PAUSE_BETWEEN_RUNS_MS);
+    try {
+      for (const config of configs) {
+        setRunning(config.label);
+        breadcrumb.write(`${config.label} · ${files.length} ảnh`);
+        const result = await runPoolBench(files, config);
+        setResults((current) => [...current, result]);
+        await wait(PAUSE_BETWEEN_RUNS_MS);
+      }
+    } catch (error) {
+      // A file that cannot be read is an error, not a crash: say so instead of leaving the
+      // breadcrumb behind for the next open to report as one.
+      setRunError(error instanceof Error ? error.message : String(error));
+    } finally {
+      breadcrumb.clear();
+      setRunning(null);
     }
-    setRunning(null);
   };
 
   const totalBytes = files.reduce((total, file) => total + file.size, 0);
@@ -86,8 +70,9 @@ export default function ImagePoolBench() {
       <p className="field-heading m-0">Worker pool: N worker × M ảnh (R3)</p>
       <p className="m-0 mt-1 text-sm text-slate-500">{describeDevice()}</p>
       <p className="m-0 mt-1 text-sm text-slate-500">
-        Chọn ~10 ảnh thật khác nhau, có cả ảnh 24 MP. RAM trong bảng là ước tính (rộng × cao × 4);
-        RAM thật đo bằng Xcode Instruments hoặc chrome://inspect trong lúc chạy.
+        Chọn ~10 ảnh thật khác nhau, có cả ảnh 24 MP. RAM trong bảng là ước tính (ảnh giải nén rộng
+        × cao × 4, cộng khung 1280); RAM thật đo bằng Xcode Instruments hoặc chrome://inspect trong
+        lúc chạy.
       </p>
 
       {crashedStage && (
@@ -98,12 +83,12 @@ export default function ImagePoolBench() {
 
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="small" disabled={isBusy} onClick={() => inputRef.current?.click()}>
-          {files.length ? `${files.length} ảnh · ${(totalBytes / MB).toFixed(1)} MB` : 'Chọn ảnh'}
+          {files.length ? `${files.length} ảnh · ${(totalBytes / MIB).toFixed(1)} MB` : 'Chọn ảnh'}
         </Button>
         <Button
           size="small"
           disabled={isBusy || !files.length || !canOptimizeImages}
-          onClick={() => void runConfigs(TABLE_CONFIGS)}
+          onClick={() => void runConfigs(BENCH_CONFIGS)}
         >
           Chạy cả bảng
         </Button>
@@ -126,6 +111,9 @@ export default function ImagePoolBench() {
       />
 
       {running && <p className="m-0 mt-2 text-sm">Đang chạy {running}…</p>}
+      {runError && (
+        <p className="m-0 mt-2 text-sm text-red-600">Lỗi, không phải crash: {runError}</p>
+      )}
 
       {results.length > 0 && <BenchTable results={results} />}
 
@@ -179,7 +167,7 @@ function BenchTable({ results }: { results: BenchResult[] }) {
                 <td className="pr-2">{Math.round(result.longestFrameMs)}</td>
                 <td className="pr-2">{result.peakInFlight}</td>
                 <td className="whitespace-nowrap pr-2">
-                  {(result.peakEstimatedBytes / MB).toFixed(0)} MB
+                  {(result.peakEstimatedBytes / MIB).toFixed(0)} MB
                 </td>
                 <td>
                   {summary.failed}

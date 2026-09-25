@@ -4,6 +4,7 @@
  */
 
 import type { ImageDimensions } from '@/features/media/file-header';
+import { MIB } from '@/features/media/media-limits';
 
 export type BenchConfig = {
   key: string;
@@ -51,8 +52,6 @@ export type BenchSummary = {
   drawShare: number;
   outputBytes: number;
 };
-
-const MB = 1024 * 1024;
 
 export function median(values: number[]): number {
   if (values.length === 0) {
@@ -121,7 +120,7 @@ export function formatBenchTsv(results: BenchResult[]): string {
       summary.drawShare.toFixed(2),
       Math.round(result.longestFrameMs),
       result.peakInFlight,
-      (result.peakEstimatedBytes / MB).toFixed(0),
+      (result.peakEstimatedBytes / MIB).toFixed(0),
       Math.round(summary.outputBytes / 1024),
     ].join('\t');
   });

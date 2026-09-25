@@ -3,20 +3,21 @@
  * flight per worker, pulling from one shared queue. Dev-only, used by the media lab.
  *
  * Peak memory cannot be read from the page on iOS, so `peakEstimatedBytes` is the model
- * (width × height × 4 per image in flight). Confirm real peaks with Xcode Instruments or
+ * (estimateJobBytes: the decoded bitmap plus the 1280 canvas, per photo in flight). Confirm real peaks with Xcode Instruments or
  * chrome://inspect while the run is going.
  */
 
-import { IMAGE_HEAD_BYTES, readImageDimensions } from '@/features/media/file-header';
+import { IMAGE_HEAD_BYTES, readHead, readImageDimensions } from '@/features/media/file-header';
 import { startFrameMeter } from '@/features/media/lab/frame-meter';
 import { ImageWorker, MAX_EDGE, PipelineError } from '@/features/media/image/image-worker';
 import { estimateJobBytes, pickWorker, type PoolState } from '@/features/media/image/image-queue';
+import { MIB } from '@/features/media/media-limits';
 import type { BenchConfig, BenchResult, JobRecord } from '@/features/media/lab/pool-bench-summary';
 
 type QueuedJob = { file: File; record: JobRecord; decodeWidth?: number };
 
 async function prepareJob(file: File, decodeWidth?: number): Promise<QueuedJob> {
-  const head = new Uint8Array(await file.slice(0, IMAGE_HEAD_BYTES).arrayBuffer());
+  const head = await readHead(file, IMAGE_HEAD_BYTES);
   const dimensions = readImageDimensions(head);
 
   // Only shrink at decode when the stored width is larger; resizeWidth would upscale.
@@ -86,11 +87,12 @@ export async function runPoolBench(files: File[], config: BenchConfig): Promise<
 
     const pump = () => {
       while (queue.length > 0) {
-        const index = pickWorker(state, queue[0].record.costBytes, config);
+        const [job] = queue;
+        const index = pickWorker(state, job.record.costBytes, config);
         if (index === null) {
           return;
         }
-        const job = queue.shift() as QueuedJob;
+        queue.shift();
 
         state.inFlight[index] += 1;
         state.bytesInFlight += job.record.costBytes;
@@ -130,8 +132,6 @@ export async function runPoolBench(files: File[], config: BenchConfig): Promise<
   };
 }
 
-const MB = 1024 * 1024;
-
 export const BENCH_CONFIGS: BenchConfig[] = [
   { key: 'n1m1', label: 'N1 × M1', workers: 1, perWorker: 1 },
   { key: 'n1m2', label: 'N1 × M2', workers: 1, perWorker: 2 },
@@ -139,7 +139,7 @@ export const BENCH_CONFIGS: BenchConfig[] = [
   { key: 'n2m2', label: 'N2 × M2', workers: 2, perWorker: 2 },
   { key: 'n3m1', label: 'N3 × M1', workers: 3, perWorker: 1 },
   { key: 'n3m2', label: 'N3 × M2', workers: 3, perWorker: 2 },
-  { key: 'budget', label: 'N1 × M2, 150 MB', workers: 1, perWorker: 2, budgetBytes: 150 * MB },
+  { key: 'budget', label: 'N1 × M2, 150 MB', workers: 1, perWorker: 2, budgetBytes: 150 * MIB },
   {
     key: 'decode1280',
     label: 'N1 × M2, decode 1280',
@@ -147,6 +147,12 @@ export const BENCH_CONFIGS: BenchConfig[] = [
     perWorker: 2,
     decodeWidth: MAX_EDGE,
   },
-  // The current production behaviour (P1): every image at once. Run it last; it may crash.
-  { key: 'all', label: 'N1 × tất cả', workers: 1, perWorker: Number.MAX_SAFE_INTEGER },
 ];
+
+/** P1, how the app worked before the image queue: every photo at once. It may crash. */
+export const ALL_AT_ONCE: BenchConfig = {
+  key: 'all',
+  label: 'N1 × tất cả',
+  workers: 1,
+  perWorker: Number.MAX_SAFE_INTEGER,
+};

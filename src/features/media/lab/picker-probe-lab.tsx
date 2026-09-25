@@ -9,12 +9,19 @@ import {
   readImageDimensions,
   sniffFormat,
 } from '@/features/media/file-header';
-import { type ByteReader, describeCodec, rangeReaderFor } from '@/features/media/lab/byte-access';
+import {
+  type ByteReader,
+  describeCodec,
+  pickedPaths,
+  rangeReaderFor,
+} from '@/features/media/lab/byte-access';
+import { createStageBreadcrumb } from '@/features/media/lab/stage-breadcrumb';
 import {
   checkImage,
   checkVideoLength,
   formatProblem,
   MediaKind,
+  MIB,
   originalVideoProblem,
   shouldConvertVideo,
 } from '@/features/media/media-limits';
@@ -24,12 +31,9 @@ import { readVideoMetadata } from '@/features/media/video-metadata';
  * openMediaPicker for a photo or a video, with or without silentRequest, then reads what it
  * returns WITHOUT loading the whole file: a photo by its first 256 KB (format and size from
  * the header; mediabunny only reads audio and video), a video with mediabunny over HTTP
- * range requests. Each step leaves a breadcrumb in sessionStorage: if Zalo reloads the
+ * range requests. Each step leaves a breadcrumb (stage-breadcrumb.ts): if Zalo reloads the
  * mini app, the next open says which step it died in.
  */
-
-const STAGE_KEY = 'medialab.pickerProbeStage';
-const MB = 1024 * 1024;
 
 type PickerType = 'photo' | 'video' | 'zcamera_photo' | 'zcamera_video';
 
@@ -59,41 +63,7 @@ const compressLabels: Record<string, string> = {
 
 const isVideoType = (type: PickerType) => type === 'video' || type === 'zcamera_video';
 
-function writeStage(stage: string | null) {
-  try {
-    if (stage) {
-      sessionStorage.setItem(STAGE_KEY, `${stage} @ ${new Date().toLocaleTimeString()}`);
-    } else {
-      sessionStorage.removeItem(STAGE_KEY);
-    }
-  } catch {
-    // Private mode: the breadcrumb is a convenience, the test still runs.
-  }
-}
-
-function readStage() {
-  try {
-    return sessionStorage.getItem(STAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-/** The SDK answers with paths, or with one string that may be a JSON array of them. */
-function pickedPaths(data: string[] | string | undefined): string[] {
-  if (Array.isArray(data)) {
-    return data;
-  }
-  if (!data) {
-    return [];
-  }
-  try {
-    const parsed: unknown = JSON.parse(data);
-    return Array.isArray(parsed) ? parsed.map(String) : [data];
-  } catch {
-    return [data];
-  }
-}
+const breadcrumb = createStageBreadcrumb('medialab.pickerProbeStage');
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -131,10 +101,10 @@ async function probePath(path: string, index: number, type: PickerType) {
   const lines = [`  [${index + 1}] ${path}`];
   let step = 'dung lượng';
   try {
-    writeStage(`file ${index + 1}: ${step}`);
+    breadcrumb.write(`file ${index + 1}: ${step}`);
     const { read, size, rangeSupported, contentType } = await rangeReaderFor(path);
     lines.push(
-      `  ↳ dung lượng · ${size ? `${(size / MB).toFixed(2)} MB` : 'không rõ'} · ${contentType || 'không có mime'} · Range ${rangeSupported ? 'có' : 'KHÔNG'}`,
+      `  ↳ dung lượng · ${size ? `${(size / MIB).toFixed(2)} MB` : 'không rõ'} · ${contentType || 'không có mime'} · Range ${rangeSupported ? 'có' : 'KHÔNG'}`,
     );
     if (!rangeSupported) {
       lines.push('  ↳ dừng: không đọc từng đoạn được, đọc tiếp sẽ tải cả file');
@@ -142,7 +112,7 @@ async function probePath(path: string, index: number, type: PickerType) {
     }
 
     step = isVideoType(type) ? 'mediabunny' : 'header ảnh';
-    writeStage(`file ${index + 1}: ${step}`);
+    breadcrumb.write(`file ${index + 1}: ${step}`);
     lines.push(
       ...(isVideoType(type) ? await probeVideo(path, size) : await probePhoto(read, size)),
     );
@@ -162,7 +132,7 @@ export default function PickerProbeLab() {
   // results
   const [lines, setLines] = useState<string[]>([]);
   const [isBusy, setIsBusy] = useState(false);
-  const [crashedStage] = useState(readStage);
+  const [crashedStage] = useState(breadcrumb.read);
 
   const isPhoto = !isVideoType(type);
 
@@ -178,7 +148,7 @@ export default function PickerProbeLab() {
     setLines([header, '  … đang chờ picker']);
 
     const started = Date.now();
-    writeStage(`picker đang mở ${JSON.stringify(args)}`);
+    breadcrumb.write(`picker đang mở ${JSON.stringify(args)}`);
     try {
       const response = await openMediaPicker(args);
       const paths = pickedPaths(response.data);
@@ -196,7 +166,7 @@ export default function PickerProbeLab() {
       setLines([header, `  picker lỗi sau ${Date.now() - started} ms · ${errorText(error)}`]);
     } finally {
       // Reaching here means nothing crashed; the breadcrumb is only for a reload.
-      writeStage(null);
+      breadcrumb.clear();
       setIsBusy(false);
     }
   };

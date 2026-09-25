@@ -11,7 +11,8 @@ import { rejectMessages } from '@/features/listings/draft/reject-messages';
 import { useListingDraftStore } from '@/features/listings/draft/store';
 import { canConvertVideos } from '@/features/media/convert-video';
 import { startFrameMeter } from '@/features/media/lab/frame-meter';
-import { MediaKind } from '@/features/media/media-limits';
+import { createStageBreadcrumb } from '@/features/media/lab/stage-breadcrumb';
+import { MediaKind, MIB } from '@/features/media/media-limits';
 import { canOptimizeImages } from '@/features/media/image/image-worker';
 
 /**
@@ -21,7 +22,7 @@ import { canOptimizeImages } from '@/features/media/image/image-worker';
  * It shares the draft with the sell page, as the form will.
  */
 
-const MB = 1024 * 1024;
+const breadcrumb = createStageBreadcrumb('medialab.draftStage');
 
 interface Timing {
   startedAt: number;
@@ -51,7 +52,7 @@ function describeStatus(media: DraftMedia) {
         : `Đang chuyển 720p ${Math.round(media.progress * 100)}%`;
     case DraftMediaStatus.ReadyToUpload: {
       const { upload } = media;
-      const size = `${(upload.blob.size / MB).toFixed(2)} MB ${upload.contentType}`;
+      const size = `${(upload.blob.size / MIB).toFixed(2)} MB ${upload.contentType}`;
       return `Sẵn sàng · ${size} · ${upload.optimized ? 'đã tối ưu' : 'bản gốc'}`;
     }
   }
@@ -65,6 +66,7 @@ export default function DraftMediaLab() {
 
   const timings = useRef(new Map<string, Timing>());
   const [longestFrameMs, setLongestFrameMs] = useState<number | null>(null);
+  const [crashedStage] = useState(breadcrumb.read);
 
   const isBusy = media.some(isWorking);
 
@@ -88,6 +90,16 @@ export default function DraftMediaLab() {
     return () => setLongestFrameMs(stopFrameMeter());
   }, [isBusy]);
 
+  // Left behind only if the app dies mid-run: the next open says so.
+  const workingCount = media.filter(isWorking).length;
+  useEffect(() => {
+    if (workingCount > 0) {
+      breadcrumb.write(`đang xử lý ${workingCount} tệp`);
+    } else {
+      breadcrumb.clear();
+    }
+  }, [workingCount]);
+
   const handlePick = (event: React.ChangeEvent<HTMLInputElement>) => {
     void addDraftFiles(Array.from(event.target.files ?? []));
     // Lets the same file be picked again.
@@ -103,6 +115,11 @@ export default function DraftMediaLab() {
     <section className="marketplace-card mt-3 p-4">
       <p className="field-heading m-0">Quy trình đăng tin thật (L4)</p>
       <p className="m-0 mt-1 text-sm text-slate-500">{describeDevice()}</p>
+      {crashedStage && (
+        <p className="m-0 mt-2 text-sm font-semibold text-red-600">
+          Lần trước app bị tải lại khi: {crashedStage}
+        </p>
+      )}
       <p className="m-0 mt-1 text-sm text-slate-500">
         Frame dài nhất khi đang xử lý:{' '}
         {/* 0 means no frame was drawn at all: the page was hidden while it worked. */}
@@ -163,7 +180,7 @@ function DraftMediaRow({ media, seconds }: { media: DraftMedia; seconds: string 
           {media.kind === MediaKind.Video ? 'Video' : 'Ảnh'} · {media.file.name}
         </p>
         <p className="m-0 text-slate-500">
-          Gốc {(media.file.size / MB).toFixed(2)} MB
+          Gốc {(media.file.size / MIB).toFixed(2)} MB
           {original?.width && ` · ${original.width}×${original.height}`}
           {seconds && ` · ${seconds} s`}
         </p>

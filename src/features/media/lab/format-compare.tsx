@@ -88,11 +88,15 @@ export default function FormatCompare() {
   const [activeKey, setActiveKey] = useState('jpeg85');
   const [zoom, setZoom] = useState<(typeof ZOOMS)[number]>(2);
   const [status, setStatus] = useState<string | null>(null);
+  const [isEncoding, setIsEncoding] = useState(false);
 
   // Object URLs hold the encoded bytes until revoked.
   useEffect(() => () => revokeAll(variants), [variants]);
 
   const encode = async (picked: File, nextEdge: Edge) => {
+    // One encode at a time: two full-size decodes at once is a memory spike of the lab's
+    // own making, and a slower earlier encode would land under the newer size's label.
+    setIsEncoding(true);
     setStatus('Đang encode…');
     try {
       setVariants(await encodeVariants(picked, nextEdge));
@@ -101,6 +105,8 @@ export default function FormatCompare() {
       );
     } catch (error) {
       setStatus(`Lỗi: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsEncoding(false);
     }
   };
 
@@ -131,7 +137,7 @@ export default function FormatCompare() {
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button size="small" onClick={() => inputRef.current?.click()}>
+        <Button size="small" disabled={isEncoding} onClick={() => inputRef.current?.click()}>
           Chọn ảnh
         </Button>
         {ZOOMS.map((level) => (
@@ -151,6 +157,7 @@ export default function FormatCompare() {
             key={value}
             size="small"
             variant={edge === value ? 'primary' : 'secondary'}
+            disabled={isEncoding}
             onClick={() => handleEdge(value)}
           >
             {value} px
