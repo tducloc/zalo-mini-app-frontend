@@ -27,7 +27,7 @@ export default function MediaTile({
   onReplace,
 }: MediaTileProps) {
   const isError = view.tone === TileTone.Error;
-  const state = isError ? `lỗi: ${view.label}` : (view.label ?? 'đã sẵn sàng');
+  const state = isError ? `lỗi: ${view.detail}` : (view.label ?? 'đã sẵn sàng');
 
   return (
     <li aria-label={name} className="relative aspect-square">
@@ -35,10 +35,12 @@ export default function MediaTile({
         type="button"
         aria-label={`${name}, ${state}. Chạm để xem`}
         onClick={onOpen}
-        className="relative block h-full w-full overflow-hidden rounded-[10px] border-0 bg-marketplace-pale p-0"
+        className={`relative block h-full w-full overflow-hidden rounded-[10px] border-0 bg-marketplace-pale p-0 ${
+          isError ? 'ring-2 ring-inset ring-marketplace-danger' : ''
+        }`}
       >
         {view.imageUrl && <img src={view.imageUrl} alt="" className="h-full w-full object-cover" />}
-        {/* An empty tile shows its kind, except under the error's own icon. */}
+        {/* An empty tile shows its kind, except under the error's mark. */}
         {!view.imageUrl && !isError && (
           <span className="grid h-full w-full place-items-center text-marketplace-muted">
             <Icon icon={isVideo ? 'zi-video' : 'zi-photo'} size={28} />
@@ -59,20 +61,29 @@ export default function MediaTile({
           </span>
         )}
 
+        {/* Just the mark: the viewer gives the reason, so there is one message per error. */}
+        {isError && (
+          <span className="absolute inset-0 grid place-items-center">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-marketplace-danger text-lg font-bold text-white shadow">
+              !
+            </span>
+          </span>
+        )}
+
         {view.label && <TileStatus view={view} />}
       </button>
 
       <CornerButton
         icon="zi-close"
         label={`Xoá ${name}`}
-        isOnPicture={!!view.imageUrl || isError}
+        isOnPicture={!!view.imageUrl}
         className="right-0.5 top-0.5"
         onClick={onRemove}
       />
       <CornerButton
         icon="zi-edit"
         label={`Đổi ${isVideo ? 'video' : 'ảnh'} ${name}`}
-        isOnPicture={!!view.imageUrl || isError}
+        isOnPicture={!!view.imageUrl}
         className="left-0.5 top-0.5"
         onClick={onReplace}
       />
@@ -82,8 +93,8 @@ export default function MediaTile({
 
 /**
  * A bare icon on a tile's top corner (remove right, replace left), at the same inset; the
- * bottom edge is the cover's strip. White with a shadow over a
- * picture, which can be light or dark; dark on the empty tile.
+ * bottom edge is the cover's strip. White with a shadow over a picture, which can be light
+ * or dark; dark on the empty tile.
  */
 function CornerButton({
   icon,
@@ -116,20 +127,14 @@ function CornerButton({
 function TileStatus({ view }: { view: TileView }) {
   const hasProgress = view.progress !== null;
   const isWaiting = view.tone === TileTone.Waiting;
-  const isError = view.tone === TileTone.Error;
 
   return (
-    <span
-      className={`absolute inset-0 grid place-content-center gap-1 px-1 text-center text-micro text-white ${
-        isError ? 'bg-marketplace-danger/75 font-semibold' : 'bg-marketplace-ink/60'
-      }`}
-    >
-      {isError && <Icon icon="zi-warning-circle-solid" size={22} className="mx-auto" />}
+    <span className="absolute inset-0 grid place-content-center gap-1 bg-marketplace-ink/60 px-1 text-center text-micro text-white">
       {isWaiting && <Icon icon="zi-backup-warning-solid" size={20} className="mx-auto" />}
-      {!isWaiting && !isError && !hasProgress && (
+      {!isWaiting && !hasProgress && (
         <i className="mx-auto h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
       )}
-      {hasProgress && !isWaiting && !isError && (
+      {hasProgress && !isWaiting && (
         <b className="text-sm">{Math.round((view.progress ?? 0) * 100)}%</b>
       )}
       <span>{view.label}</span>

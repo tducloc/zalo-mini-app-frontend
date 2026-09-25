@@ -101,38 +101,6 @@ const mediaErrorMessages: Record<MediaError, string> = {
   [MediaError.Missing]: 'Vui lòng xoá và chọn lại tệp: tệp đã hết hạn trên máy chủ.',
 };
 
-const SECONDS = MAX_VIDEO_DURATION_MS / 1000;
-
-/** The short line on a failed tile, what went wrong; the viewer gives the full sentence. */
-export const rejectLabels: Record<RejectReason, string> = {
-  [RejectReason.UnsupportedImageFormat]: 'Sai định dạng',
-  [RejectReason.ImageTooLarge]: 'Ảnh quá lớn',
-  [RejectReason.TooManyImages]: 'Quá số ảnh',
-  [RejectReason.UnsupportedVideoFormat]: 'Sai định dạng',
-  [RejectReason.TooManyVideos]: 'Quá số video',
-  [RejectReason.VideoTooLong]: `Quá ${SECONDS} giây`,
-  [RejectReason.VideoTooLarge]: 'Video quá lớn',
-  [RejectReason.VideoResolution]: 'Quá 1080p',
-  [RejectReason.VideoHevc]: 'Chưa hỗ trợ HEVC',
-  [RejectReason.VideoNotPlayable]: 'Không phát được',
-  [RejectReason.Unreadable]: 'Không đọc được',
-};
-
-const mediaErrorLabels: Record<MediaError, string> = {
-  [MediaError.UnsupportedFormat]: 'Sai định dạng',
-  [MediaError.FileTooLarge]: 'Tệp quá lớn',
-  [MediaError.VideoTooLong]: `Quá ${SECONDS} giây`,
-  [MediaError.VideoNotPlayable]: 'Không phát được',
-  [MediaError.BlankImage]: 'Ảnh trống',
-  [MediaError.ProcessingFailed]: 'Xử lý lỗi',
-  [MediaError.Missing]: 'Đã hết hạn',
-};
-
-export const mediaErrorLabel = (code: MediaError | null) =>
-  mediaErrorLabels[code ?? MediaError.ProcessingFailed];
-
-export const uploadFailedLabel = 'Tải lên lỗi';
-
 /** Under a file the server failed; every failure asks for another file. */
 export const mediaErrorMessage = (code: MediaError | null) =>
   mediaErrorMessages[code ?? MediaError.ProcessingFailed];

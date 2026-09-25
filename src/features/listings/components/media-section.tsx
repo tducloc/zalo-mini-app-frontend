@@ -147,7 +147,7 @@ export default function MediaSection() {
           className="m-0 mt-3 flex items-center gap-2 rounded-lg bg-marketplace-danger/10 px-3 py-2 text-sm text-marketplace-danger"
         >
           <Icon icon="zi-warning-circle-solid" size={18} className="shrink-0" />
-          {attentionCount} tệp cần xử lý. Vui lòng chạm vào ô màu đỏ để xem.
+          {attentionCount} tệp cần xử lý. Vui lòng chạm vào ô có dấu chấm than để xem.
         </p>
       )}
 

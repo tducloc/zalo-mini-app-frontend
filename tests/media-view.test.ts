@@ -1,13 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  mediaErrorLabel,
   mediaErrorMessage,
   refusedFilesMessage,
-  rejectLabels,
   rejectMessages,
   tileLabels,
-  uploadFailedLabel,
   uploadFailedMessages,
   uploadWaitMessages,
 } from '@/features/listings/draft/media-messages';
@@ -79,7 +76,6 @@ describe('tileView', () => {
     });
     expect(tileView(failed(true))).toMatchObject({
       tone: TileTone.Error,
-      label: uploadFailedLabel,
       detail: uploadFailedMessages.retryable,
       canRetry: true,
     });
@@ -98,7 +94,6 @@ describe('tileView', () => {
     };
     expect(tileView(tooLong)).toMatchObject({
       tone: TileTone.Error,
-      label: rejectLabels[RejectReason.VideoTooLong],
       detail: rejectMessages[RejectReason.VideoTooLong],
       imageUrl: null,
     });
@@ -111,7 +106,6 @@ describe('tileView', () => {
     };
     expect(tileView(blank)).toMatchObject({
       tone: TileTone.Error,
-      label: mediaErrorLabel(MediaError.BlankImage),
       detail: mediaErrorMessage(MediaError.BlankImage),
       canRetry: false,
     });

@@ -9,12 +9,9 @@
 
 import { type DraftMedia, DraftMediaStatus } from '@/features/listings/draft/media-reducer';
 import {
-  mediaErrorLabel,
   mediaErrorMessage,
-  rejectLabels,
   rejectMessages,
   tileLabels,
-  uploadFailedLabel,
   uploadFailedMessages,
   uploadWaitMessages,
 } from '@/features/listings/draft/media-messages';
@@ -35,7 +32,7 @@ export enum TileTone {
 
 export interface TileView {
   tone: TileTone;
-  /** The short line on the tile (what it is doing, or what went wrong); null when done. */
+  /** The short line on the tile; null when the picture is enough. */
   label: string | null;
   /** 0–1 when there is a percentage to show. */
   progress: number | null;
@@ -54,9 +51,9 @@ const working = (label: string, progress: number | null = null) => ({
   canRetry: false,
 });
 
-const failed = (label: string, detail: string, canRetry = false) => ({
+const failed = (detail: string, canRetry = false) => ({
   tone: TileTone.Error,
-  label,
+  label: null,
   progress: null,
   detail,
   canRetry,
@@ -67,7 +64,7 @@ function statusView(media: DraftMedia): Omit<TileView, 'imageUrl'> {
     case DraftMediaStatus.Checking:
       return working(tileLabels.checking);
     case DraftMediaStatus.Rejected:
-      return failed(rejectLabels[media.reason], rejectMessages[media.reason]);
+      return failed(rejectMessages[media.reason]);
     case DraftMediaStatus.Optimizing:
       return media.kind === MediaKind.Video
         ? working(tileLabels.convertingVideo, media.progress)
@@ -87,11 +84,11 @@ function statusView(media: DraftMedia): Omit<TileView, 'imageUrl'> {
       };
     case DraftMediaStatus.UploadFailed:
       return media.isRetryable
-        ? failed(uploadFailedLabel, uploadFailedMessages.retryable, true)
-        : failed(uploadFailedLabel, uploadFailedMessages.permanent);
+        ? failed(uploadFailedMessages.retryable, true)
+        : failed(uploadFailedMessages.permanent);
     case DraftMediaStatus.Uploaded:
       if (media.server.status === ServerMediaStatus.Failed) {
-        return failed(mediaErrorLabel(media.server.error), mediaErrorMessage(media.server.error));
+        return failed(mediaErrorMessage(media.server.error));
       }
       if (media.server.status === ServerMediaStatus.Ready) {
         return { tone: TileTone.Done, label: null, progress: null, detail: null, canRetry: false };
