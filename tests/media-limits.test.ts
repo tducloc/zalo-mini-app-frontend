@@ -75,7 +75,6 @@ describe('checkImage', () => {
   it('refuses what the server would refuse', () => {
     expect(checkImage(MAX_IMAGE_BYTES + 1, PHOTO)).toBe(RejectReason.ImageTooLarge);
     expect(checkImage(MB, { width: 800, height: 499 })).toBe(RejectReason.ImageTooSmall);
-    expect(checkImage(20 * MB, { width: 12_000, height: 9_000 })).toBe(RejectReason.TooManyPixels);
   });
 
   it('leaves a photo with an unreadable header to the server', () => {

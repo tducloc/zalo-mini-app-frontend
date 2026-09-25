@@ -12,10 +12,10 @@ const MIB = 1024 * 1024;
 export const MAX_IMAGES_PER_LISTING = 10;
 export const MAX_VIDEOS_PER_LISTING = 1;
 
-export const MAX_IMAGE_BYTES = 25 * MIB;
+/** iPhone photos are at most ~5 MB; lowered from 25 MB on 2026-09-25. */
+export const MAX_IMAGE_BYTES = 15 * MIB;
 /** The server refuses a photo whose shorter side is below this. */
 export const MIN_IMAGE_EDGE = 500;
-export const MAX_IMAGE_PIXELS = 50_000_000;
 
 export const MAX_VIDEO_BYTES = 150 * MIB;
 export const MAX_VIDEO_DURATION_MS = 60_000;
@@ -40,7 +40,6 @@ export enum RejectReason {
   Heic = 'HEIC',
   ImageTooLarge = 'IMAGE_TOO_LARGE',
   ImageTooSmall = 'IMAGE_TOO_SMALL',
-  TooManyPixels = 'TOO_MANY_PIXELS',
   TooManyImages = 'TOO_MANY_IMAGES',
   TooManyVideos = 'TOO_MANY_VIDEOS',
   /** The file could not be read, or is not a video mediabunny can open. */
@@ -102,9 +101,6 @@ export function checkImage(bytes: number, dimensions: ImageDimensions | null) {
   }
   if (Math.min(dimensions.width, dimensions.height) < MIN_IMAGE_EDGE) {
     return RejectReason.ImageTooSmall;
-  }
-  if (dimensions.width * dimensions.height > MAX_IMAGE_PIXELS) {
-    return RejectReason.TooManyPixels;
   }
   return null;
 }

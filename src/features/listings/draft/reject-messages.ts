@@ -5,9 +5,8 @@ export const rejectMessages: Record<RejectReason, string> = {
   [RejectReason.UnsupportedFormat]: 'Chỉ nhận ảnh JPG, PNG, WebP và video MP4, MOV.',
   [RejectReason.Heic]:
     'Ảnh HEIC chưa dùng được. Hãy chọn ảnh JPG, hoặc tắt định dạng HEIC/HEIF trong cài đặt camera rồi chụp lại.',
-  [RejectReason.ImageTooLarge]: 'Ảnh lớn hơn 25 MB.',
+  [RejectReason.ImageTooLarge]: 'Ảnh lớn hơn 15 MB.',
   [RejectReason.ImageTooSmall]: 'Ảnh quá nhỏ: cạnh ngắn cần từ 500 px.',
-  [RejectReason.TooManyPixels]: 'Ảnh quá lớn: tối đa 50 triệu điểm ảnh.',
   [RejectReason.TooManyImages]: 'Mỗi tin có tối đa 10 ảnh.',
   [RejectReason.TooManyVideos]: 'Mỗi tin có tối đa 1 video.',
   [RejectReason.Unreadable]: 'Không đọc được tệp này. Hãy chọn lại.',
