@@ -21,13 +21,19 @@ export async function readHead(blob: Blob, bytes: number) {
 
 // ---- Format ----
 
+/**
+ * Only the formats the app takes; anything else is Unknown and refused, whatever it is.
+ * Why these (plans/create-listing.md, "Supported formats"):
+ * - JPEG, PNG, WebP: every WebView the app supports decodes them, so the phone can shrink
+ *   them in the worker, and the server's sharp reads them. HEIC is left out: Android
+ *   cannot decode it and sharp's prebuilt libvips has no HEVC decoder.
+ * - MP4 and MOV: what phone cameras record (Android MP4, iPhone MOV). The codec inside is
+ *   checked afterwards from the file itself (video-metadata.ts).
+ */
 export enum FileFormat {
   Jpeg = 'image/jpeg',
   Png = 'image/png',
   Webp = 'image/webp',
-  Heic = 'image/heic',
-  Avif = 'image/avif',
-  Gif = 'image/gif',
   Mp4 = 'video/mp4',
   QuickTime = 'video/quicktime',
   Unknown = 'unknown',
@@ -43,34 +49,22 @@ export const IMAGE_FORMATS: readonly FileFormat[] = [
 ];
 export const VIDEO_FORMATS: readonly FileFormat[] = [FileFormat.Mp4, FileFormat.QuickTime];
 
-// ISO-BMFF major brands of HEIF stills (iPhone photos, Samsung "high efficiency" photos).
-const HEIF_BRANDS = new Set([
-  'heic',
-  'heix',
-  'hevc',
-  'hevx',
-  'heim',
-  'heis',
-  'hevm',
-  'hevs',
-  'mif1',
-  'msf1',
-]);
-const AVIF_BRANDS = new Set(['avif', 'avis']);
-
-function isoBmffFormat(brand: string) {
-  if (brand === 'qt  ') {
-    return FileFormat.QuickTime;
-  }
-  if (HEIF_BRANDS.has(brand)) {
-    return FileFormat.Heic;
-  }
-  if (AVIF_BRANDS.has(brand)) {
-    return FileFormat.Avif;
-  }
-  // isom, mp41, mp42, avc1, 3gp…: let the video reader decide whether it can use it.
-  return FileFormat.Mp4;
-}
+/**
+ * Major brands of the MP4 and MOV files phones and editors write. Listed rather than "any
+ * ftyp", because HEIC and AVIF photos use the same box with their own brands.
+ */
+const VIDEO_BRANDS: Record<string, FileFormat> = {
+  'qt  ': FileFormat.QuickTime,
+  isom: FileFormat.Mp4,
+  iso2: FileFormat.Mp4,
+  iso4: FileFormat.Mp4,
+  iso5: FileFormat.Mp4,
+  iso6: FileFormat.Mp4,
+  mp41: FileFormat.Mp4,
+  mp42: FileFormat.Mp4,
+  avc1: FileFormat.Mp4,
+  'M4V ': FileFormat.Mp4,
+};
 
 export function sniffFormat(head: Uint8Array): FileFormat {
   if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) {
@@ -82,11 +76,8 @@ export function sniffFormat(head: Uint8Array): FileFormat {
   if (ascii(head, 0, 4) === 'RIFF' && ascii(head, 8, 4) === 'WEBP') {
     return FileFormat.Webp;
   }
-  if (ascii(head, 0, 3) === 'GIF') {
-    return FileFormat.Gif;
-  }
   if (ascii(head, 4, 4) === 'ftyp') {
-    return isoBmffFormat(ascii(head, 8, 4));
+    return VIDEO_BRANDS[ascii(head, 8, 4)] ?? FileFormat.Unknown;
   }
   return FileFormat.Unknown;
 }

@@ -69,13 +69,13 @@ describe('mediaReducer', () => {
   it('rejects while checking or optimizing, keeping the reason', () => {
     const state = run(
       added,
-      { type: 'rejected', id: 'p1', reason: RejectReason.Heic },
+      { type: 'rejected', id: 'p1', reason: RejectReason.UnsupportedFormat },
       { type: 'optimizing', id: 'v1', original },
       { type: 'rejected', id: 'v1', reason: RejectReason.VideoResolution },
     );
     expect(state[0]).toMatchObject({
       status: DraftMediaStatus.Rejected,
-      reason: RejectReason.Heic,
+      reason: RejectReason.UnsupportedFormat,
     });
     expect(state[1]).toMatchObject({
       status: DraftMediaStatus.Rejected,
@@ -102,7 +102,11 @@ describe('mediaReducer', () => {
     });
     expect(rejectedLate).toBe(ready);
 
-    const rejected = run(added, { type: 'rejected', id: 'p1', reason: RejectReason.Heic });
+    const rejected = run(added, {
+      type: 'rejected',
+      id: 'p1',
+      reason: RejectReason.UnsupportedFormat,
+    });
     expect(mediaReducer(rejected, { type: 'optimizing', id: 'p1', original })).toBe(rejected);
   });
 

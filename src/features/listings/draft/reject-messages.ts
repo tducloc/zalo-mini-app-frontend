@@ -12,9 +12,8 @@ import {
 
 /** What the seller reads under a refused file: why, and what to do instead. */
 export const rejectMessages: Record<RejectReason, string> = {
-  [RejectReason.UnsupportedFormat]: 'Chỉ nhận ảnh JPG, PNG, WebP và video MP4, MOV.',
-  [RejectReason.Heic]:
-    'Ảnh HEIC chưa dùng được. Hãy chọn ảnh JPG, hoặc tắt định dạng HEIC/HEIF trong cài đặt camera rồi chụp lại.',
+  [RejectReason.UnsupportedFormat]:
+    'Chỉ nhận ảnh JPG, PNG, WebP và video MP4, MOV. Ảnh HEIC của iPhone: Cài đặt > Camera > Định dạng > Tương thích nhất.',
   [RejectReason.ImageTooLarge]: `Ảnh lớn hơn ${MAX_IMAGE_BYTES / MIB} MB.`,
   [RejectReason.ImageTooSmall]: `Ảnh quá nhỏ: cạnh ngắn cần từ ${MIN_IMAGE_EDGE} px.`,
   [RejectReason.TooManyImages]: `Mỗi tin có tối đa ${MAX_IMAGES_PER_LISTING} ảnh.`,

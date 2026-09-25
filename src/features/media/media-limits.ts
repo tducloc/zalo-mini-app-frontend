@@ -41,7 +41,6 @@ export enum MediaKind {
 
 export enum RejectReason {
   UnsupportedFormat = 'UNSUPPORTED_FORMAT',
-  Heic = 'HEIC',
   ImageTooLarge = 'IMAGE_TOO_LARGE',
   ImageTooSmall = 'IMAGE_TOO_SMALL',
   TooManyImages = 'TOO_MANY_IMAGES',
@@ -75,14 +74,8 @@ export function formatProblem(kind: MediaKind, format: FileFormat | null) {
     return RejectReason.Unreadable;
   }
 
-  if (kind === MediaKind.Video) {
-    return VIDEO_FORMATS.includes(format) ? null : RejectReason.UnsupportedFormat;
-  }
-
-  if (format === FileFormat.Heic) {
-    return RejectReason.Heic;
-  }
-  return IMAGE_FORMATS.includes(format) ? null : RejectReason.UnsupportedFormat;
+  const accepted = kind === MediaKind.Video ? VIDEO_FORMATS : IMAGE_FORMATS;
+  return accepted.includes(format) ? null : RejectReason.UnsupportedFormat;
 }
 
 /** `dimensions` is null when the header could not be read; the server then decides. */

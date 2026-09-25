@@ -65,14 +65,14 @@ describe('refusePicked', () => {
   it('refuses what the first bytes rule out before counting, so it takes no slot', () => {
     const picked = [
       ...Array(9).fill(photo()),
-      photo({ format: FileFormat.Heic }),
+      photo({ format: FileFormat.Unknown }),
       photo({ bytes: MAX_IMAGE_BYTES + 1 }),
       photo({ dimensions: { width: 400, height: 300 } }),
       photo(),
     ];
 
     expect(refusePicked(picked, none).slice(9)).toEqual([
-      RejectReason.Heic,
+      RejectReason.UnsupportedFormat,
       RejectReason.ImageTooLarge,
       RejectReason.ImageTooSmall,
       null,
@@ -86,10 +86,10 @@ describe('formatProblem', () => {
     expect(formatProblem(MediaKind.Video, FileFormat.QuickTime)).toBeNull();
   });
 
-  it('names HEIC apart from other formats, so the message can say what to change', () => {
-    expect(formatProblem(MediaKind.Image, FileFormat.Heic)).toBe(RejectReason.Heic);
-    expect(formatProblem(MediaKind.Image, FileFormat.Gif)).toBe(RejectReason.UnsupportedFormat);
+  it('refuses anything else, including a photo format picked as a video', () => {
+    expect(formatProblem(MediaKind.Image, FileFormat.Unknown)).toBe(RejectReason.UnsupportedFormat);
     expect(formatProblem(MediaKind.Video, FileFormat.Unknown)).toBe(RejectReason.UnsupportedFormat);
+    expect(formatProblem(MediaKind.Video, FileFormat.Jpeg)).toBe(RejectReason.UnsupportedFormat);
   });
 
   it('reports a file that could not be read', () => {

@@ -21,15 +21,21 @@ describe('sniffFormat', () => {
     ['JPEG', bytes([0xff, 0xd8, 0xff, 0xe1]), FileFormat.Jpeg],
     ['PNG', bytes([0x89], 'PNG', [0x0d, 0x0a, 0x1a, 0x0a]), FileFormat.Png],
     ['WebP', bytes('RIFF', [0, 0, 0, 0], 'WEBPVP8 '), FileFormat.Webp],
-    ['GIF', bytes('GIF89a'), FileFormat.Gif],
-    ['iPhone HEIC', ftyp('heic'), FileFormat.Heic],
-    ['Samsung HEIF', ftyp('mif1'), FileFormat.Heic],
-    ['AVIF', ftyp('avif'), FileFormat.Avif],
     ['iPhone MOV', ftyp('qt  '), FileFormat.QuickTime],
     ['Android MP4', ftyp('isom'), FileFormat.Mp4],
-    ['3GP', ftyp('3gp4'), FileFormat.Mp4],
+    ['exported MP4', ftyp('mp42'), FileFormat.Mp4],
   ])('recognises %s', (_name, head, format) => {
     expect(sniffFormat(head)).toBe(format);
+  });
+
+  it.each([
+    ['GIF', bytes('GIF89a')],
+    ['iPhone HEIC', ftyp('heic')],
+    ['Samsung HEIF', ftyp('mif1')],
+    ['AVIF', ftyp('avif')],
+    ['3GP', ftyp('3gp4')],
+  ])('leaves %s unknown, as any format the app does not take', (_name, head) => {
+    expect(sniffFormat(head)).toBe(FileFormat.Unknown);
   });
 
   it('does not trust a name or type, only the bytes', () => {
