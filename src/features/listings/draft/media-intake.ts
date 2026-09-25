@@ -13,16 +13,11 @@ import {
 } from '@/features/listings/draft/media-reducer';
 import { cancelUpload } from '@/features/listings/draft/media-upload';
 import { useListingDraftStore } from '@/features/listings/draft/store';
+import { detectPickedFile } from '@/features/media/detect-media';
 import { ImageQueue } from '@/features/media/image/image-queue';
-import {
-  IMAGE_HEAD_BYTES,
-  ImageFormat,
-  type PhotoHeader,
-  photoProblem,
-  readPhotoHeader,
-} from '@/features/media/image/image-utils';
+import { ImageFormat, type PhotoHeader } from '@/features/media/image/image-utils';
 import { canOptimizeImages } from '@/features/media/image/image-worker';
-import { MediaKind, readHead, refusePicked, RejectReason } from '@/features/media/media-utils';
+import { MediaKind, refusePicked, RejectReason } from '@/features/media/media-utils';
 import { canConvertVideos, convertVideo } from '@/features/media/video/convert-video';
 import {
   checkVideoLength,
@@ -57,16 +52,6 @@ const findMedia = (id: string) =>
 
 const warn = (message: string, error: unknown) => warnInDev('media', message, error);
 
-/** Enough for a photo's format and size; null when the file cannot be read. */
-async function readPickedHead(file: File) {
-  try {
-    return await readHead(file, IMAGE_HEAD_BYTES);
-  } catch {
-    // iOS can hand over a file it no longer lets us read, e.g. an iCloud photo not downloaded.
-    return null;
-  }
-}
-
 function acceptedCounts() {
   const counts = { [MediaKind.Image]: 0, [MediaKind.Video]: 0 };
   for (const media of useListingDraftStore.getState().media) {
@@ -79,6 +64,8 @@ function acceptedCounts() {
 
 async function takeImage({ id, file, photo, signal }: PickedFile) {
   if (!photo?.format) {
+    // detectPickedFile refuses such a file first; never leave a tile on Checking.
+    dispatch({ type: 'rejected', id, reason: RejectReason.UnsupportedFormat });
     return;
   }
   // As stored in the file, before EXIF orientation (api-spec, upload-urls).
@@ -202,37 +189,21 @@ async function take(picked: PickedFile, kind: MediaKind) {
   }
 }
 
-/**
- * What a picked file is, by its first bytes: a photo when image-size can read it, else a
- * video, which mediabunny checks next (it opens only MP4 and MOV). `file.type` only breaks
- * the tie for a header nothing can read: it is empty for some files on Android.
- */
-function describePicked(file: File, head: Uint8Array | null) {
-  const photo = head && readPhotoHeader(head);
-  if (photo) {
-    return { file, kind: MediaKind.Image, photo, problem: photoProblem(photo, file.size) };
-  }
-
-  const kind = file.type.startsWith('image/') ? MediaKind.Image : MediaKind.Video;
-  const isReadable = head !== null && kind === MediaKind.Video;
-  return { file, kind, photo: null, problem: isReadable ? null : RejectReason.Unreadable };
-}
-
 /** Adds the picked files to the draft, in order, and starts checking them. */
 export async function addDraftFiles(files: File[]) {
-  const heads = await Promise.all(files.map(readPickedHead));
+  const picked = await Promise.all(files.map(detectPickedFile));
 
   // No await from here to the dispatch, so two quick picks cannot both take the last slot.
-  const picked = files.map((file, index) => describePicked(file, heads[index]));
   const refusals = refusePicked(picked, acceptedCounts());
   const ids = files.map(() => `local-${++fileCount}`);
   dispatch({
     type: 'added',
-    items: picked.map(({ file, kind }, index) => ({ id: ids[index], file, kind })),
+    items: picked.map(({ kind }, index) => ({ id: ids[index], file: files[index], kind })),
   });
 
-  picked.forEach(({ file, kind, photo }, index) => {
+  picked.forEach(({ kind, photo }, index) => {
     const id = ids[index];
+    const file = files[index];
     const refusal = refusals[index];
     if (refusal) {
       dispatch({ type: 'rejected', id, reason: refusal });

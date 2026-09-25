@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { MediaKind } from '@/features/media/media-utils';
 import {
@@ -279,6 +279,35 @@ describe('FileUpload, photo', () => {
     expect(events.filter((event) => event === `waiting ${UploadWait.Network}`)).toHaveLength(4);
   });
 
+  it('waits for the network when it drops on the last attempt, instead of failing', async () => {
+    let isOnline = true;
+    let puts = 0;
+    const transport = fakeTransport({
+      isOnline: vi.fn(() => isOnline),
+      waitForNetwork: vi.fn(async () => {
+        isOnline = true;
+      }),
+      // Two timeouts while the phone still says online use up the retries; then it drops.
+      put: vi.fn(async () => {
+        puts += 1;
+        if (puts <= 2) {
+          throw failure(FailureKind.Server);
+        }
+        if (puts === 3) {
+          isOnline = false;
+          throw failure(FailureKind.Network);
+        }
+        return '"e"';
+      }),
+    });
+    const { events, listener } = recordingListener();
+
+    const result = await run(newUpload(photoRequest, photoBlob, transport), listener);
+
+    expect(result.kind).toBe('uploaded');
+    expect(events).toContain(`waiting ${UploadWait.Network}`);
+  });
+
   it('does not send the photo again when only the answer to complete was lost', async () => {
     const transport = fakeTransport({
       complete: failing(1, FailureKind.Network, async () => ServerMediaStatus.Processing),
@@ -327,6 +356,51 @@ describe('FileUpload, photo', () => {
         controller.signal,
       ),
     ).rejects.toBeDefined();
+    expect(transport.put).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('FileUpload, waits between attempts', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('waits 1–2 s before the second attempt and 2–4 s before the third', async () => {
+    vi.useFakeTimers();
+    const transport = fakeTransport({ put: failing(ALWAYS, FailureKind.Server, async () => '') });
+
+    const result = new FileUpload(photoRequest, photoBlob, transport).run(
+      recordingListener().listener,
+      new AbortController().signal,
+    );
+
+    await vi.advanceTimersByTimeAsync(999);
+    expect(transport.put).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1_001);
+    expect(transport.put).toHaveBeenCalledTimes(2);
+
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(transport.put).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(2_001);
+    expect(transport.put).toHaveBeenCalledTimes(3);
+
+    await expect(result).resolves.toMatchObject({ kind: 'failed', failure: FailureKind.Server });
+  });
+
+  it('rejects at once when removed during a wait', async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    const transport = fakeTransport({ put: failing(ALWAYS, FailureKind.Server, async () => '') });
+
+    const result = new FileUpload(photoRequest, photoBlob, transport).run(
+      recordingListener().listener,
+      controller.signal,
+    );
+    const settled = expect(result).rejects.toBeDefined();
+
+    await vi.advanceTimersByTimeAsync(500);
+    controller.abort();
+    await settled;
     expect(transport.put).toHaveBeenCalledTimes(1);
   });
 });

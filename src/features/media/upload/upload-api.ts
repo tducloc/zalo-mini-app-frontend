@@ -145,7 +145,8 @@ export async function putBlob(
     return typeof etag === 'string' ? etag : null;
   } catch (error) {
     if (signal?.aborted) {
-      throw signal.reason;
+      // Old WebKit (iOS < 15.4) keeps no abort reason.
+      throw signal.reason ?? error;
     }
     if (hasStalled) {
       throw new UploadFailure(FailureKind.Network, 'upload stalled');

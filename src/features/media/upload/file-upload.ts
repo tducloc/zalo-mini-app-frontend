@@ -118,44 +118,52 @@ export class FileUpload {
   /** Attempts until uploaded, refused for good, or out of attempts. Rejects only on abort. */
   async run(listener: UploadListener, signal: AbortSignal): Promise<UploadResult> {
     let isWaiting = false;
-    const attempt = async () => {
+    const wait = (reason: UploadWait) => {
+      isWaiting = true;
+      listener.onWaiting(reason);
+    };
+    const resume = () => {
       if (isWaiting) {
         isWaiting = false;
         listener.onResumed();
       }
-      if (!this.transport.isOnline()) {
-        throw new UploadFailure(FailureKind.Network, 'offline');
-      }
-      return this.attempt(listener, signal);
     };
 
-    // Offline is a pause, not a failure: it uses up no attempt (diagram 05).
-    const isOfflineFailure = (error: Error) =>
-      error instanceof UploadFailure &&
-      error.kind === FailureKind.Network &&
-      !this.transport.isOnline();
+    // Offline is a pause, not a failure: it uses up no attempt (diagram 05). So it is
+    // handled inside one p-retry attempt, and p-retry only sees failures that count; its
+    // own shouldConsumeRetry is checked after "no retries left", too late for the last one.
+    const attemptWhenOnline = async () => {
+      for (;;) {
+        if (!this.transport.isOnline()) {
+          wait(UploadWait.Network);
+          await this.transport.waitForNetwork(signal);
+        }
+        resume();
+        try {
+          return await this.attempt(listener, signal);
+        } catch (error) {
+          if (!this.isOfflineFailure(error)) {
+            throw error;
+          }
+        }
+      }
+    };
 
-    const handleFailure = async ({ error, retriesLeft }: RetryContext) => {
+    const handleFailure = ({ error, retriesLeft }: RetryContext) => {
       if (!(error instanceof UploadFailure)) {
         return;
       }
       this.recover(error.kind);
-      if (isOfflineFailure(error)) {
-        isWaiting = true;
-        listener.onWaiting(UploadWait.Network);
-        await this.transport.waitForNetwork(signal);
-      } else if (isRetryable(error.kind) && retriesLeft > 0) {
-        isWaiting = true;
-        listener.onWaiting(UploadWait.Retry);
+      if (isRetryable(error.kind) && retriesLeft > 0) {
+        wait(UploadWait.Retry);
       }
     };
 
     try {
-      return await pRetry(attempt, {
+      return await pRetry(attemptWhenOnline, {
         ...this.retryTiming,
         retries: MAX_UPLOAD_ATTEMPTS - 1,
         signal,
-        shouldConsumeRetry: ({ error }) => !isOfflineFailure(error),
         shouldRetry: ({ error }) => error instanceof UploadFailure && isRetryable(error.kind),
         onFailedAttempt: handleFailure,
       });
@@ -185,6 +193,14 @@ export class FileUpload {
       mediaId: this.requireMediaId(),
       status: await this.complete(signal),
     };
+  }
+
+  private isOfflineFailure(error: unknown) {
+    return (
+      error instanceof UploadFailure &&
+      error.kind === FailureKind.Network &&
+      !this.transport.isOnline()
+    );
   }
 
   /** Clears whatever the failure showed to be wrong, before the next attempt. */
