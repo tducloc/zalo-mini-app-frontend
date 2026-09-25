@@ -182,7 +182,7 @@ async function probeVideoSource(source: VideoSource, stage: string): Promise<str
     const meta = await readVideoMetadata(source.metadataSource);
     lines.push(
       `  ↳ metadata · ${Date.now() - started} ms · ${meta.mimeType} (mediabunny)`,
-      `  ↳ codec · ${describeCodec(meta.videoCodec)} · audio ${meta.audioCodec ?? 'không có'}`,
+      `  ↳ codec · ${describeCodec(meta.videoCodec)} · audio ${meta.audioCodecs.join(', ') || 'không có'}`,
       `  ↳ khung hình · ${meta.width ?? '?'} x ${meta.height ?? '?'} · ${
         meta.durationMs === null ? '? s' : `${(meta.durationMs / 1000).toFixed(1)} s`
       } · xoay ${meta.rotation}°`,
