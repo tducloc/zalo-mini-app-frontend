@@ -1,4 +1,5 @@
 import { type ChangeEvent, useCallback, useState } from 'react';
+import { Icon } from 'zmp-ui';
 
 import MediaAddTile from '@/features/listings/components/media-add-tile';
 import MediaViewer from '@/features/listings/components/media-viewer';
@@ -141,8 +142,12 @@ export default function MediaSection() {
       </ul>
 
       {attentionCount > 0 && (
-        <p className="field-error" role="status">
-          Vui lòng chạm vào {attentionCount} tệp có dấu chấm than để xử lý.
+        <p
+          role="status"
+          className="m-0 mt-3 flex items-center gap-2 rounded-lg bg-marketplace-danger/10 px-3 py-2 text-sm text-marketplace-danger"
+        >
+          <Icon icon="zi-warning-circle-solid" size={18} className="shrink-0" />
+          {attentionCount} tệp cần xử lý. Vui lòng chạm vào ô màu đỏ để xem.
         </p>
       )}
 
