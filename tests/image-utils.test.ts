@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest';
 import {
   ImageFormat,
   MAX_IMAGE_BYTES,
+  photoProblem,
   readPhotoHeader,
-  uploadedPhotoProblem,
 } from '@/features/media/image/image-utils';
 import { RejectReason } from '@/features/media/media-utils';
 
@@ -56,9 +56,18 @@ describe('readPhotoHeader', () => {
   });
 });
 
-describe('uploadedPhotoProblem', () => {
-  it('refuses only what the server would refuse for its bytes', () => {
-    expect(uploadedPhotoProblem(MAX_IMAGE_BYTES)).toBeNull();
-    expect(uploadedPhotoProblem(MAX_IMAGE_BYTES + 1)).toBe(RejectReason.ImageTooLarge);
+describe('photoProblem', () => {
+  const phone = { format: ImageFormat.Jpeg, width: 4032, height: 3024 };
+
+  it('takes a photo of any pixel size up to 15 MB', () => {
+    expect(photoProblem(phone, MAX_IMAGE_BYTES)).toBeNull();
+    expect(photoProblem({ ...phone, width: 40, height: 20 }, 1_000)).toBeNull();
+  });
+
+  it('refuses a format the app does not take, or a photo too heavy to work on', () => {
+    expect(photoProblem({ ...phone, format: null }, 1_000)).toBe(
+      RejectReason.UnsupportedImageFormat,
+    );
+    expect(photoProblem(phone, MAX_IMAGE_BYTES + 1)).toBe(RejectReason.ImageTooLarge);
   });
 });

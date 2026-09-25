@@ -3,7 +3,11 @@ import { openMediaPicker } from 'zmp-sdk';
 import { Button } from 'zmp-ui';
 
 import { rejectMessages } from '@/features/listings/draft/media-messages';
-import { IMAGE_HEAD_BYTES, readPhotoHeader } from '@/features/media/image/image-utils';
+import {
+  IMAGE_HEAD_BYTES,
+  photoProblem,
+  readPhotoHeader,
+} from '@/features/media/image/image-utils';
 import {
   type ByteReader,
   describeCodec,
@@ -59,11 +63,11 @@ const breadcrumb = createStageBreadcrumb('medialab.pickerProbeStage');
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-async function probePhoto(read: ByteReader) {
+async function probePhoto(read: ByteReader, size: number) {
   const started = Date.now();
   const head = new Uint8Array(await read(0, IMAGE_HEAD_BYTES));
   const photo = readPhotoHeader(head);
-  const problem = photo?.format ? null : RejectReason.UnsupportedImageFormat;
+  const problem = photo ? photoProblem(photo, size) : RejectReason.UnsupportedImageFormat;
   return [
     `  ↳ header · ${Date.now() - started} ms · ${photo?.format ?? 'định dạng không nhận'}`,
     `  ↳ kích thước · ${photo ? `${photo.width} × ${photo.height}` : 'không đọc được'}`,
@@ -104,7 +108,9 @@ async function probePath(path: string, index: number, type: PickerType) {
 
     step = isVideoType(type) ? 'mediabunny' : 'header ảnh';
     breadcrumb.write(`file ${index + 1}: ${step}`);
-    lines.push(...(isVideoType(type) ? await probeVideo(path, size) : await probePhoto(read)));
+    lines.push(
+      ...(isVideoType(type) ? await probeVideo(path, size) : await probePhoto(read, size)),
+    );
   } catch (error) {
     lines.push(`  ↳ LỖI ở bước ${step} · ${errorText(error)}`);
   }

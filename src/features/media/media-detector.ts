@@ -10,6 +10,7 @@
 import {
   IMAGE_HEAD_BYTES,
   type PhotoHeader,
+  photoProblem,
   readPhotoHeader,
 } from '@/features/media/image/image-utils';
 import {
@@ -95,8 +96,7 @@ export class MediaDetector {
   }
 
   private asPhoto(photo: PhotoHeader): DetectedFile {
-    const problem = photo.format ? null : RejectReason.UnsupportedImageFormat;
-    return { kind: MediaKind.Image, photo, problem };
+    return { kind: MediaKind.Image, photo, problem: photoProblem(photo, this.file.size) };
   }
 
   /** The picker's type only says whether the seller meant a photo or a video. */

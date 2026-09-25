@@ -16,11 +16,7 @@ import { cancelUpload } from '@/features/listings/draft/media-upload';
 import { useListingDraftStore } from '@/stores/listing-draft';
 import { MediaDetector } from '@/features/media/media-detector';
 import { ImageQueue } from '@/features/media/image/image-queue';
-import {
-  ImageFormat,
-  type PhotoHeader,
-  uploadedPhotoProblem,
-} from '@/features/media/image/image-utils';
+import { ImageFormat, type PhotoHeader } from '@/features/media/image/image-utils';
 import { canOptimizeImages } from '@/features/media/image/image-worker';
 import { MediaKind, refusePicked, RejectReason } from '@/features/media/media-utils';
 import { canConvertVideos, convertVideo } from '@/features/media/video/convert-video';
@@ -75,16 +71,8 @@ async function takeImage({ id, file, photo, signal }: PickedFile) {
   // As stored in the file, before EXIF orientation (api-spec, upload-urls).
   const original = { bytes: file.size, width: photo.width, height: photo.height };
   const asPicked: UploadSource = { blob: file, contentType: photo.format, optimized: false };
-  const takeAsPicked = () => {
-    const tooLarge = uploadedPhotoProblem(file.size);
-    dispatch(
-      tooLarge
-        ? { type: MediaActionType.Rejected, id, reason: tooLarge }
-        : { type: MediaActionType.Ready, id, original, upload: asPicked, previewUrl: null },
-    );
-  };
   if (!canOptimizeImages) {
-    takeAsPicked();
+    dispatch({ type: MediaActionType.Ready, id, original, upload: asPicked, previewUrl: null });
     return;
   }
 
@@ -95,7 +83,7 @@ async function takeImage({ id, file, photo, signal }: PickedFile) {
   }
 
   if (outcome.kind === 'original' || outcome.image.keptOriginal) {
-    takeAsPicked();
+    dispatch({ type: MediaActionType.Ready, id, original, upload: asPicked, previewUrl: null });
     return;
   }
 

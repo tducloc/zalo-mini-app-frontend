@@ -28,7 +28,7 @@ const NOT_PLAYABLE =
 export const rejectMessages: Record<RejectReason, string> = {
   // Photos
   [RejectReason.UnsupportedImageFormat]: 'Chỉ nhận ảnh JPG, PNG hoặc WebP.',
-  [RejectReason.ImageTooLarge]: `Ảnh lớn hơn ${MAX_IMAGE_BYTES / MIB} MB mà máy này không thu nhỏ được. Hãy chọn ảnh khác.`,
+  [RejectReason.ImageTooLarge]: `Ảnh lớn hơn ${MAX_IMAGE_BYTES / MIB} MB. Hãy chọn ảnh khác.`,
   [RejectReason.TooManyImages]: `Mỗi tin có tối đa ${MAX_IMAGES_PER_LISTING} ảnh.`,
 
   // Videos

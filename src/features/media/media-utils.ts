@@ -18,7 +18,7 @@ export enum MediaKind {
 export enum RejectReason {
   // Photos
   UnsupportedImageFormat = 'UNSUPPORTED_IMAGE_FORMAT',
-  /** Over the server's limit, and the phone could not shrink it. */
+  /** Over MAX_IMAGE_BYTES: refused before the worker decodes it. */
   ImageTooLarge = 'IMAGE_TOO_LARGE',
   TooManyImages = 'TOO_MANY_IMAGES',
   // Videos
