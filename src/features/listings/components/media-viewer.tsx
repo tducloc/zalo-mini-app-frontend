@@ -1,44 +1,55 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from 'zmp-ui';
 
+import { type TileView, TileTone } from '@/features/listings/draft/media-view';
+
 interface MediaViewerProps {
-  /** "Ảnh 2" or "Video"; null keeps the viewer closed. */
-  name: string | null;
+  /** "Ảnh 2" or "Video". */
+  name: string;
+  /** What the file's tile shows; null keeps the viewer closed. */
+  view: TileView | null;
   isVideo: boolean;
-  /** The optimized photo or the server's thumbnail, when there is one. */
-  imageUrl: string | null;
-  /** Shown from an object URL when there is no image URL: the video, or an original photo. */
+  /** Shown from an object URL when the view has no image: the video, or an original photo. */
   file: Blob | null;
-  /** What the file is waiting for, e.g. the network; null when nothing to say. */
-  status: string | null;
   canBeCover: boolean;
   onMakeCover: () => void;
+  onRetry: () => void;
+  onReplace: () => void;
   onRemove: () => void;
   onClose: () => void;
 }
 
+type ViewerIcon = 'zi-star' | 'zi-delete' | 'zi-retry' | 'zi-edit';
+
 /**
- * A draft photo or video on the whole screen, with what the seller can do with it. One
- * file at a time: zmp-ui's ImageViewer swipes, but cannot say which photo an action is for.
+ * A draft photo or video on the whole screen, failed or not, with what the seller can do
+ * with it: make it the cover, or for a failure read why and retry or replace it; remove.
+ * One file at a time: zmp-ui's ImageViewer swipes, but cannot say which photo an action
+ * is for.
  */
 export default function MediaViewer({
   name,
+  view,
   isVideo,
-  imageUrl,
   file,
-  status,
   canBeCover,
   onMakeCover,
+  onRetry,
+  onReplace,
   onRemove,
   onClose,
 }: MediaViewerProps) {
   const closeRef = useRef<HTMLButtonElement>(null);
-  const fileUrl = useObjectUrl(name !== null && (isVideo || !imageUrl) ? file : null);
+  const isOpen = view !== null;
+  const fileUrl = useObjectUrl(isOpen && (isVideo || !view.imageUrl) ? file : null);
+  // A file the WebView cannot show (e.g. an HEVC clip) gets an icon instead of black.
+  const [hasFailedToShow, setHasFailedToShow] = useState(false);
 
   useEffect(() => {
-    if (name === null) {
+    if (!isOpen) {
       return;
     }
+    setHasFailedToShow(false);
     closeRef.current?.focus();
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -47,13 +58,15 @@ export default function MediaViewer({
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [name, onClose]);
+  }, [isOpen, onClose]);
 
-  if (name === null) {
+  if (!isOpen) {
     return null;
   }
 
-  const source = isVideo ? fileUrl : (imageUrl ?? fileUrl);
+  const isError = view.tone === TileTone.Error;
+  const source = isVideo ? fileUrl : (view.imageUrl ?? fileUrl);
+  const handleShowError = () => setHasFailedToShow(true);
 
   return (
     <div
@@ -76,21 +89,43 @@ export default function MediaViewer({
       </div>
 
       <div className="flex min-h-0 flex-1 items-center justify-center">
-        {source && isVideo && (
-          <video src={source} controls playsInline className="max-h-full max-w-full" />
+        {(!source || hasFailedToShow) && (
+          <Icon icon={isVideo ? 'zi-video' : 'zi-photo'} size={48} className="text-white/40" />
         )}
-        {source && !isVideo && (
-          <img src={source} alt={name} className="max-h-full max-w-full object-contain" />
+        {source && !hasFailedToShow && isVideo && (
+          <video
+            src={source}
+            controls
+            playsInline
+            onError={handleShowError}
+            className="max-h-full max-w-full"
+          />
+        )}
+        {source && !hasFailedToShow && !isVideo && (
+          <img
+            src={source}
+            alt={name}
+            onError={handleShowError}
+            className="max-h-full max-w-full object-contain"
+          />
         )}
       </div>
 
-      {status && (
-        <p role="status" className="m-0 px-4 pb-2 text-center text-sm text-white/80">
-          {status}
+      {view.detail && (
+        <p
+          role={isError ? 'alert' : 'status'}
+          className={`mx-4 mb-2 flex items-start gap-2 rounded-xl px-3 py-2.5 text-sm ${
+            isError ? 'bg-marketplace-danger/20 text-white' : 'text-white/80'
+          }`}
+        >
+          {isError && <Icon icon="zi-warning-circle-solid" size={20} className="shrink-0" />}
+          <span>{view.detail}</span>
         </p>
       )}
-      <div className="flex justify-center gap-3 px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-2">
-        {canBeCover && (
+      <div className="flex flex-wrap justify-center gap-3 px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-2">
+        {view.canRetry && <ViewerAction icon="zi-retry" label="Thử lại" onClick={onRetry} />}
+        {isError && <ViewerAction icon="zi-edit" label="Chọn tệp khác" onClick={onReplace} />}
+        {canBeCover && !isError && (
           <ViewerAction icon="zi-star" label="Đặt làm ảnh bìa" onClick={onMakeCover} />
         )}
         <ViewerAction icon="zi-delete" label="Xoá" onClick={onRemove} />
@@ -105,7 +140,7 @@ function ViewerAction({
   label,
   onClick,
 }: {
-  icon: 'zi-star' | 'zi-delete';
+  icon: ViewerIcon;
   label: string;
   onClick: () => void;
 }) {

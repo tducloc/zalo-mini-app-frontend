@@ -1,7 +1,6 @@
 import { type ChangeEvent, useCallback, useState } from 'react';
 
 import MediaAddTile from '@/features/listings/components/media-add-tile';
-import MediaSheet from '@/features/listings/components/media-sheet';
 import MediaViewer from '@/features/listings/components/media-viewer';
 import MediaTile from '@/features/listings/components/media-tile';
 import { useReplaceMedia } from '@/features/listings/hooks/use-replace-media';
@@ -9,7 +8,7 @@ import { addDraftFiles, removeDraftMedia } from '@/features/listings/draft/media
 import { refusedFilesMessage } from '@/features/listings/draft/media-messages';
 import { type DraftMedia, MediaActionType } from '@/features/listings/draft/media-reducer';
 import { retryUpload } from '@/features/listings/draft/media-upload';
-import { countNeedingAttention, TileTone, tileView } from '@/features/listings/draft/media-view';
+import { countNeedingAttention, tileView } from '@/features/listings/draft/media-view';
 import { ImageFormat } from '@/features/media/image/image-utils';
 import { MAX_IMAGES_PER_LISTING, MediaKind } from '@/features/media/media-utils';
 import { MAX_VIDEO_DURATION_MS, VideoFormat } from '@/features/media/video/video-utils';
@@ -38,11 +37,7 @@ export default function MediaSection() {
 
   const nameOf = (item: DraftMedia) =>
     item.kind === MediaKind.Video ? 'Video' : `Ảnh ${photos.indexOf(item) + 1}`;
-  // An error opens the sheet; anything else, the full-screen viewer.
   const opened = media.find((item) => item.id === openId) ?? null;
-  const openedView = opened && tileView(opened);
-  const isOpenedError = openedView?.tone === TileTone.Error;
-  const viewed = isOpenedError ? null : opened;
 
   const handlePick = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
@@ -151,22 +146,15 @@ export default function MediaSection() {
         </p>
       )}
 
-      <MediaSheet
-        name={opened && isOpenedError ? nameOf(opened) : null}
-        view={isOpenedError ? openedView : null}
+      <MediaViewer
+        name={opened ? nameOf(opened) : ''}
+        view={opened && tileView(opened)}
+        isVideo={opened?.kind === MediaKind.Video}
+        file={opened && ('upload' in opened ? opened.upload.blob : opened.file)}
+        canBeCover={!!opened && opened.kind === MediaKind.Image && photos[0] !== opened}
+        onMakeCover={handleMakeCover}
         onRetry={handleRetry}
         onReplace={() => opened && handleReplaceStart(opened)}
-        onRemove={handleRemove}
-        onClose={handleClose}
-      />
-      <MediaViewer
-        name={viewed && nameOf(viewed)}
-        isVideo={viewed?.kind === MediaKind.Video}
-        imageUrl={openedView?.imageUrl ?? null}
-        file={viewed && ('upload' in viewed ? viewed.upload.blob : viewed.file)}
-        status={openedView?.tone === TileTone.Waiting ? openedView.detail : null}
-        canBeCover={!!viewed && viewed.kind === MediaKind.Image && photos[0] !== viewed}
-        onMakeCover={handleMakeCover}
         onRemove={handleRemove}
         onClose={handleClose}
       />
