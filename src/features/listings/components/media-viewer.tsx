@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from 'zmp-ui';
 
 import { type TileView, TileTone } from '@/features/listings/draft/media-view';
+import { useObjectUrl } from '@/features/listings/hooks/use-object-url';
 
 interface MediaViewerProps {
   /** "Ảnh 2" or "Video". */
@@ -154,21 +155,4 @@ function ViewerAction({
       {label}
     </button>
   );
-}
-
-/** An object URL for `blob` while it is shown, revoked after. */
-function useObjectUrl(blob: Blob | null) {
-  const [url, setUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!blob) {
-      setUrl(null);
-      return;
-    }
-    const created = URL.createObjectURL(blob);
-    setUrl(created);
-    return () => URL.revokeObjectURL(created);
-  }, [blob]);
-
-  return url;
 }

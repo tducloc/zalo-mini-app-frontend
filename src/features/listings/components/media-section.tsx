@@ -36,6 +36,8 @@ export default function MediaSection() {
   const video = media.find((item) => item.kind === MediaKind.Video);
   const attentionCount = countNeedingAttention(media);
 
+  // What will be uploaded (a shrunk photo, a converted clip), else what was picked.
+  const fileOf = (item: DraftMedia) => ('upload' in item ? item.upload.blob : item.file);
   const nameOf = (item: DraftMedia) =>
     item.kind === MediaKind.Video ? 'Video' : `Ảnh ${photos.indexOf(item) + 1}`;
   const opened = media.find((item) => item.id === openId) ?? null;
@@ -105,6 +107,7 @@ export default function MediaSection() {
             name={nameOf(item)}
             view={tileView(item)}
             isVideo={false}
+            file={fileOf(item)}
             isCover={index === 0}
             onOpen={() => setOpenId(item.id)}
             onRemove={() => removeDraftMedia(item.id)}
@@ -126,6 +129,7 @@ export default function MediaSection() {
             name="Video"
             view={tileView(video)}
             isVideo
+            file={fileOf(video)}
             isCover={false}
             onOpen={() => setOpenId(video.id)}
             onRemove={() => removeDraftMedia(video.id)}
@@ -155,7 +159,7 @@ export default function MediaSection() {
         name={opened ? nameOf(opened) : ''}
         view={opened && tileView(opened)}
         isVideo={opened?.kind === MediaKind.Video}
-        file={opened && ('upload' in opened ? opened.upload.blob : opened.file)}
+        file={opened && fileOf(opened)}
         canBeCover={!!opened && opened.kind === MediaKind.Image && photos[0] !== opened}
         onMakeCover={handleMakeCover}
         onRetry={handleRetry}

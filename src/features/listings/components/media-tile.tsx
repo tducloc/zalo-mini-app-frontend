@@ -1,12 +1,15 @@
 import { Icon } from 'zmp-ui';
 
 import { type TileView, TileTone } from '@/features/listings/draft/media-view';
+import { useObjectUrl } from '@/features/listings/hooks/use-object-url';
 
 interface MediaTileProps {
   /** "Ảnh 2", "Video": the tile's accessible name. */
   name: string;
   view: TileView;
   isVideo: boolean;
+  /** The file to draw itself when the view has no image; see MediaTile. */
+  file: Blob;
   isCover: boolean;
   onOpen: () => void;
   onRemove: () => void;
@@ -21,12 +24,17 @@ export default function MediaTile({
   name,
   view,
   isVideo,
+  file,
   isCover,
   onOpen,
   onRemove,
   onReplace,
 }: MediaTileProps) {
   const isError = view.tone === TileTone.Error;
+  // A video shows its own first frame until the server's poster arrives. A photo shows
+  // its original only when it failed: decoding ten full-size photos for the grid is what
+  // the image worker exists to avoid.
+  const localUrl = useObjectUrl(!view.imageUrl && (isVideo || isError) ? file : null);
   const state = isError ? `lỗi: ${view.detail}` : (view.label ?? 'đã sẵn sàng');
 
   return (
@@ -40,8 +48,20 @@ export default function MediaTile({
         }`}
       >
         {view.imageUrl && <img src={view.imageUrl} alt="" className="h-full w-full object-cover" />}
-        {/* An empty tile shows its kind, except under the error's mark. */}
-        {!view.imageUrl && !isError && (
+        {!view.imageUrl && localUrl && isVideo && (
+          // #t=0.1 makes iOS draw a frame instead of a blank box.
+          <video
+            src={`${localUrl}#t=0.1`}
+            muted
+            playsInline
+            preload="metadata"
+            className="h-full w-full object-cover"
+          />
+        )}
+        {!view.imageUrl && localUrl && !isVideo && (
+          <img src={localUrl} alt="" className="h-full w-full object-cover" />
+        )}
+        {!view.imageUrl && !localUrl && (
           <span className="grid h-full w-full place-items-center text-marketplace-muted">
             <Icon icon={isVideo ? 'zi-video' : 'zi-photo'} size={28} />
           </span>
@@ -63,7 +83,7 @@ export default function MediaTile({
 
         {/* Just the mark: the viewer gives the reason, so there is one message per error. */}
         {isError && (
-          <span className="absolute inset-0 grid place-items-center">
+          <span className="absolute inset-0 grid place-items-center bg-black/40">
             <span className="grid h-7 w-7 place-items-center rounded-full bg-marketplace-danger text-base font-bold text-white shadow">
               !
             </span>
@@ -76,14 +96,14 @@ export default function MediaTile({
       <CornerButton
         icon="zi-close"
         label={`Xoá ${name}`}
-        isOnPicture={!!view.imageUrl}
+        isOnPicture={!!view.imageUrl || !!localUrl}
         className="right-0.5 top-0.5"
         onClick={onRemove}
       />
       <CornerButton
         icon="zi-edit"
         label={`Đổi ${isVideo ? 'video' : 'ảnh'} ${name}`}
-        isOnPicture={!!view.imageUrl}
+        isOnPicture={!!view.imageUrl || !!localUrl}
         className="left-0.5 top-0.5"
         onClick={onReplace}
       />
