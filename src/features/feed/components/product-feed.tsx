@@ -39,7 +39,7 @@ export default function ProductFeed({
       <FeedbackState
         type="error"
         title="Không tải được tin"
-        description="Kiểm tra kết nối mạng và thử lại."
+        description="Vui lòng kiểm tra kết nối mạng và thử lại."
         onAction={() => feed.refetch()}
       />
     );
@@ -52,12 +52,12 @@ export default function ProductFeed({
       <FeedbackState
         type="empty"
         title="Không tìm thấy tin phù hợp"
-        description="Thử từ khoá khác hoặc bỏ bớt bộ lọc."
+        description="Vui lòng thử từ khoá khác hoặc bỏ bớt bộ lọc."
         actionLabel="Xoá tìm kiếm và bộ lọc"
         onAction={onClearCriteria}
       />
     ) : (
-      <FeedbackState type="empty" title="Chưa có tin đăng" description="Hãy quay lại sau nhé." />
+      <FeedbackState type="empty" title="Chưa có tin đăng" description="Vui lòng quay lại sau." />
     );
   }
 

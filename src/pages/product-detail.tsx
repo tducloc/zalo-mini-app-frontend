@@ -93,7 +93,7 @@ export default function ProductDetailPage() {
             <FeedbackState
               type="error"
               title="Không tải được tin"
-              description="Kiểm tra kết nối mạng và thử lại."
+              description="Vui lòng kiểm tra kết nối mạng và thử lại."
               onAction={() => productQuery.refetch()}
             />
           )}

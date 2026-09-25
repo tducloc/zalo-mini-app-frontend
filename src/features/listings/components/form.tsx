@@ -18,9 +18,9 @@ export default function ListingForm({
     state === 'validation'
       ? {
           category: 'Vui lòng chọn danh mục.',
-          title: 'Nhập tiêu đề từ 3 đến 120 ký tự.',
-          description: 'Mô tả cần từ 10 đến 5.000 ký tự.',
-          price: 'Nhập giá nguyên dương bằng VNĐ.',
+          title: 'Vui lòng nhập tiêu đề từ 3 đến 120 ký tự.',
+          description: 'Vui lòng nhập mô tả từ 10 đến 5.000 ký tự.',
+          price: 'Vui lòng nhập giá bán là số lớn hơn 0.',
           condition: 'Vui lòng chọn tình trạng.',
           location: 'Vui lòng điền địa điểm.',
           main: 'Vui lòng chọn ảnh chính.',
@@ -54,11 +54,11 @@ export default function ListingForm({
     if (!files?.length) return;
     const chosen = Array.from(files);
     if (chosen.some((file) => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))) {
-      setErrors({ ...errors, main: 'Chọn ảnh JPG, PNG hoặc WebP.' });
+      setErrors({ ...errors, main: 'Vui lòng chọn ảnh JPG, PNG hoặc WebP.' });
       return;
     }
     if (!cover && gallery.length + chosen.length > 9) {
-      setErrors({ ...errors, gallery: 'Tối đa 10 ảnh tổng cộng theo API hiện tại.' });
+      setErrors({ ...errors, gallery: 'Vui lòng chọn tối đa 10 ảnh cho mỗi tin.' });
       return;
     }
     const urls = chosen.map((file) => URL.createObjectURL(file));
@@ -87,11 +87,12 @@ export default function ListingForm({
         const next: Record<string, string> = {};
         const title = String(data.get('title') || '').trim();
         const description = String(data.get('description') || '').trim();
-        if (title.length < 3 || title.length > 120) next.title = 'Tiêu đề cần từ 3 đến 120 ký tự.';
+        if (title.length < 3 || title.length > 120)
+          next.title = 'Vui lòng nhập tiêu đề từ 3 đến 120 ký tự.';
         if (description.length < 10 || description.length > 5000)
-          next.description = 'Mô tả cần từ 10 đến 5.000 ký tự.';
+          next.description = 'Vui lòng nhập mô tả từ 10 đến 5.000 ký tự.';
         if (!Number.isInteger(Number(data.get('price'))) || Number(data.get('price')) <= 0)
-          next.price = 'Nhập giá nguyên dương bằng VNĐ.';
+          next.price = 'Vui lòng nhập giá bán là số lớn hơn 0.';
         for (const field of ['category', 'condition', 'location'])
           if (!String(data.get(field) || '').trim()) next[field] = 'Vui lòng điền thông tin này.';
         if (!main) next.main = 'Vui lòng chọn ảnh chính.';

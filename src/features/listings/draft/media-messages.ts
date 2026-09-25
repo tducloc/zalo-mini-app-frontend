@@ -20,29 +20,29 @@ import { MediaError } from '@/features/media/upload/upload-types';
 
 /** The same advice whether the phone or the server finds the clip unplayable. */
 const NOT_PLAYABLE =
-  'Video này không phát được trên mọi điện thoại. Hãy quay bằng camera của máy rồi chọn lại.';
+  'Vui lòng quay video bằng camera của máy rồi chọn lại: video này không phát được trên mọi điện thoại.';
 
 // ---- Before uploading ----
 
 /** What the seller reads under a refused file: why, and what to do instead. */
 export const rejectMessages: Record<RejectReason, string> = {
   // Photos
-  [RejectReason.UnsupportedImageFormat]: 'Chỉ nhận ảnh JPG, PNG hoặc WebP.',
-  [RejectReason.ImageTooLarge]: `Ảnh lớn hơn ${MAX_IMAGE_BYTES / MIB} MB. Hãy chọn ảnh khác.`,
-  [RejectReason.TooManyImages]: `Mỗi tin có tối đa ${MAX_IMAGES_PER_LISTING} ảnh.`,
+  [RejectReason.UnsupportedImageFormat]: 'Vui lòng chọn ảnh JPG, PNG hoặc WebP.',
+  [RejectReason.ImageTooLarge]: `Vui lòng chọn ảnh nhỏ hơn ${MAX_IMAGE_BYTES / MIB} MB.`,
+  [RejectReason.TooManyImages]: `Vui lòng chọn tối đa ${MAX_IMAGES_PER_LISTING} ảnh cho mỗi tin.`,
 
   // Videos
-  [RejectReason.UnsupportedVideoFormat]: 'Chỉ nhận video MP4 hoặc MOV.',
-  [RejectReason.TooManyVideos]: `Mỗi tin có tối đa ${MAX_VIDEOS_PER_LISTING} video.`,
-  [RejectReason.VideoTooLong]: `Video dài hơn ${MAX_VIDEO_DURATION_MS / 1000} giây.`,
-  [RejectReason.VideoTooLarge]: `Video lớn hơn ${MAX_VIDEO_BYTES / MIB} MB.`,
-  [RejectReason.VideoResolution]: `Video trên ${MAX_VIDEO_SHORT_EDGE}p. Hãy quay ở ${MAX_VIDEO_SHORT_EDGE}p rồi chọn lại.`,
+  [RejectReason.UnsupportedVideoFormat]: 'Vui lòng chọn video MP4 hoặc MOV.',
+  [RejectReason.TooManyVideos]: `Vui lòng chọn tối đa ${MAX_VIDEOS_PER_LISTING} video cho mỗi tin.`,
+  [RejectReason.VideoTooLong]: `Vui lòng chọn video không quá ${MAX_VIDEO_DURATION_MS / 1000} giây.`,
+  [RejectReason.VideoTooLarge]: `Vui lòng chọn video nhỏ hơn ${MAX_VIDEO_BYTES / MIB} MB.`,
+  [RejectReason.VideoResolution]: `Vui lòng quay video ở ${MAX_VIDEO_SHORT_EDGE}p trở xuống rồi chọn lại.`,
   [RejectReason.VideoHevc]:
-    'Video ở định dạng HEVC (hiệu quả cao) mà máy này chưa chuyển được. iPhone: Cài đặt > Camera > Định dạng > Tương thích nhất. Android: tắt HEVC trong cài đặt camera. Rồi quay lại.',
+    'Vui lòng quay lại video ở định dạng Tương thích nhất (iPhone: Cài đặt > Camera > Định dạng; Android: tắt HEVC trong cài đặt camera): máy này chưa chuyển được video HEVC.',
   [RejectReason.VideoNotPlayable]: NOT_PLAYABLE,
 
   // Any file
-  [RejectReason.Unreadable]: 'Không đọc được tệp này. Hãy chọn lại.',
+  [RejectReason.Unreadable]: 'Vui lòng chọn lại tệp: máy không đọc được tệp này.',
 };
 
 // ---- Uploading and processing ----
@@ -55,18 +55,18 @@ export const uploadWaitMessages: Record<UploadWait, string> = {
 
 /** After the attempts ran out: retry and remove, or remove only (diagram 05). */
 export const uploadFailedMessages = {
-  retryable: 'Chưa tải lên được. Kiểm tra mạng rồi bấm Thử lại.',
-  permanent: 'Tệp này không tải lên được. Hãy xoá và chọn tệp khác.',
+  retryable: 'Vui lòng kiểm tra mạng rồi bấm Thử lại: tệp chưa tải lên được.',
+  permanent: 'Vui lòng xoá và chọn tệp khác: tệp này không tải lên được.',
 };
 
 const mediaErrorMessages: Record<MediaError, string> = {
-  [MediaError.UnsupportedFormat]: 'Máy chủ không đọc được tệp này. Hãy chọn tệp khác.',
-  [MediaError.FileTooLarge]: 'Tệp quá lớn. Hãy chọn tệp nhỏ hơn.',
-  [MediaError.VideoTooLong]: 'Video quá dài. Hãy cắt ngắn rồi chọn lại.',
+  [MediaError.UnsupportedFormat]: 'Vui lòng chọn tệp khác: máy chủ không đọc được tệp này.',
+  [MediaError.FileTooLarge]: 'Vui lòng chọn tệp nhỏ hơn: tệp này quá lớn.',
+  [MediaError.VideoTooLong]: `Vui lòng cắt video không quá ${MAX_VIDEO_DURATION_MS / 1000} giây rồi chọn lại.`,
   [MediaError.VideoNotPlayable]: NOT_PLAYABLE,
-  [MediaError.BlankImage]: 'Ảnh trống hoặc bị che. Hãy chụp lại.',
-  [MediaError.ProcessingFailed]: 'Máy chủ chưa xử lý được tệp này. Hãy xoá và chọn lại.',
-  [MediaError.Missing]: 'Tệp đã hết hạn trên máy chủ. Hãy xoá và chọn lại.',
+  [MediaError.BlankImage]: 'Vui lòng chụp lại: ảnh trống hoặc bị che.',
+  [MediaError.ProcessingFailed]: 'Vui lòng xoá và chọn lại tệp: máy chủ chưa xử lý được.',
+  [MediaError.Missing]: 'Vui lòng xoá và chọn lại tệp: tệp đã hết hạn trên máy chủ.',
 };
 
 /** Under a file the server failed; every failure asks for another file. */

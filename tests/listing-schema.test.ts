@@ -5,7 +5,7 @@ import {
   listingFieldsSchema,
   listingFormMessages as messages,
   PRICE_MAX,
-} from '@/features/listings/components/schemas';
+} from '@/features/listings/schemas';
 import { type DraftFields, EMPTY_FIELDS } from '@/features/listings/draft/listing-draft';
 
 const filled: DraftFields = {

@@ -17,13 +17,13 @@ export const DESCRIPTION_MAX_LENGTH = 5000;
 export const PRICE_MAX = 2_147_483_647;
 
 export const listingFormMessages = {
-  title: `Nhập tiêu đề từ ${TITLE_MIN_LENGTH} đến ${TITLE_MAX_LENGTH} ký tự.`,
-  description: `Mô tả cần từ ${DESCRIPTION_MIN_LENGTH} đến 5.000 ký tự.`,
-  price: 'Nhập giá bán bằng số, lớn hơn 0.',
-  priceTooHigh: 'Giá bán quá lớn.',
-  categoryId: 'Chọn danh mục.',
-  condition: 'Chọn tình trạng.',
-  locationId: 'Chọn địa điểm.',
+  title: `Vui lòng nhập tiêu đề từ ${TITLE_MIN_LENGTH} đến ${TITLE_MAX_LENGTH} ký tự.`,
+  description: `Vui lòng nhập mô tả từ ${DESCRIPTION_MIN_LENGTH} đến 5.000 ký tự.`,
+  price: 'Vui lòng nhập giá bán là số lớn hơn 0.',
+  priceTooHigh: 'Vui lòng nhập giá bán không quá 2.147.483.647 đ.',
+  categoryId: 'Vui lòng chọn danh mục.',
+  condition: 'Vui lòng chọn tình trạng.',
+  locationId: 'Vui lòng chọn địa điểm.',
 };
 
 /** Separators a seller may type in a price: "6.990.000", "6,990,000", "6 990 000". */
