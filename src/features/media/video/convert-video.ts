@@ -16,6 +16,12 @@ const CONVERTED_BITRATE = 3_000_000;
 const MAX_FRAME_RATE = 30;
 /** Enough packets to know the frame rate without reading the whole index. */
 const FRAME_RATE_SAMPLE_PACKETS = 60;
+/**
+ * No progress for this long means the encoder hung. Seen with WebKit's software encoder
+ * (the iOS simulator, desktop WebKit), not on phones, which encode in hardware; the tile
+ * must not wait forever if one ever does. The caller then falls back to the original.
+ */
+const STALL_TIMEOUT_MS = 20_000;
 
 export const canConvertVideos =
   typeof VideoEncoder !== 'undefined' && typeof VideoDecoder !== 'undefined';
@@ -23,6 +29,32 @@ export const canConvertVideos =
 interface ConvertVideoOptions {
   onProgress: (progress: number) => void;
   signal: AbortSignal;
+}
+
+export class ConversionStalledError extends Error {
+  constructor() {
+    super(`no conversion progress for ${STALL_TIMEOUT_MS / 1000} s`);
+    this.name = 'ConversionStalledError';
+  }
+}
+
+/**
+ * Rejects with ConversionStalledError once `progressed` has not been called for
+ * `timeoutMs`; `stop` ends the watch. A promise to race against the work, because a hung
+ * encoder never lets the work itself settle.
+ */
+export function watchForStall(timeoutMs = STALL_TIMEOUT_MS) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let fail: (error: Error) => void = () => {};
+  const stalled = new Promise<never>((_, reject) => {
+    fail = reject;
+  });
+  const restart = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fail(new ConversionStalledError()), timeoutMs);
+  };
+  restart();
+  return { stalled, progressed: restart, stop: () => clearTimeout(timer) };
 }
 
 /** 720p on the short side, same shape, even sides as H.264 needs. Never upscales. */
@@ -93,10 +125,21 @@ export async function convertVideo(file: Blob, options: ConvertVideoOptions): Pr
     options.signal.throwIfAborted();
     const cancel = () => void conversion.cancel();
     options.signal.addEventListener('abort', cancel, { once: true });
-    conversion.onProgress = options.onProgress;
+    const watch = watchForStall();
+    conversion.onProgress = (progress) => {
+      watch.progressed();
+      options.onProgress(progress);
+    };
     try {
-      await conversion.execute();
+      await Promise.race([conversion.execute(), watch.stalled]);
+    } catch (error) {
+      if (error instanceof ConversionStalledError) {
+        // Best effort: a hung encoder may never wind down.
+        cancel();
+      }
+      throw error;
     } finally {
+      watch.stop();
       options.signal.removeEventListener('abort', cancel);
     }
 
