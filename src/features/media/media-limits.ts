@@ -16,8 +16,8 @@ const MIB = 1024 * 1024;
 export const MAX_IMAGES_PER_LISTING = 10;
 export const MAX_VIDEOS_PER_LISTING = 1;
 
-/** iPhone photos are at most ~5 MB; lowered from 25 MB on 2026-09-25. */
-export const MAX_IMAGE_BYTES = 15 * MIB;
+/** iPhone photos are at most ~5 MB; lowered from 25 MB to 10 MB on 2026-09-25. */
+export const MAX_IMAGE_BYTES = 10 * MIB;
 /** The server refuses a photo whose shorter side is below this. */
 export const MIN_IMAGE_EDGE = 500;
 
