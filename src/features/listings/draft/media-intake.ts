@@ -184,31 +184,77 @@ async function processPickedFile(picked: PickedFile, kind: MediaKind) {
   }
 }
 
-/** Adds the picked files to the draft, in order, and starts checking them. */
-export async function addDraftFiles(files: File[]) {
+function startWork(id: string, file: File, kind: MediaKind, photo: PhotoHeader | null) {
+  const controller = new AbortController();
+  inProgress.set(id, controller);
+  void processPickedFile({ id, file, photo, signal: controller.signal }, kind);
+}
+
+/** A picked file refused at once, which never joins the draft. */
+export interface RefusedFile {
+  name: string;
+  reason: RejectReason;
+}
+
+/**
+ * Adds the picked files the listing can take to the draft, in order, and starts checking
+ * them. Resolves with the ones refused from their first bytes or for lack of a slot, for
+ * the form to say so: they never were on the listing, so they get no tile to remove.
+ */
+export async function addDraftFiles(files: File[]): Promise<RefusedFile[]> {
   const picked = await Promise.all(files.map((file) => new MediaDetector(file).detect()));
 
   // No await from here to the dispatch, so two quick picks cannot both take the last slot.
   const refusals = refusePicked(picked, acceptedCounts());
-  const ids = files.map(() => `local-${nextFileNumber++}`);
+  const accepted = picked
+    .map((detected, index) => ({
+      ...detected,
+      file: files[index],
+      id: `local-${nextFileNumber++}`,
+    }))
+    .filter((_, index) => !refusals[index]);
   dispatch({
     type: MediaActionType.Added,
-    items: picked.map(({ kind }, index) => ({ id: ids[index], file: files[index], kind })),
+    items: accepted.map(({ id, file, kind }) => ({ id, file, kind })),
   });
 
-  picked.forEach(({ kind, photo }, index) => {
-    const id = ids[index];
-    const file = files[index];
-    const refusal = refusals[index];
-    if (refusal) {
-      dispatch({ type: MediaActionType.Rejected, id, reason: refusal });
-      return;
-    }
+  for (const { id, file, kind, photo } of accepted) {
+    startWork(id, file, kind, photo);
+  }
 
-    const controller = new AbortController();
-    inProgress.set(id, controller);
-    void processPickedFile({ id, file, photo, signal: controller.signal }, kind);
+  return files.flatMap((file, index) => {
+    const reason = refusals[index];
+    return reason ? [{ name: file.name, reason }] : [];
   });
+}
+
+/**
+ * Puts `file` in the place of draft file `id`, so a replaced cover stays the cover; the old
+ * one is stopped and deleted on the server. Resolves with the new file when it is refused,
+ * as addDraftFiles does; the old one then stays.
+ */
+export async function replaceDraftMedia(id: string, file: File): Promise<RefusedFile[]> {
+  const detected = await new MediaDetector(file).detect();
+  const replaced = findMedia(id);
+  if (!replaced) {
+    // Removed while the new file was read.
+    return [];
+  }
+
+  const wrongKind =
+    replaced.kind === MediaKind.Image
+      ? RejectReason.UnsupportedImageFormat
+      : RejectReason.UnsupportedVideoFormat;
+  const reason = detected.kind === replaced.kind ? detected.problem : wrongKind;
+  if (reason) {
+    return [{ name: file.name, reason }];
+  }
+
+  stopWork(replaced);
+  const newId = `local-${nextFileNumber++}`;
+  dispatch({ type: MediaActionType.Replaced, id, item: { id: newId, file, kind: replaced.kind } });
+  startWork(newId, file, replaced.kind, detected.photo);
+  return [];
 }
 
 /**

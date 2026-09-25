@@ -138,6 +138,31 @@ describe('mediaReducer', () => {
     expect(state.map((media) => media.id)).toEqual(['p3', 'p1', 'p2']);
   });
 
+  it("puts a replacing file in the old one's place, back to checking", () => {
+    const photos: MediaAction = {
+      type: MediaActionType.Added,
+      items: ['p1', 'p2'].map((id) => ({ id, kind: MediaKind.Image, file: photo })),
+    };
+    const ready = run(photos, {
+      type: MediaActionType.Ready,
+      id: 'p1',
+      original,
+      upload,
+      previewUrl: 'blob:1',
+    });
+    const other = new File(['y'], 'other.jpg');
+    const state = mediaReducer(ready, {
+      type: MediaActionType.Replaced,
+      id: 'p1',
+      item: { id: 'p3', kind: MediaKind.Image, file: other },
+    });
+    expect(state.map((media) => [media.id, media.status])).toEqual([
+      ['p3', DraftMediaStatus.Checking],
+      ['p2', DraftMediaStatus.Checking],
+    ]);
+    expect(state[0]).not.toHaveProperty('previewUrl');
+  });
+
   it('never makes a video or a refused photo the cover', () => {
     const state = run(added, {
       type: MediaActionType.Rejected,

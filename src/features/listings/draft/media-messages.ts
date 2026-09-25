@@ -47,6 +47,38 @@ export const rejectMessages: Record<RejectReason, string> = {
 
 // ---- Uploading and processing ----
 
+/**
+ * One toast for the files refused when they were picked, a sentence per reason, e.g.
+ * "Vui lòng chọn tối đa 10 ảnh cho mỗi tin (a.jpg, b.jpg)."
+ */
+export function refusedFilesMessage(refused: { name: string; reason: RejectReason }[]) {
+  const namesByReason = new Map<RejectReason, string[]>();
+  for (const { name, reason } of refused) {
+    namesByReason.set(reason, [...(namesByReason.get(reason) ?? []), name]);
+  }
+  return [...namesByReason]
+    .map(([reason, names]) => `${rejectMessages[reason].replace(/\.$/, '')} (${listNames(names)}).`)
+    .join(' ');
+}
+
+/** Two names in full; beyond that, how many more. */
+function listNames(names: string[]) {
+  const shown = names.slice(0, 2).join(', ');
+  return names.length > 2 ? `${shown} và ${names.length - 2} tệp khác` : shown;
+}
+
+/** The short line on a tile; the sheet gives the full sentence. */
+export const tileLabels = {
+  checking: 'Đang kiểm tra',
+  optimizingPhoto: 'Đang tối ưu',
+  convertingVideo: 'Đang chuyển 720p',
+  queued: 'Chờ tải lên',
+  uploading: 'Đang tải lên',
+  waitingNetwork: 'Chờ mạng',
+  retrying: 'Đang thử lại',
+  processing: 'Đang xử lý',
+};
+
 /** What the tile says while an upload waits (diagram 05). */
 export const uploadWaitMessages: Record<UploadWait, string> = {
   [UploadWait.Network]: 'Đang chờ có mạng để tải lên tiếp…',

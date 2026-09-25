@@ -36,8 +36,15 @@ test('posts a listing with two photos and a video', async ({ page }) => {
   await expect(tiles).toHaveCount(3);
   await expect(tiles.first()).toContainText('Ảnh bìa');
 
-  // The second photo becomes the cover.
-  await tiles.nth(1).getByRole('button', { name: 'Đặt làm ảnh bìa' }).click();
+  // The second photo becomes the cover, from the full-screen viewer.
+  await tiles
+    .nth(1)
+    .getByRole('button', { name: /^Ảnh 2/ })
+    .click();
+  await page
+    .getByRole('dialog', { name: 'Ảnh 2' })
+    .getByRole('button', { name: 'Đặt làm ảnh bìa' })
+    .click();
   await expect(tiles.first()).toContainText('Ảnh bìa');
 
   // Fields, filled while the files upload.

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from 'zmp-ui';
 
 import { addDraftFiles, clearDraftMedia } from '@/features/listings/draft/media-intake';
+import { refusedFilesMessage } from '@/features/listings/draft/media-messages';
 import { type DraftMedia, DraftMediaStatus } from '@/features/listings/draft/media-reducer';
 import { useListingDraftStore } from '@/stores/listing-draft';
 import { canConvertVideos } from '@/features/media/video/convert-video';
@@ -51,6 +52,7 @@ export default function DraftMediaLab() {
   const timings = useRef(new Map<string, Timing>());
   const [longestFrameMs, setLongestFrameMs] = useState<number | null>(null);
   const [crashedStage] = useState(breadcrumb.read);
+  const [refusedMessage, setRefusedMessage] = useState<string | null>(null);
 
   const isBusy = media.some(isWorking);
 
@@ -89,10 +91,12 @@ export default function DraftMediaLab() {
     }
   }, [workingCount]);
 
-  const handlePick = (event: React.ChangeEvent<HTMLInputElement>) => {
-    void addDraftFiles(Array.from(event.target.files ?? []));
+  const handlePick = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
     // Lets the same file be picked again.
     event.target.value = '';
+    const refused = await addDraftFiles(files);
+    setRefusedMessage(refused.length > 0 ? refusedFilesMessage(refused) : null);
   };
 
   const timesFor = (id: string): RowTimes => {
@@ -118,6 +122,12 @@ export default function DraftMediaLab() {
         {longestFrameMs ? `${Math.round(longestFrameMs)} ms` : '–'}
         {isBusy && ' (đang đo)'}
       </p>
+
+      {refusedMessage && (
+        <p className="m-0 mt-2 text-sm text-red-600" role="status">
+          Không thêm: {refusedMessage}
+        </p>
+      )}
 
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="small" onClick={() => photoInputRef.current?.click()}>

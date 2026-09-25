@@ -99,6 +99,8 @@ export enum MediaActionType {
   Cleared = 'CLEARED',
   /** The seller made this photo the cover: it moves to the front. */
   CoverChosen = 'COVER_CHOSEN',
+  /** Another file takes this one's place, cover included. */
+  Replaced = 'REPLACED',
   // Intake
   Rejected = 'REJECTED',
   OptimizeStarted = 'OPTIMIZE_STARTED',
@@ -121,7 +123,8 @@ type ListAction =
   | { type: MediaActionType.Added; items: BaseMedia[] }
   | { type: MediaActionType.Removed; id: string }
   | { type: MediaActionType.Cleared }
-  | { type: MediaActionType.CoverChosen; id: string };
+  | { type: MediaActionType.CoverChosen; id: string }
+  | { type: MediaActionType.Replaced; id: string; item: BaseMedia };
 
 type IntakeAction =
   | { type: MediaActionType.Rejected; id: string; reason: RejectReason }
@@ -297,6 +300,10 @@ export function mediaReducer(state: DraftMedia[], action: MediaAction): DraftMed
       return [];
     case MediaActionType.CoverChosen:
       return chooseCover(state, action.id);
+    case MediaActionType.Replaced:
+      return state.map((media) =>
+        media.id === action.id ? { ...action.item, status: DraftMediaStatus.Checking } : media,
+      );
     default: {
       const index = state.findIndex((media) => media.id === action.id);
       const next = index < 0 ? undefined : applyToFile(state[index], action);
