@@ -18,6 +18,8 @@ export enum MediaKind {
 export enum RejectReason {
   // Photos
   UnsupportedImageFormat = 'UNSUPPORTED_IMAGE_FORMAT',
+  /** Over the server's limit, and the phone could not shrink it. */
+  ImageTooLarge = 'IMAGE_TOO_LARGE',
   TooManyImages = 'TOO_MANY_IMAGES',
   // Videos
   /** Not an MP4 or MOV mediabunny can open. */

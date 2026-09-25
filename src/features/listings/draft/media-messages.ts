@@ -14,6 +14,7 @@ import {
   MAX_VIDEO_DURATION_MS,
   MAX_VIDEO_SHORT_EDGE,
 } from '@/features/media/video/video-utils';
+import { MAX_IMAGE_BYTES } from '@/features/media/image/image-utils';
 import { UploadWait } from '@/features/media/upload/file-upload';
 import { MediaError } from '@/features/media/upload/upload-types';
 
@@ -27,6 +28,7 @@ const NOT_PLAYABLE =
 export const rejectMessages: Record<RejectReason, string> = {
   // Photos
   [RejectReason.UnsupportedImageFormat]: 'Chỉ nhận ảnh JPG, PNG hoặc WebP.',
+  [RejectReason.ImageTooLarge]: `Ảnh lớn hơn ${MAX_IMAGE_BYTES / MIB} MB mà máy này không thu nhỏ được. Hãy chọn ảnh khác.`,
   [RejectReason.TooManyImages]: `Mỗi tin có tối đa ${MAX_IMAGES_PER_LISTING} ảnh.`,
 
   // Videos

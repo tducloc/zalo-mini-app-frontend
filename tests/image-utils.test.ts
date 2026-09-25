@@ -3,7 +3,13 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { ImageFormat, readPhotoHeader } from '@/features/media/image/image-utils';
+import {
+  ImageFormat,
+  MAX_IMAGE_BYTES,
+  readPhotoHeader,
+  uploadedPhotoProblem,
+} from '@/features/media/image/image-utils';
+import { RejectReason } from '@/features/media/media-utils';
 
 // Fixtures were encoded by sharp (libvips), so they are real files, not hand-built headers.
 function fixture(name: string) {
@@ -47,5 +53,12 @@ describe('readPhotoHeader', () => {
     expect(readPhotoHeader(fixture('big-exif-33x21.jpg').subarray(0, 1024))).toBeNull();
     expect(readPhotoHeader(new TextEncoder().encode('%PDF-1.7'))).toBeNull();
     expect(readPhotoHeader(new Uint8Array())).toBeNull();
+  });
+});
+
+describe('uploadedPhotoProblem', () => {
+  it('refuses only what the server would refuse for its bytes', () => {
+    expect(uploadedPhotoProblem(MAX_IMAGE_BYTES)).toBeNull();
+    expect(uploadedPhotoProblem(MAX_IMAGE_BYTES + 1)).toBe(RejectReason.ImageTooLarge);
   });
 });

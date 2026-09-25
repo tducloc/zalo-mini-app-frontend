@@ -1,11 +1,19 @@
 /**
  * What the app reads from a picked photo before it goes to the worker: its format and pixel
- * size, from the first bytes by image-size, never by decoding it. Only the format is
- * checked; any size is taken (decided 2026-09-25: a seller cannot tell a photo's pixels on
- * the phone). The size goes to the server with the upload.
+ * size, from the first bytes by image-size, never by decoding it. Any pixel size is taken
+ * (decided 2026-09-25: a seller cannot tell a photo's pixels on the phone); the size goes
+ * to the server with the upload. The bytes that are uploaded are checked.
  */
 
 import { imageSize } from 'image-size';
+
+import { MIB, RejectReason } from '@/features/media/media-utils';
+
+/**
+ * The server's limit on an uploaded photo. A shrunk photo is 60–300 KB, so only an original
+ * the phone could not shrink (no worker, or the JPEG was not smaller) comes near it.
+ */
+export const MAX_IMAGE_BYTES = 10 * MIB;
 
 /** Enough for a JPEG's size to follow a full 64 KB EXIF segment plus ICC and MPF. */
 export const IMAGE_HEAD_BYTES = 256 * 1024;
@@ -52,3 +60,7 @@ export function readPhotoHeader(head: Uint8Array): PhotoHeader | null {
     return null;
   }
 }
+
+/** Refuses a photo the server would refuse for its bytes, before it is uploaded. */
+export const uploadedPhotoProblem = (bytes: number) =>
+  bytes > MAX_IMAGE_BYTES ? RejectReason.ImageTooLarge : null;
