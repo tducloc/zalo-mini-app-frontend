@@ -18,8 +18,6 @@ export enum MediaKind {
 export enum RejectReason {
   // Photos
   UnsupportedImageFormat = 'UNSUPPORTED_IMAGE_FORMAT',
-  ImageTooLarge = 'IMAGE_TOO_LARGE',
-  ImageTooSmall = 'IMAGE_TOO_SMALL',
   TooManyImages = 'TOO_MANY_IMAGES',
   // Videos
   /** Not an MP4 or MOV mediabunny can open. */

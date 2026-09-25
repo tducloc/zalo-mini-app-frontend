@@ -3,7 +3,6 @@
  * is waiting for or why it failed, and why the server refused it.
  */
 
-import { MAX_IMAGE_BYTES, MIN_IMAGE_EDGE } from '@/features/media/image/image-utils';
 import {
   MAX_IMAGES_PER_LISTING,
   MAX_VIDEOS_PER_LISTING,
@@ -28,8 +27,6 @@ const NOT_PLAYABLE =
 export const rejectMessages: Record<RejectReason, string> = {
   // Photos
   [RejectReason.UnsupportedImageFormat]: 'Chỉ nhận ảnh JPG, PNG hoặc WebP.',
-  [RejectReason.ImageTooLarge]: `Ảnh lớn hơn ${MAX_IMAGE_BYTES / MIB} MB.`,
-  [RejectReason.ImageTooSmall]: `Ảnh quá nhỏ: cạnh ngắn cần từ ${MIN_IMAGE_EDGE} px.`,
   [RejectReason.TooManyImages]: `Mỗi tin có tối đa ${MAX_IMAGES_PER_LISTING} ảnh.`,
 
   // Videos
@@ -65,7 +62,6 @@ const mediaErrorMessages: Record<MediaError, string> = {
   [MediaError.FileTooLarge]: 'Tệp quá lớn. Hãy chọn tệp nhỏ hơn.',
   [MediaError.VideoTooLong]: 'Video quá dài. Hãy cắt ngắn rồi chọn lại.',
   [MediaError.VideoNotPlayable]: NOT_PLAYABLE,
-  [MediaError.ImageTooSmall]: 'Ảnh quá nhỏ. Hãy chọn ảnh rõ hơn.',
   [MediaError.BlankImage]: 'Ảnh trống hoặc bị che. Hãy chụp lại.',
   [MediaError.ProcessingFailed]: 'Máy chủ chưa xử lý được tệp này. Hãy xoá và chọn lại.',
   [MediaError.Missing]: 'Tệp đã hết hạn trên máy chủ. Hãy xoá và chọn lại.',

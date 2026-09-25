@@ -90,11 +90,7 @@ async function optimizeImage(file: Blob, settings: ImageSettings): Promise<Optim
   const bitmap = decoded.value;
 
   try {
-    // Long edge down to maxEdge, but the short edge never below minEdge: the server
-    // refuses a photo under 500 px on either side, so a panorama stays that tall.
-    const longEdge = Math.max(bitmap.width, bitmap.height);
-    const shortEdge = Math.min(bitmap.width, bitmap.height);
-    const scale = Math.min(1, Math.max(settings.maxEdge / longEdge, settings.minEdge / shortEdge));
+    const scale = Math.min(1, settings.maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.round(bitmap.width * scale);
     const height = Math.round(bitmap.height * scale);
 

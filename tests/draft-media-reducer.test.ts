@@ -142,7 +142,7 @@ describe('mediaReducer', () => {
     const state = run(added, {
       type: MediaActionType.Rejected,
       id: 'p1',
-      reason: RejectReason.ImageTooSmall,
+      reason: RejectReason.UnsupportedImageFormat,
     });
     expect(mediaReducer(state, { type: MediaActionType.CoverChosen, id: 'v1' })).toBe(state);
     expect(mediaReducer(state, { type: MediaActionType.CoverChosen, id: 'p1' })).toBe(state);

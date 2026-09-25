@@ -50,7 +50,6 @@ export enum MediaError {
   FileTooLarge = 'FILE_TOO_LARGE',
   VideoTooLong = 'VIDEO_TOO_LONG',
   VideoNotPlayable = 'VIDEO_NOT_PLAYABLE',
-  ImageTooSmall = 'IMAGE_TOO_SMALL',
   BlankImage = 'BLANK_IMAGE',
   ProcessingFailed = 'PROCESSING_FAILED',
   /** Client-side: the server no longer lists the media, e.g. the hourly cleanup removed it. */

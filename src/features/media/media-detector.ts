@@ -9,12 +9,19 @@
 
 import {
   IMAGE_HEAD_BYTES,
-  MAX_IMAGE_BYTES,
   type PhotoHeader,
-  photoProblem,
   readPhotoHeader,
 } from '@/features/media/image/image-utils';
-import { MediaKind, type PickedMedia, readHead, RejectReason } from '@/features/media/media-utils';
+import {
+  MediaKind,
+  MIB,
+  type PickedMedia,
+  readHead,
+  RejectReason,
+} from '@/features/media/media-utils';
+
+/** The most read to find a photo's size: past any metadata a phone or an editor writes. */
+const LONG_HEAD_BYTES = 10 * MIB;
 
 export interface DetectedFile extends PickedMedia {
   /** Photos only: format and size, for the checks and the upload request. */
@@ -76,11 +83,11 @@ export class MediaDetector {
 
   /**
    * A JPEG whose metadata (a Pixel depth map, Photoshop XMP) puts its size past the head.
-   * Rare, so only then is more read; a photo the app takes fits in MAX_IMAGE_BYTES.
+   * Rare, so only then is more read.
    */
   private async detectLongPhoto() {
     try {
-      const photo = readPhotoHeader(await readHead(this.file, MAX_IMAGE_BYTES));
+      const photo = readPhotoHeader(await readHead(this.file, LONG_HEAD_BYTES));
       return photo ? this.asPhoto(photo) : this.unsupported();
     } catch {
       return this.refused(RejectReason.Unreadable);
@@ -88,7 +95,8 @@ export class MediaDetector {
   }
 
   private asPhoto(photo: PhotoHeader): DetectedFile {
-    return { kind: MediaKind.Image, photo, problem: photoProblem(photo, this.file.size) };
+    const problem = photo.format ? null : RejectReason.UnsupportedImageFormat;
+    return { kind: MediaKind.Image, photo, problem };
   }
 
   /** The picker's type only says whether the seller meant a photo or a video. */

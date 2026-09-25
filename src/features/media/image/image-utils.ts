@@ -1,16 +1,12 @@
 /**
- * What the app checks on a picked photo before it goes to the worker: its format and pixel
- * size, read from the first bytes by image-size, never by decoding it.
+ * What the app reads from a picked photo before it goes to the worker: its format and pixel
+ * size, from the first bytes by image-size, never by decoding it. Only the format is
+ * checked; any size is taken (decided 2026-09-25: a seller cannot tell a photo's pixels on
+ * the phone). The size goes to the server with the upload.
  */
 
 import { imageSize } from 'image-size';
 
-import { MIB, RejectReason } from '@/features/media/media-utils';
-
-/** iPhone photos are at most ~5 MB; the app uploads a ~200 KB JPEG. */
-export const MAX_IMAGE_BYTES = 10 * MIB;
-/** The server refuses a photo whose shorter side is below this. */
-export const MIN_IMAGE_EDGE = 500;
 /** Enough for a JPEG's size to follow a full 64 KB EXIF segment plus ICC and MPF. */
 export const IMAGE_HEAD_BYTES = 256 * 1024;
 
@@ -55,18 +51,4 @@ export function readPhotoHeader(head: Uint8Array): PhotoHeader | null {
     // image-size throws on bytes it cannot follow.
     return null;
   }
-}
-
-/** Why the photo is refused before anything else happens to it, or null. */
-export function photoProblem(photo: PhotoHeader, bytes: number) {
-  if (!photo.format) {
-    return RejectReason.UnsupportedImageFormat;
-  }
-  if (bytes > MAX_IMAGE_BYTES) {
-    return RejectReason.ImageTooLarge;
-  }
-  if (Math.min(photo.width, photo.height) < MIN_IMAGE_EDGE) {
-    return RejectReason.ImageTooSmall;
-  }
-  return null;
 }

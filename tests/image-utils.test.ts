@@ -3,15 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import {
-  ImageFormat,
-  MAX_IMAGE_BYTES,
-  photoProblem,
-  readPhotoHeader,
-} from '@/features/media/image/image-utils';
-import { RejectReason } from '@/features/media/media-utils';
-
-const MB = 1024 * 1024;
+import { ImageFormat, readPhotoHeader } from '@/features/media/image/image-utils';
 
 // Fixtures were encoded by sharp (libvips), so they are real files, not hand-built headers.
 function fixture(name: string) {
@@ -55,21 +47,5 @@ describe('readPhotoHeader', () => {
     expect(readPhotoHeader(fixture('big-exif-33x21.jpg').subarray(0, 1024))).toBeNull();
     expect(readPhotoHeader(new TextEncoder().encode('%PDF-1.7'))).toBeNull();
     expect(readPhotoHeader(new Uint8Array())).toBeNull();
-  });
-});
-
-describe('photoProblem', () => {
-  const phone = { format: ImageFormat.Jpeg, width: 4032, height: 3024 };
-
-  it('accepts a normal phone photo', () => {
-    expect(photoProblem(phone, 3 * MB)).toBeNull();
-  });
-
-  it('refuses what the server would refuse', () => {
-    expect(photoProblem({ ...phone, format: null }, MB)).toBe(RejectReason.UnsupportedImageFormat);
-    expect(photoProblem(phone, MAX_IMAGE_BYTES + 1)).toBe(RejectReason.ImageTooLarge);
-    expect(photoProblem({ ...phone, width: 800, height: 499 }, MB)).toBe(
-      RejectReason.ImageTooSmall,
-    );
   });
 });

@@ -29,13 +29,13 @@ describe('refusePicked', () => {
     const picked = [
       ...Array(9).fill(photo),
       { kind: MediaKind.Image, problem: RejectReason.UnsupportedImageFormat },
-      { kind: MediaKind.Image, problem: RejectReason.ImageTooSmall },
+      { kind: MediaKind.Image, problem: RejectReason.Unreadable },
       photo,
     ];
 
     expect(refusePicked(picked, none).slice(9)).toEqual([
       RejectReason.UnsupportedImageFormat,
-      RejectReason.ImageTooSmall,
+      RejectReason.Unreadable,
       null,
     ]);
   });

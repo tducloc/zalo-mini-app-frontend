@@ -46,7 +46,7 @@ const rejected = (id: string, kind = MediaKind.Image): DraftMedia => ({
   kind,
   file,
   status: DraftMediaStatus.Rejected,
-  reason: RejectReason.ImageTooSmall,
+  reason: RejectReason.UnsupportedImageFormat,
 });
 
 describe('hasDraft', () => {
