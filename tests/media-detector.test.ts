@@ -76,6 +76,16 @@ describe('MediaDetector', () => {
     }
   });
 
+  it('refuses a HEIF or AVIF photo image-size cannot read, without taking the video slot', async () => {
+    for (const brand of ['heic', 'mif1', 'avif']) {
+      expect(await new MediaDetector(pick(mp4Head(brand))).detect()).toEqual({
+        kind: MediaKind.Image,
+        photo: null,
+        problem: RejectReason.UnsupportedFormat,
+      });
+    }
+  });
+
   it('refuses a photo format the app does not take', async () => {
     const gif = new TextEncoder().encode('GIF89a\x0a\x00\x14\x00\x00\x00\x00');
     expect(await new MediaDetector(pick(gif, 'image/gif')).detect()).toMatchObject({

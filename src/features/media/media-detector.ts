@@ -1,7 +1,7 @@
 /**
  * What a picked file is, from its first bytes (plans/create-listing.md, "Supported
- * formats"): a photo when image-size reads it, a video when it starts with an MP4/MOV
- * `ftyp` box (mediabunny then checks the rest), anything else is refused. `file.type` only
+ * formats"): a photo when image-size reads it, a video when it starts with an `ftyp` box
+ * of a video brand (mediabunny then checks the rest), anything else is refused. `file.type` only
  * picks the tile's kind for a refused file: Android leaves it empty for some files.
  *
  * Not in media-utils.ts: it builds on image-utils.ts, which itself imports media-utils.ts.
@@ -21,8 +21,28 @@ export interface DetectedFile extends PickedMedia {
   photo: PhotoHeader | null;
 }
 
-/** An ISO media file (MP4, MOV) opens with a box whose type, at byte 4, is `ftyp`. */
-const hasFtypBox = (head: Uint8Array) => String.fromCharCode(...head.subarray(4, 8)) === 'ftyp';
+const ascii = (head: Uint8Array, start: number, end: number) =>
+  String.fromCharCode(...head.subarray(start, end));
+
+/**
+ * The major brand of an ISO media file, which opens with an `ftyp` box: MP4 and MOV, but
+ * also HEIF and AVIF photos. Null for anything else.
+ */
+const ftypBrand = (head: Uint8Array) => (ascii(head, 4, 8) === 'ftyp' ? ascii(head, 8, 12) : null);
+
+/** Brands of HEIF and AVIF photos and photo bursts, which the app does not take. */
+const PHOTO_BRANDS = new Set([
+  'heic',
+  'heix',
+  'heim',
+  'heis',
+  'hevc',
+  'hevx',
+  'mif1',
+  'msf1',
+  'avif',
+  'avis',
+]);
 
 export class MediaDetector {
   constructor(private readonly file: File) {}
@@ -40,7 +60,12 @@ export class MediaDetector {
     if (photo) {
       return this.asPhoto(photo);
     }
-    if (hasFtypBox(head)) {
+    const brand = ftypBrand(head);
+    if (brand && PHOTO_BRANDS.has(brand)) {
+      // Usually image-size reads these already; this catches one whose header it cannot.
+      return { kind: MediaKind.Image, photo: null, problem: RejectReason.UnsupportedFormat };
+    }
+    if (brand) {
       return { kind: MediaKind.Video, photo: null, problem: null };
     }
     if (this.file.size <= head.length) {
