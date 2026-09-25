@@ -7,15 +7,10 @@
  * chrome://inspect while the run is going.
  */
 
-import { IMAGE_HEAD_BYTES, readImageDimensions } from '@/features/media/image-dimensions';
+import { IMAGE_HEAD_BYTES, readImageDimensions } from '@/features/media/file-header';
 import { startFrameMeter } from '@/features/media/lab/frame-meter';
-import {
-  createPipelineWorker,
-  PipelineError,
-  type PipelineWorker,
-} from '@/features/media/optimize-image';
-import { MAX_EDGE } from '@/features/media/image-worker-protocol';
-import { estimateJobBytes, pickWorker, type PoolState } from '@/features/media/pool-scheduler';
+import { ImageWorker, MAX_EDGE, PipelineError } from '@/features/media/image/image-worker';
+import { estimateJobBytes, pickWorker, type PoolState } from '@/features/media/image/image-queue';
 import type { BenchConfig, BenchResult, JobRecord } from '@/features/media/lab/pool-bench-summary';
 
 type QueuedJob = { file: File; record: JobRecord; decodeWidth?: number };
@@ -41,7 +36,7 @@ async function prepareJob(file: File, decodeWidth?: number): Promise<QueuedJob> 
   };
 }
 
-function recordSuccess(record: JobRecord, result: Awaited<ReturnType<PipelineWorker['run']>>) {
+function recordSuccess(record: JobRecord, result: Awaited<ReturnType<ImageWorker['run']>>) {
   record.ok = true;
   record.decodeMs = result.timings.decodeMs;
   record.drawMs = result.timings.drawMs;
@@ -60,7 +55,7 @@ export async function runPoolBench(files: File[], config: BenchConfig): Promise<
   const queue = await Promise.all(files.map((file) => prepareJob(file, config.decodeWidth)));
   const records = queue.map((job) => job.record);
 
-  const workers = Array.from({ length: config.workers }, () => createPipelineWorker());
+  const workers = Array.from({ length: config.workers }, () => new ImageWorker());
   const state: PoolState = { inFlight: workers.map(() => 0), bytesInFlight: 0 };
   let peakInFlight = 0;
   let peakEstimatedBytes = 0;
@@ -79,7 +74,7 @@ export async function runPoolBench(files: File[], config: BenchConfig): Promise<
       // A crashed worker disposes itself; replace it so the run can go on, as in 02b.
       if (workers[index].isDisposed()) {
         workerCrashes += 1;
-        workers[index] = createPipelineWorker();
+        workers[index] = new ImageWorker();
       }
 
       if (remaining === 0) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { FileFormat } from '@/features/media/file-format';
+import { FileFormat } from '@/features/media/file-header';
 import {
   admitByCount,
   checkImage,

@@ -1,18 +1,18 @@
 /**
- * Runs inside the image worker, never on the main thread: decode the photo upright, scale
- * it to 1280 px on the long side and encode it as JPEG. The page starts it from a string
- * (optimize-image.ts), so this file is bundled on its own and must not touch the DOM.
+ * Runs inside the image worker thread, never on the main thread: decode the photo upright,
+ * scale it down and encode it as JPEG, with the settings image-worker.ts sends each time.
+ *
+ * Bundled on its own into a string (vite-plugins/worker-source.ts), so it imports types
+ * only and must not touch the DOM.
  */
 
-import {
-  type ImageJob,
-  type ImageJobOptions,
-  type ImageReply,
-  JPEG_QUALITY,
-  MAX_EDGE,
-  type OptimizedImage,
+import type {
+  ImageJob,
+  ImageReply,
+  ImageSettings,
+  OptimizedImage,
   PipelineStep,
-} from '@/features/media/image-worker-protocol';
+} from '@/features/media/image/image-worker';
 
 /** The parts of DedicatedWorkerGlobalScope used here; the project is typed with the DOM lib. */
 interface WorkerScope {
@@ -61,8 +61,8 @@ function release(canvas: OffscreenCanvas) {
   canvas.height = 1;
 }
 
-async function encode(canvas: OffscreenCanvas) {
-  const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: JPEG_QUALITY });
+async function encode(canvas: OffscreenCanvas, quality: number) {
+  const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality });
   // blob.type cannot be trusted: a platform that cannot encode a type silently returns PNG,
   // and Safari has been seen labelling it with the requested type. Check the bytes.
   const head = new Uint8Array(await blob.slice(0, 2).arrayBuffer());
@@ -81,19 +81,17 @@ async function timed<T>(step: PipelineStep, work: () => Promise<T> | T) {
   }
 }
 
-async function optimizeImage(file: Blob, options: ImageJobOptions): Promise<OptimizedImage> {
-  const decoded = await timed(PipelineStep.Decode, () => decode(file, options.decodeWidth));
+async function optimizeImage(file: Blob, settings: ImageSettings): Promise<OptimizedImage> {
+  const decoded = await timed('decode', () => decode(file, settings.decodeWidth));
   const bitmap = decoded.value;
 
   try {
-    const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const scale = Math.min(1, settings.maxEdge / Math.max(bitmap.width, bitmap.height));
     const width = Math.round(bitmap.width * scale);
     const height = Math.round(bitmap.height * scale);
 
-    const drawn = await timed(PipelineStep.Draw, () =>
-      draw(bitmap, width, height, options.flushDraw),
-    );
-    const encoded = await timed(PipelineStep.Encode, () => encode(drawn.value)).finally(() =>
+    const drawn = await timed('draw', () => draw(bitmap, width, height, settings.flushDraw));
+    const encoded = await timed('encode', () => encode(drawn.value, settings.quality)).finally(() =>
       release(drawn.value),
     );
 
@@ -118,9 +116,9 @@ async function optimizeImage(file: Blob, options: ImageJobOptions): Promise<Opti
 const scope = self as unknown as WorkerScope;
 
 scope.onmessage = async (event) => {
-  const { id, file, options } = event.data;
+  const { id, file, settings } = event.data;
   try {
-    scope.postMessage({ id, ok: true, result: await optimizeImage(file, options) });
+    scope.postMessage({ id, ok: true, result: await optimizeImage(file, settings) });
   } catch (error) {
     scope.postMessage({
       id,

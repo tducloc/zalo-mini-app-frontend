@@ -3,7 +3,7 @@
  * plans/create-listing.md). Kept apart from the runner so they can be unit tested.
  */
 
-import type { ImageDimensions } from '@/features/media/image-dimensions';
+import type { ImageDimensions } from '@/features/media/file-header';
 
 export type BenchConfig = {
   key: string;

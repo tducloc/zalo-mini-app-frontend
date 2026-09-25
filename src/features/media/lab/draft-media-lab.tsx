@@ -12,7 +12,7 @@ import { useListingDraftStore } from '@/features/listings/draft/store';
 import { canConvertVideos } from '@/features/media/convert-video';
 import { startFrameMeter } from '@/features/media/lab/frame-meter';
 import { MediaKind } from '@/features/media/media-limits';
-import { canOptimizeImages } from '@/features/media/optimize-image';
+import { canOptimizeImages } from '@/features/media/image/image-worker';
 
 /**
  * The real create-listing pipeline (draft store + intake service, L4) on files picked here,

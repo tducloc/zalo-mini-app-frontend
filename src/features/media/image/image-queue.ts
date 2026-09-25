@@ -1,27 +1,87 @@
 /**
- * The queue of photos waiting for the image worker (diagrams 02 and 02b).
+ * Which photo goes to the image worker, and when (diagrams 02 and 02b).
  *
- * - Memory decides how many run at once (pool-scheduler.ts, R3): P1 was every photo decoded
- *   at the same time, which can crash the WebView.
+ * - Memory decides how many run at once (R3): P1 was every photo decoded at the same time,
+ *   which can crash the WebView. A photo starts while the decoded size of the photos in
+ *   flight fits the budget; one larger than the whole budget still runs, but alone.
  * - A photo the worker fails on is tried once more, alone; then the original is used.
  * - When the worker crashes, one new worker takes the unfinished photos, one at a time.
  *   If that one crashes too, every photo left uses its original.
  * - Nothing ever falls back to the main thread (decided 2026-09-24).
  */
 
-import type { ImageDimensions } from '@/features/media/image-dimensions';
-import type { OptimizedImage } from '@/features/media/image-worker-protocol';
+import type { ImageDimensions } from '@/features/media/file-header';
 import {
-  createPipelineWorker,
+  ImageWorker,
+  MAX_EDGE,
+  type OptimizedImage,
   PipelineError,
-  type PipelineWorker,
-} from '@/features/media/optimize-image';
-import { estimateJobBytes, pickWorker, type PoolConfig } from '@/features/media/pool-scheduler';
+} from '@/features/media/image/image-worker';
 
 const MIB = 1024 * 1024;
+const BYTES_PER_PIXEL = 4;
+
+// ---- Memory budget: pure, tested on its own ----
+
+export type PoolConfig = {
+  workers: number;
+  perWorker: number;
+  /** Omit to limit by count only. */
+  budgetBytes?: number;
+};
 
 /** Starting values from R3; the phone runs in the media lab pick the final ones. */
 export const DEFAULT_POOL_CONFIG: PoolConfig = { workers: 1, perWorker: 2, budgetBytes: 150 * MIB };
+
+export type PoolState = {
+  /** Images in flight on each worker, by worker index. */
+  inFlight: number[];
+  bytesInFlight: number;
+};
+
+/** Used when the header cannot be read: a 24 MP photo, the iPhone 15+ default. */
+export const UNKNOWN_IMAGE_DIMENSIONS: ImageDimensions = { width: 5712, height: 4284 };
+
+/**
+ * Peak memory of one job: the decoded bitmap plus the output canvas.
+ * With `decodeWidth`, the decoder is asked for a bitmap that many pixels wide.
+ */
+export function estimateJobBytes(dimensions: ImageDimensions | null, decodeWidth?: number): number {
+  const { width, height } = dimensions ?? UNKNOWN_IMAGE_DIMENSIONS;
+
+  const decodeScale = decodeWidth && width > decodeWidth ? decodeWidth / width : 1;
+  const bitmapBytes =
+    Math.round(width * decodeScale) * Math.round(height * decodeScale) * BYTES_PER_PIXEL;
+
+  const outputScale = Math.min(1, MAX_EDGE / Math.max(width, height));
+  const canvasBytes =
+    Math.round(width * outputScale) * Math.round(height * outputScale) * BYTES_PER_PIXEL;
+
+  return bitmapBytes + canvasBytes;
+}
+
+/** Returns the worker index to start the job on, or null to keep it queued. */
+export function pickWorker(state: PoolState, jobBytes: number, config: PoolConfig): number | null {
+  const running = state.inFlight.reduce((total, count) => total + count, 0);
+
+  let chosen: number | null = null;
+  for (let index = 0; index < config.workers; index += 1) {
+    const load = state.inFlight[index] ?? 0;
+    if (load < config.perWorker && (chosen === null || load < state.inFlight[chosen])) {
+      chosen = index;
+    }
+  }
+
+  if (chosen === null) {
+    return null;
+  }
+
+  const fitsBudget =
+    config.budgetBytes === undefined || state.bytesInFlight + jobBytes <= config.budgetBytes;
+  return running === 0 || fitsBudget ? chosen : null;
+}
+
+// ---- The queue ----
 
 /** The first crash gets a new worker; the second ends optimizing for this session. */
 const MAX_CRASHES = 2;
@@ -47,9 +107,12 @@ interface Job {
   settle: (outcome: ImageOutcome) => void;
 }
 
+/** What the queue needs from a worker; tests pass a fake. */
+export type QueueWorker = Pick<ImageWorker, 'run' | 'dispose' | 'isDisposed'>;
+
 interface RunningJob extends Job {
   workerIndex: number;
-  worker: PipelineWorker;
+  worker: QueueWorker;
   /** Removed while the worker had it: its slot stays taken until the worker answers. */
   isCancelled: boolean;
 }
@@ -57,7 +120,7 @@ interface RunningJob extends Job {
 export class ImageQueue {
   private readonly waiting: Job[] = [];
   private readonly running = new Map<string, RunningJob>();
-  private readonly workers: (PipelineWorker | null)[];
+  private readonly workers: (QueueWorker | null)[];
 
   private jobCount = 0;
   private crashes = 0;
@@ -65,7 +128,7 @@ export class ImageQueue {
   private perWorker: number;
 
   constructor(
-    private readonly createWorker: () => PipelineWorker = createPipelineWorker,
+    private readonly createWorker: () => QueueWorker = () => new ImageWorker(),
     private readonly config: PoolConfig = DEFAULT_POOL_CONFIG,
   ) {
     this.workers = Array.from({ length: config.workers }, () => null);
@@ -145,7 +208,7 @@ export class ImageQueue {
   }
 
   private start(job: Job, workerIndex: number) {
-    let worker: PipelineWorker;
+    let worker: QueueWorker;
     try {
       worker = this.workerAt(workerIndex);
     } catch {

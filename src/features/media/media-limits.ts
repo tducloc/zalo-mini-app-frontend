@@ -4,8 +4,12 @@
  * checking here only tells the seller early, before a long upload.
  */
 
-import type { ImageDimensions } from '@/features/media/image-dimensions';
-import { FileFormat, IMAGE_FORMATS, VIDEO_FORMATS } from '@/features/media/file-format';
+import {
+  FileFormat,
+  IMAGE_FORMATS,
+  type ImageDimensions,
+  VIDEO_FORMATS,
+} from '@/features/media/file-header';
 
 const MIB = 1024 * 1024;
 

@@ -12,9 +12,16 @@ import {
 } from '@/features/listings/draft/media-reducer';
 import { useListingDraftStore } from '@/features/listings/draft/store';
 import { canConvertVideos, convertVideo } from '@/features/media/convert-video';
-import { FileFormat, FORMAT_HEAD_BYTES, readHead, sniffFormat } from '@/features/media/file-format';
-import { IMAGE_HEAD_BYTES, readImageDimensions } from '@/features/media/image-dimensions';
-import { ImageQueue } from '@/features/media/image-queue';
+import {
+  FileFormat,
+  FORMAT_HEAD_BYTES,
+  IMAGE_HEAD_BYTES,
+  readHead,
+  readImageDimensions,
+  sniffFormat,
+} from '@/features/media/file-header';
+import { ImageQueue } from '@/features/media/image/image-queue';
+import { canOptimizeImages } from '@/features/media/image/image-worker';
 import {
   admitByCount,
   checkImage,
@@ -28,7 +35,6 @@ import {
   shouldConvertVideo,
   type VideoFacts,
 } from '@/features/media/media-limits';
-import { canOptimizeImages } from '@/features/media/optimize-image';
 import { readVideoMetadata } from '@/features/media/video-metadata';
 
 interface PickedFile {

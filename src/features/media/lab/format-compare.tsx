@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from 'zmp-ui';
 
-import { sniffBlobFormat } from '@/features/media/file-format';
+import { sniffBlobFormat } from '@/features/media/file-header';
 
 /**
  * Encodes one photo with this device's own canvas encoders and lets you flip

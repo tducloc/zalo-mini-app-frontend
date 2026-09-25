@@ -8,7 +8,7 @@ import {
   summarizeBench,
 } from '@/features/media/lab/pool-bench-summary';
 import { BENCH_CONFIGS, runPoolBench } from '@/features/media/lab/run-pool-bench';
-import { canOptimizeImages } from '@/features/media/optimize-image';
+import { canOptimizeImages } from '@/features/media/image/image-worker';
 
 // Survives the page reload that WKWebView does when it runs out of memory.
 const STAGE_KEY = 'medialab.poolStage';
