@@ -8,7 +8,7 @@ import FilterChips from '@/features/feed/components/filter-chips';
 import FilterSheet from '@/features/feed/components/filter-sheet';
 import HomeHeader from '@/features/feed/components/home-header';
 import ProductFeed from '@/features/feed/components/product-feed';
-import { useHomeFeedStore } from '@/features/feed/store';
+import { useHomeFeedStore } from '@/stores/home-feed';
 import { homeContentClass, homePageVarsClass, sectionHeadingClass } from '@/features/feed/styles';
 import type { FeedFilters, FilterKey } from '@/features/feed/types';
 import {

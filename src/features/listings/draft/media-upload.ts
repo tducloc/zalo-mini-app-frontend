@@ -16,7 +16,7 @@ import {
   type ReadyDraftMedia,
   type UploadedDraftMedia,
 } from '@/features/listings/draft/media-reducer';
-import { useListingDraftStore } from '@/features/listings/draft/store';
+import { useListingDraftStore } from '@/stores/listing-draft';
 import { browserTransport } from '@/features/media/upload/browser-transport';
 import { FileUpload, type UploadListener } from '@/features/media/upload/file-upload';
 import { FailureKind } from '@/features/media/upload/retry-policy';

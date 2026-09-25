@@ -5,7 +5,7 @@ share the work:
 
 - `features/media/` — tools for **one file**; they know nothing about listings.
 - `features/listings/draft/` — the **listing draft**: puts the tools together for every file the
-  seller picks, and keeps each file's state in the draft store.
+  seller picks, and keeps each file's state in the draft store (`src/stores/listing-draft.ts`).
 
 ## Where to start reading
 
@@ -47,7 +47,6 @@ pick ─► MediaDetector ─► photo: image-queue ─► image-worker ─► r
 
 | `listings/draft/`   | What it holds                                           |
 | ------------------- | ------------------------------------------------------- |
-| `store.ts`          | The draft (Zustand); outlives the sell page             |
 | `media-reducer.ts`  | Each file's state and the actions that move it, by flow |
 | `media-intake.ts`   | Detect, check, optimize each picked file                |
 | `media-upload.ts`   | Upload queue and processing status                      |

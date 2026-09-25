@@ -24,7 +24,7 @@ const file = new File(['0123456789'], 'photo.jpg');
 type Modules = Awaited<ReturnType<typeof loadModules>>;
 
 async function loadModules() {
-  const { useListingDraftStore } = await import('@/features/listings/draft/store');
+  const { useListingDraftStore } = await import('@/stores/listing-draft');
   const upload = await import('@/features/listings/draft/media-upload');
   const { FailureKind, UploadFailure } = await import('@/features/media/upload/retry-policy');
   const { DraftMediaStatus, MediaActionType } =

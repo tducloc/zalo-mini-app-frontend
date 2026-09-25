@@ -3,7 +3,7 @@ import { Button } from 'zmp-ui';
 
 import { addDraftFiles, clearDraftMedia } from '@/features/listings/draft/media-intake';
 import { type DraftMedia, DraftMediaStatus } from '@/features/listings/draft/media-reducer';
-import { useListingDraftStore } from '@/features/listings/draft/store';
+import { useListingDraftStore } from '@/stores/listing-draft';
 import { canConvertVideos } from '@/features/media/video/convert-video';
 import { startFrameMeter } from '@/features/lab/media/frame-meter';
 import DraftMediaRow, { type RowTimes } from '@/features/lab/media/draft-media-row';

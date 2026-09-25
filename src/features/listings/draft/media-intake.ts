@@ -13,7 +13,7 @@ import {
   type UploadSource,
 } from '@/features/listings/draft/media-reducer';
 import { cancelUpload } from '@/features/listings/draft/media-upload';
-import { useListingDraftStore } from '@/features/listings/draft/store';
+import { useListingDraftStore } from '@/stores/listing-draft';
 import { MediaDetector } from '@/features/media/media-detector';
 import { ImageQueue } from '@/features/media/image/image-queue';
 import { ImageFormat, type PhotoHeader } from '@/features/media/image/image-utils';
