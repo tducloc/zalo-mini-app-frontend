@@ -1,7 +1,7 @@
 import { ChangeEvent, useLayoutEffect, useRef } from 'react';
 
-import { filterControlClass } from '../styles';
-import { applyPriceEdit, caretAfterDigits, formatPriceDigits } from '../utils/price';
+import { filterControlClass } from '@/features/feed/constants/styles';
+import { applyPriceEdit, caretAfterDigits, formatPriceDigits } from '@/features/feed/utils/price';
 
 interface PriceInputProps {
   id: string;

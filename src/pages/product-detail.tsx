@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Page, useNavigate, useParams } from 'zmp-ui';
 
 import FeedbackState from '@/components/feedback-state';
-import { useSession } from '@/features/auth/hooks/session';
+import { useSession } from '@/features/auth/hooks/use-session';
+import DraftBanner from '@/features/listings/components/draft-banner';
 import { useProductDetail } from '@/features/products/api/get-product-detail';
 import ProductActionsSheet from '@/features/products/components/actions-sheet';
 import ProductContactAction from '@/features/products/components/contact-action';
@@ -13,7 +14,7 @@ import ProductMediaGallery from '@/features/products/components/media-gallery';
 import ProductSellerContact from '@/features/products/components/seller-card';
 import { useCreateReport } from '@/features/reports/api/create-report';
 import ProductReportSheet from '@/features/reports/components/report-sheet';
-import type { CreateReportInput } from '@/features/reports/types';
+import type { CreateReportInput } from '@/features/reports/types/report';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorStatus } from '@/utils/api-error';
 
@@ -93,7 +94,7 @@ export default function ProductDetailPage() {
             <FeedbackState
               type="error"
               title="Không tải được tin"
-              description="Kiểm tra kết nối mạng và thử lại."
+              description="Vui lòng kiểm tra kết nối mạng và thử lại."
               onAction={() => productQuery.refetch()}
             />
           )}
@@ -114,7 +115,11 @@ export default function ProductDetailPage() {
           <ProductSellerContact product={product} />
         </section>
       </main>
-      <ProductContactAction product={product} onContactError={showError} />
+      <ProductContactAction
+        product={product}
+        banner={<DraftBanner className="mb-3" />}
+        onContactError={showError}
+      />
       <ProductActionsSheet
         isOwner={isOwner}
         hasReported={product.viewer.hasReported}

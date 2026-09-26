@@ -1,7 +1,5 @@
-import { Session } from '@/features/auth/model';
+import type { Session } from '@/features/auth/types/session';
 import { useAuthStore } from '@/stores/auth';
-
-export type { Session, SessionUser } from '@/features/auth/model';
 
 export function getSession(): Session | null {
   return useAuthStore.getState().session;

@@ -1,5 +1,8 @@
-import { categoryPresentation, DEFAULT_CATEGORY_ICON } from '../constants';
-import type { CategoryOption, CategoryResponse } from '../types';
+import {
+  categoryPresentation,
+  DEFAULT_CATEGORY_ICON,
+} from '@/features/categories/constants/categories';
+import type { CategoryOption, CategoryResponse } from '@/features/categories/types/category';
 
 const presentationById = new Map(categoryPresentation.map((item) => [item.id, item]));
 

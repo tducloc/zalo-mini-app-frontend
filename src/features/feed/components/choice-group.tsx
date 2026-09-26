@@ -1,5 +1,9 @@
-import { choicePillClass, filterLabelClass, filterSectionClass } from '../styles';
-import { nextChoice } from '../utils/filters';
+import {
+  choicePillClass,
+  filterLabelClass,
+  filterSectionClass,
+} from '@/features/feed/constants/styles';
+import { nextChoice } from '@/features/feed/utils/filters';
 
 interface ChoiceGroupProps<T extends string> {
   label: string;

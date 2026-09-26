@@ -1,10 +1,9 @@
-import { formatNumber, formatVnd } from '@/utils/format';
+import { MAX_PRICE_VND } from '@/features/products/constants/product';
+import { formatNumber } from '@/utils/format';
 
-// Backend price column is a 32-bit signed integer.
-export const MAX_PRICE_VND = 2_147_483_647;
 // Longer than any valid price so an oversized paste shows the "too large"
 // error instead of being silently cut down to a valid-looking number.
-const MAX_INPUT_DIGITS = 15;
+const MAX_INPUT_DIGITS = String(MAX_PRICE_VND).length + 1;
 
 const NON_DIGIT = /\D/g;
 
@@ -88,7 +87,7 @@ interface PriceRangeResult {
 export function parsePriceRange(minDigits: string, maxDigits: string): PriceRangeResult {
   const minPrice = minDigits ? Number(minDigits) : undefined;
   const maxPrice = maxDigits ? Number(maxDigits) : undefined;
-  const tooLargeMessage = `Giá tối đa là ${formatVnd(MAX_PRICE_VND)}.`;
+  const tooLargeMessage = 'Vui lòng kiểm tra lại giá: số tiền quá lớn.';
   const errors: PriceRangeResult['errors'] = {};
 
   if (minPrice !== undefined && minPrice > MAX_PRICE_VND) {

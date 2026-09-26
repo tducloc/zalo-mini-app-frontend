@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { Icon } from 'zmp-ui';
 
 import Price from '@/components/price';
-import type { ProductCard } from '@/features/products/types';
+import {
+  listingCardClass,
+  listingCopyClass,
+  listingImageClass,
+  videoBadgeClass,
+} from '@/features/feed/constants/styles';
+import type { ProductCard } from '@/features/products/types/product';
 import { formatShortRelativeTime } from '@/utils/format';
-
-import { listingCardClass, listingCopyClass, listingImageClass, videoBadgeClass } from '../styles';
 
 // Square 400×400 thumbnails; the attributes reserve space before the image loads.
 const THUMBNAIL_SIZE = 400;

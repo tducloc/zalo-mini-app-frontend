@@ -1,3 +1,6 @@
+// Missing built-ins on iOS 15.1–15.3; must run before anything else.
+import '@/polyfills';
+
 // ZaUI stylesheet
 import 'zmp-ui/zaui.css';
 // Tailwind stylesheet

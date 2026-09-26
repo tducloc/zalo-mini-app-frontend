@@ -3,15 +3,17 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App, Sheet, ZMPRouter } from 'zmp-ui';
 import 'zmp-ui/zaui.css';
+
+import AuthRetryNotice from '@/features/auth/components/auth-retry-notice';
+import ListingForm, { FormState } from '@/features/listings/components/showcase-listing-form';
+
 import './css/tailwind.scss';
 import './css/app.scss';
 import './css/showcase.scss';
 import AppShell from './components/app-shell';
 import FeedbackState from './components/feedback-state';
 import Price from './components/price';
-import ListingForm, { FormState } from './features/listings/components/form';
 import HomePage from './pages/home';
-import AuthRetryNotice from '@/features/auth/components/auth-retry-notice';
 import { installShowcaseApi, isShowcaseFeedState } from './showcase-api';
 const screens = [
   ['home', 'Trang chủ'],
@@ -46,7 +48,7 @@ function ListingSummary({ onEdit, onStatus }: { onEdit?: () => void; onStatus?: 
         <p className="ui-muted">Hà Nội · 2 giờ trước</p>
       </div>
       {onEdit && (
-        <button className="listing-menu-trigger" aria-label="Tùy chọn tin đăng" onClick={onEdit}>
+        <button className="listing-menu-trigger" aria-label="Tuỳ chọn tin đăng" onClick={onEdit}>
           •••
         </button>
       )}
@@ -106,7 +108,6 @@ function Frame({ screen }: { screen: string }) {
           onPreviewNavigate={(path) =>
             location.assign(`?screen=${screenByTabPath[path] ?? 'home'}`)
           }
-          hasDraft={screen === 'processing'}
         >
           {['home', 'processing', 'filter', 'auth', 'loading', 'empty', 'error'].includes(
             screen,
@@ -262,14 +263,14 @@ function Frame({ screen }: { screen: string }) {
                   Xác nhận
                 </button>
                 <button className="text-action" onClick={() => setDialog('')}>
-                  Hủy
+                  Huỷ
                 </button>
               </section>
             </div>
           )}
           <Sheet
             visible={screen === 'manage' && listingMenuOpen}
-            title="Tùy chọn tin đăng"
+            title="Tuỳ chọn tin đăng"
             autoHeight
             unmountOnClose
             onClose={() => setListingMenuOpen(false)}
@@ -294,7 +295,7 @@ function Frame({ screen }: { screen: string }) {
                 Ẩn tin
               </button>
               <button className="cancel" onClick={() => setListingMenuOpen(false)}>
-                Hủy
+                Huỷ
               </button>
             </div>
           </Sheet>

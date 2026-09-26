@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Button } from 'zmp-ui';
 import { openPhone, openProfile } from 'zmp-sdk';
 
-import { ProductDetail } from '../types';
+import { ProductDetail } from '@/features/products/types/product';
 
 export default function ProductContactAction({
   product,
+  banner,
   onContactError,
 }: {
   product: ProductDetail;
+  /** Above the button, in the same bar, so the two never overlap. */
+  banner: ReactNode;
   onContactError: (message: string) => void;
 }) {
   const contact = product.seller.contact;
@@ -41,6 +44,7 @@ export default function ProductContactAction({
 
   return (
     <footer className="product-detail-actions">
+      {banner}
       <Button fullWidth disabled={!canContact || product.status === 'SOLD'} onClick={contactSeller}>
         {product.status === 'SOLD'
           ? 'Sản phẩm đã bán'

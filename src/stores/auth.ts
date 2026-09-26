@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { Session } from '@/features/auth/model';
+import { Session } from '@/features/auth/types/session';
 
 type AuthState = {
   session: Session | null;

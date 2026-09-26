@@ -2,11 +2,10 @@ import { useEffect, useRef } from 'react';
 
 import FeedbackState from '@/components/feedback-state';
 import InlineRetry from '@/components/inline-retry';
+import ListingCard from '@/features/feed/components/listing-card';
+import ListingGridSkeleton from '@/features/feed/components/listing-grid-skeleton';
+import { listingGridClass, loadMoreButtonClass } from '@/features/feed/constants/styles';
 import type { useProductFeed } from '@/features/products/api/get-product-feed';
-
-import ListingCard from './listing-card';
-import ListingGridSkeleton from './listing-grid-skeleton';
-import { listingGridClass, loadMoreButtonClass } from '../styles';
 
 type FeedQuery = ReturnType<typeof useProductFeed>;
 
@@ -39,7 +38,7 @@ export default function ProductFeed({
       <FeedbackState
         type="error"
         title="Không tải được tin"
-        description="Kiểm tra kết nối mạng và thử lại."
+        description="Vui lòng kiểm tra kết nối mạng và thử lại."
         onAction={() => feed.refetch()}
       />
     );
@@ -52,12 +51,12 @@ export default function ProductFeed({
       <FeedbackState
         type="empty"
         title="Không tìm thấy tin phù hợp"
-        description="Thử từ khoá khác hoặc bỏ bớt bộ lọc."
+        description="Vui lòng thử từ khoá khác hoặc bỏ bớt bộ lọc."
         actionLabel="Xoá tìm kiếm và bộ lọc"
         onAction={onClearCriteria}
       />
     ) : (
-      <FeedbackState type="empty" title="Chưa có tin đăng" description="Hãy quay lại sau nhé." />
+      <FeedbackState type="empty" title="Chưa có tin đăng" description="Vui lòng quay lại sau." />
     );
   }
 
