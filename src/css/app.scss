@@ -82,124 +82,10 @@ button:focus-visible {
   color: #d92d20;
   font-style: normal;
 }
-.cover-picker {
-  display: flex;
-  position: relative;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  border: 1px dashed #aacaff;
-  border-radius: 12px;
-  background: #f7faff;
-  min-height: 132px;
-  cursor: pointer;
-  color: #0068ff;
-}
-.cover-picker img {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-.cover-picker:has(.image-transfer) {
-  overflow: hidden;
-}
-.cover-picker small,
-.gallery-add small {
-  display: block;
-  font-size: 12px;
-  color: #68769b;
-  margin-top: 6px;
-}
-.cover-picker input,
-.gallery-add input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  width: 100%;
-  cursor: pointer;
-}
-.upload-plus {
-  font-size: 36px;
-  width: 72px;
-  text-align: center;
-}
-.gallery-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.gallery-item,
-.gallery-add {
-  position: relative;
-  width: 78px;
-  height: 86px;
-  border-radius: 10px;
-  overflow: hidden;
-}
-.gallery-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.gallery-item button {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  border: 0;
-  background: #111b3dcc;
-  color: white;
-  border-radius: 50%;
-  width: 26px;
-  height: 26px;
-}
-.image-transfer {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  gap: 7px;
-  padding: 12px;
-  color: #fff;
-  text-align: center;
-  font-size: 12px;
-  background: rgb(0 104 255 / 84%);
-}
-.image-transfer-loading i {
-  width: 22px;
-  height: 22px;
-  margin: 0 auto;
-  border: 2px solid rgb(255 255 255 / 40%);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: image-spin 700ms linear infinite;
-}
 @keyframes image-spin {
   to {
     transform: rotate(360deg);
   }
-}
-.image-transfer-error {
-  background: rgb(164 35 35 / 76%);
-}
-.image-transfer-error button {
-  position: static;
-  width: auto;
-  height: auto;
-  padding: 0;
-  color: #fff;
-  text-decoration: underline;
-  background: transparent;
-}
-.gallery-add {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background: #f7faff;
-  color: #0068ff;
-  border: 1px dashed #aacaff;
-  font-size: 24px;
 }
 .ui-field {
   display: block;
@@ -308,26 +194,6 @@ button:focus-visible {
 .feedback-error .feedback-symbol {
   background: #fff0f0;
   color: #cf3030;
-}
-.feedback-success .feedback-symbol {
-  background: #e5f9ef;
-  color: #138054;
-}
-.demo-skeleton {
-  height: 80px;
-  border-radius: 8px;
-  background: #e8eef6;
-  animation: demo-pulse 1.4s infinite alternate;
-}
-@keyframes demo-pulse {
-  to {
-    opacity: 0.45;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .demo-skeleton {
-    animation: none;
-  }
 }
 
 * {

@@ -15,9 +15,6 @@
     "Samsung >= 5"
   ],
   "scripts": {
-    "dev:showcase": "vite --config vite.showcase.config.mts --host 127.0.0.1 --port 4174",
-    "build:showcase": "vite build --config vite.showcase.config.mts",
-    "deploy:showcase": "gh-pages -d ui-review",
     "format": "prettier --write src tests authTest.config.mjs",
     "format:check": "prettier --check src tests authTest.config.mjs",
     "test": "vitest run",
@@ -61,7 +58,6 @@
     "autoprefixer": "^10.4.19",
     "cross-env": "^7.0.3",
     "esbuild": "^0.21.5",
-    "gh-pages": "^6.3.0",
     "jsdom": "^25.0.1",
     "postcss": "^8.4.38",
     "postcss-cli": "^8.3.1",

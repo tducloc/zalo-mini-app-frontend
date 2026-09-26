@@ -5,7 +5,7 @@ export default function FeedbackState({
   onAction,
   actionLabel = 'Thử lại',
 }: {
-  type: 'loading' | 'empty' | 'error' | 'success';
+  type: 'empty' | 'error';
   title: string;
   description?: string;
   /** Primary action (retry, clear filters…); labelled by `actionLabel`. */
@@ -14,13 +14,9 @@ export default function FeedbackState({
 }) {
   return (
     <section className={`feedback-state feedback-${type}`} role="status">
-      {type === 'loading' ? (
-        <div className="demo-skeleton" />
-      ) : (
-        <span className="feedback-symbol" aria-hidden>
-          {type === 'success' ? '✓' : type === 'error' ? '!' : '○'}
-        </span>
-      )}
+      <span className="feedback-symbol" aria-hidden>
+        {type === 'error' ? '!' : '○'}
+      </span>
       <h2>{title}</h2>
       <p>{description}</p>
       {onAction && (

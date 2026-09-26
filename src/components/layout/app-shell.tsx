@@ -23,17 +23,10 @@ const navigationItems: NavigationItem[] = [
   { label: 'Cá nhân', icon: 'zi-user', path: '/profile' },
 ];
 
-export default function AppShell({
-  children,
-  previewPath,
-  onPreviewNavigate,
-}: PropsWithChildren<{
-  previewPath?: string;
-  onPreviewNavigate?: (path: string) => void;
-}>) {
+export default function AppShell({ children }: PropsWithChildren) {
   const navigate = useNavigate();
   const location = useLocation();
-  const currentPath = previewPath ?? location.pathname;
+  const currentPath = location.pathname;
   const shouldShowTabbar = !currentPath.startsWith('/products/');
   // On the sell page the draft is in front of the seller.
   const shouldShowDraft = currentPath !== '/sell';
@@ -73,10 +66,7 @@ export default function AppShell({
                 aria-current={isActive ? 'page' : undefined}
                 aria-describedby={item.primary && shouldShowDraft ? DRAFT_STATUS_ID : undefined}
                 disabled={item.disabled}
-                onClick={() =>
-                  item.path &&
-                  (onPreviewNavigate ? onPreviewNavigate(item.path) : navigate(item.path))
-                }
+                onClick={() => item.path && navigate(item.path)}
               >
                 <span className="marketplace-tab-icon">
                   {item.primary ? (

@@ -27,7 +27,7 @@ import { useHomeFeedStore } from '@/stores/home-feed';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-export default function HomePage({ initialFilterOpen = false }: { initialFilterOpen?: boolean }) {
+export default function HomePage() {
   const navigate = useNavigate();
 
   // search and filters (store survives navigation to detail)
@@ -45,7 +45,7 @@ export default function HomePage({ initialFilterOpen = false }: { initialFilterO
   );
 
   // local UI state
-  const [isFilterOpen, setIsFilterOpen] = useState(initialFilterOpen);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
 
   // queries
