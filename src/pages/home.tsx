@@ -4,10 +4,10 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { useCategories } from '@/features/categories/api/get-categories';
 import CategoryStrip from '@/features/categories/components/category-strip';
-import FilterChips from '@/features/feed/components/filter-chips';
-import FilterSheet from '@/features/feed/components/filter-sheet';
+import FilterChips from '@/features/feed/components/filters/filter-chips';
+import FilterSheet from '@/features/feed/components/filters/filter-sheet';
 import HomeHeader from '@/features/feed/components/home-header';
-import ProductFeed from '@/features/feed/components/product-feed';
+import ProductFeed from '@/features/feed/components/grid/product-feed';
 import {
   homeContentClass,
   homePageVarsClass,

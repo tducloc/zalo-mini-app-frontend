@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { configAppView, getSystemInfo } from 'zmp-sdk';
 import { AnimationRoutes, App, Route, SnackbarProvider, ZMPRouter } from 'zmp-ui';
 import { AppProps } from 'zmp-ui/app';
-import AppShell from '@/components/app-shell';
+import AppShell from '@/components/layout/app-shell';
 import { AuthBootstrap } from '@/features/auth/components/bootstrap';
 import HomePage from '@/pages/home';
 import MyListingsPage from '@/pages/my-listings';

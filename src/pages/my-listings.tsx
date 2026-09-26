@@ -1,5 +1,5 @@
 import { Button, Icon, Page } from 'zmp-ui';
-import MobilePageHeader from '@/components/mobile-page-header';
+import MobilePageHeader from '@/components/layout/mobile-page-header';
 
 export default function MyListingsPage() {
   return (

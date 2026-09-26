@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { openMediaPicker } from 'zmp-sdk';
 import { Button, Page } from 'zmp-ui';
-import MobilePageHeader from '@/components/mobile-page-header';
+import MobilePageHeader from '@/components/layout/mobile-page-header';
 import DraftMediaLab from '@/features/lab/media/draft-media-lab';
 import PickerProbeLab from '@/features/lab/media/picker-probe-lab';
 import FormatCompare from '@/features/lab/media/format-compare';

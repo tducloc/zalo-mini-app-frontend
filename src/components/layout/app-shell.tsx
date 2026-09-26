@@ -1,8 +1,10 @@
 import { PropsWithChildren } from 'react';
 import { Icon, useLocation, useNavigate } from 'zmp-ui';
 
-import DraftBanner from '@/features/listings/components/draft-banner';
-import DraftIndicator, { DRAFT_STATUS_ID } from '@/features/listings/components/draft-indicator';
+import DraftBanner from '@/features/listings/components/draft/draft-banner';
+import DraftIndicator, {
+  DRAFT_STATUS_ID,
+} from '@/features/listings/components/draft/draft-indicator';
 import { hasDraft } from '@/features/listings/utils/listing-draft';
 import { useListingDraftStore } from '@/stores/listing-draft';
 

@@ -1,7 +1,7 @@
 import { type ComponentRef, useRef, useState } from 'react';
 import { Swiper } from 'zmp-ui';
 
-import MediaLightbox from '@/features/products/components/media-lightbox';
+import MediaLightbox from '@/features/products/components/gallery/media-lightbox';
 import { ProductDetail } from '@/features/products/types/product';
 import { isNearSlide } from '@/features/products/utils/gallery';
 

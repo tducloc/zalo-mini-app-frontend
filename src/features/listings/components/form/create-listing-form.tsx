@@ -2,9 +2,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useRef } from 'react';
 import { type FieldErrors, useForm } from 'react-hook-form';
 
-import DiscardDraftButton from '@/features/listings/components/discard-draft-button';
-import ListingFields from '@/features/listings/components/listing-fields';
-import MediaSection from '@/features/listings/components/media-section';
+import DiscardDraftButton from '@/features/listings/components/form/discard-draft-button';
+import ListingFields from '@/features/listings/components/form/listing-fields';
+import MediaSection from '@/features/listings/components/media/media-section';
 import { EMPTY_FIELDS } from '@/features/listings/constants/listing-fields';
 import {
   discardMessages,

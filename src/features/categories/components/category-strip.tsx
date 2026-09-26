@@ -1,5 +1,5 @@
-import InlineRetry from '@/components/inline-retry';
-import Skeleton from '@/components/skeleton';
+import InlineRetry from '@/components/feedback/inline-retry';
+import Skeleton from '@/components/feedback/skeleton';
 import type { CategoryOption } from '@/features/categories/types/category';
 
 const SKELETON_ITEMS = 5;

@@ -1,6 +1,6 @@
 import { Page } from 'zmp-ui';
-import MobilePageHeader from '@/components/mobile-page-header';
-import CreateListingForm from '@/features/listings/components/create-listing-form';
+import MobilePageHeader from '@/components/layout/mobile-page-header';
+import CreateListingForm from '@/features/listings/components/form/create-listing-form';
 
 export default function SellPage() {
   return (

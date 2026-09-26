@@ -1,6 +1,6 @@
 import { Button, Icon, Page, useNavigate } from 'zmp-ui';
 
-import MobilePageHeader from '@/components/mobile-page-header';
+import MobilePageHeader from '@/components/layout/mobile-page-header';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { getAuthStatusLabel } from '@/features/auth/utils/auth-status';
 

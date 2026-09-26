@@ -1,4 +1,4 @@
-import Skeleton from '@/components/skeleton';
+import Skeleton from '@/components/feedback/skeleton';
 
 const lineClass = 'mt-4 h-2.5 rounded-lg';
 

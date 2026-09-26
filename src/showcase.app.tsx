@@ -10,9 +10,9 @@ import ListingForm, { FormState } from '@/features/listings/components/showcase-
 import './css/tailwind.scss';
 import './css/app.scss';
 import './css/showcase.scss';
-import AppShell from './components/app-shell';
-import FeedbackState from './components/feedback-state';
-import Price from './components/price';
+import AppShell from '@/components/layout/app-shell';
+import FeedbackState from '@/components/feedback/feedback-state';
+import Price from '@/components/price';
 import HomePage from './pages/home';
 import { installShowcaseApi, isShowcaseFeedState } from './showcase-api';
 const screens = [

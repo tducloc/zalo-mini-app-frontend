@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-import FeedbackState from '@/components/feedback-state';
+import FeedbackState from '@/components/feedback/feedback-state';
 import { categoryPresentation } from '@/features/categories/constants/categories';
 import {
   TITLE_MIN_LENGTH,

@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { Page, useNavigate, useParams } from 'zmp-ui';
 
-import FeedbackState from '@/components/feedback-state';
+import FeedbackState from '@/components/feedback/feedback-state';
 import { useSession } from '@/features/auth/hooks/use-session';
-import DraftBanner from '@/features/listings/components/draft-banner';
+import DraftBanner from '@/features/listings/components/draft/draft-banner';
 import { useProductDetail } from '@/features/products/api/get-product-detail';
-import ProductActionsSheet from '@/features/products/components/actions-sheet';
-import ProductContactAction from '@/features/products/components/contact-action';
-import ProductDetailHeader from '@/features/products/components/detail-header';
-import DetailSkeleton from '@/features/products/components/detail-skeleton';
-import ProductInformation from '@/features/products/components/information';
-import ProductMediaGallery from '@/features/products/components/media-gallery';
-import ProductSellerContact from '@/features/products/components/seller-card';
+import ProductActionsSheet from '@/features/products/components/detail/actions-sheet';
+import ProductContactAction from '@/features/products/components/detail/contact-action';
+import ProductDetailHeader from '@/features/products/components/detail/detail-header';
+import DetailSkeleton from '@/features/products/components/detail/detail-skeleton';
+import ProductInformation from '@/features/products/components/detail/information';
+import ProductMediaGallery from '@/features/products/components/gallery/media-gallery';
+import ProductSellerContact from '@/features/products/components/detail/seller-card';
 import { useCreateReport } from '@/features/reports/api/create-report';
 import ProductReportSheet from '@/features/reports/components/report-sheet';
 import type { CreateReportInput } from '@/features/reports/types/report';

@@ -1,6 +1,6 @@
 import Price from '@/components/price';
 import { getCategoryLabel } from '@/features/categories/utils/presentation';
-import ProductDescription from '@/features/products/components/description';
+import ProductDescription from '@/features/products/components/detail/description';
 import { conditionLabels } from '@/features/products/constants/product';
 import { ProductDetail } from '@/features/products/types/product';
 

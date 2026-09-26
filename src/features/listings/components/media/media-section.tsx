@@ -12,9 +12,9 @@ import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { type ChangeEvent, useState } from 'react';
 import { Icon } from 'zmp-ui';
 
-import MediaAddTile from '@/features/listings/components/media-add-tile';
-import MediaTile from '@/features/listings/components/media-tile';
-import MediaViewer from '@/features/listings/components/media-viewer';
+import MediaAddTile from '@/features/listings/components/media/media-add-tile';
+import MediaTile from '@/features/listings/components/media/media-tile';
+import MediaViewer from '@/features/listings/components/media/media-viewer';
 import { missingPhotoMessage, refusedFilesMessage } from '@/features/listings/constants/messages';
 import { addDraftFiles, removeDraftMedia } from '@/features/listings/services/add-media';
 import { retryUpload } from '@/features/listings/services/upload-media';

@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Button } from 'zmp-ui';
 
 import AppSheet from '@/components/app-sheet';
-import InlineRetry from '@/components/inline-retry';
+import InlineRetry from '@/components/feedback/inline-retry';
 import type { CategoryOption } from '@/features/categories/types/category';
-import ChoiceGroup from '@/features/feed/components/choice-group';
-import PriceInput from '@/features/feed/components/price-input';
+import ChoiceGroup from '@/features/feed/components/filters/choice-group';
+import PriceInput from '@/features/feed/components/filters/price-input';
 import {
   HAS_VIDEO_LABEL,
   SORT_OPTIONS,
