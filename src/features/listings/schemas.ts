@@ -36,7 +36,8 @@ const price = z
   .pipe(
     z
       .number()
-      .int()
+      // The regex lets only digits through, so a failed int is a number too big to be exact.
+      .int(listingFormMessages.priceTooHigh)
       .min(1, listingFormMessages.price)
       .max(MAX_PRICE_VND, listingFormMessages.priceTooHigh),
   );

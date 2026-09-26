@@ -58,13 +58,13 @@ describe('applyPriceEdit', () => {
 
   it('keeps an oversized paste so validation rejects it instead of truncating', () => {
     const { digits } = applyPriceEdit({
-      value: '1.000.000.000.000',
-      caret: 17,
+      value: '10.000.000.000.000.000',
+      caret: 22,
       previousDigits: '',
     });
 
-    expect(digits).toBe('1000000000000');
-    expect(parsePriceRange(digits, '').errors.minPrice).toMatch(/Giá tối đa/);
+    expect(digits).toBe('10000000000000000');
+    expect(parsePriceRange(digits, '').errors.minPrice).toMatch(/quá lớn/);
   });
 });
 
@@ -110,12 +110,12 @@ describe('parsePriceRange', () => {
     });
   });
 
-  it('rejects amounts above the backend integer range', () => {
+  it('rejects amounts a number cannot hold to the đồng', () => {
     const tooLarge = String(MAX_PRICE_VND + 1);
     const result = parsePriceRange(tooLarge, tooLarge);
 
-    expect(result.errors.minPrice).toMatch(/Giá tối đa/);
-    expect(result.errors.maxPrice).toMatch(/Giá tối đa/);
+    expect(result.errors.minPrice).toMatch(/quá lớn/);
+    expect(result.errors.maxPrice).toMatch(/quá lớn/);
   });
 
   it('accepts the maximum amount itself', () => {

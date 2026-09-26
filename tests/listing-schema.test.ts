@@ -81,8 +81,9 @@ describe('listingFieldsSchema', () => {
     ]) {
       expect(errorFor({ price: typed }, 'price')).toBe(messages.price);
     }
+    // A car or a home: past the 2.1 billion the server's integer column once capped.
+    expect(errorFor({ price: '3.500.000.000' }, 'price')).toBeUndefined();
     expect(errorFor({ price: String(MAX_PRICE_VND) }, 'price')).toBeUndefined();
     expect(errorFor({ price: String(MAX_PRICE_VND + 1) }, 'price')).toBe(messages.priceTooHigh);
-    expect(messages.priceTooHigh).toContain('2.147.483.647 đ');
   });
 });

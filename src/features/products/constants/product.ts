@@ -6,5 +6,8 @@ export const conditionLabels: Record<(typeof productConditions)[number], string>
   USED: 'Đã dùng',
 };
 
-/** The highest price: the server keeps prices in a 32-bit integer column. */
-export const MAX_PRICE_VND = 2_147_483_647;
+/**
+ * The highest price in whole đồng (api-spec, Conventions): past it a number cannot hold
+ * every đồng. Not a business limit; only a typo with 16 digits reaches it.
+ */
+export const MAX_PRICE_VND = Number.MAX_SAFE_INTEGER;

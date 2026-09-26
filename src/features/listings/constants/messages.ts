@@ -22,8 +22,7 @@ import {
 } from '@/features/media/constants/limits';
 import { RejectReason, type RefusedFile } from '@/features/media/types/media';
 import { MediaError, UploadWait } from '@/features/media/types/upload';
-import { MAX_PRICE_VND } from '@/features/products/constants/product';
-import { formatNumber, formatVnd } from '@/utils/format';
+import { formatNumber } from '@/utils/format';
 
 const MEGAPIXEL = 1_000_000;
 
@@ -37,7 +36,7 @@ export const listingFormMessages = {
   title: `Vui lòng nhập tiêu đề từ ${TITLE_MIN_LENGTH} đến ${TITLE_MAX_LENGTH} ký tự.`,
   description: `Vui lòng nhập mô tả từ ${DESCRIPTION_MIN_LENGTH} đến ${formatNumber(DESCRIPTION_MAX_LENGTH)} ký tự.`,
   price: 'Vui lòng nhập giá bán là số đồng lớn hơn 0, ví dụ 150.000.',
-  priceTooHigh: `Vui lòng nhập giá bán không quá ${formatVnd(MAX_PRICE_VND)}.`,
+  priceTooHigh: 'Vui lòng kiểm tra lại giá bán: số tiền quá lớn.',
   categoryId: 'Vui lòng chọn danh mục.',
   condition: 'Vui lòng chọn tình trạng.',
   locationId: 'Vui lòng chọn địa điểm.',
