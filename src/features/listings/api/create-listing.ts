@@ -37,6 +37,7 @@ enum HttpStatus {
 const draftField = listingFieldsSchema.keyof();
 const fieldDetails = z.array(z.object({ field: z.string() }));
 const reusedDetails = z.object({ productId: z.string() });
+const conflictDetails = z.array(z.object({ mediaId: z.string() }));
 
 const INVALID: PostError = { kind: PostErrorKind.Invalid };
 const OTHER: PostError = { kind: PostErrorKind.Other };
@@ -46,6 +47,11 @@ function fieldsError(details: unknown): PostError {
     ({ field }) => draftField.safeParse(field).data ?? [],
   );
   return fields.length > 0 ? { kind: PostErrorKind.Fields, fields } : INVALID;
+}
+
+function conflictError(details: unknown): PostError {
+  const mediaIds = (conflictDetails.safeParse(details).data ?? []).map(({ mediaId }) => mediaId);
+  return { kind: PostErrorKind.MediaConflict, mediaIds };
 }
 
 function reusedError(details: unknown): PostError {
@@ -62,7 +68,7 @@ export function readPostError(error: unknown): PostError {
     case HttpStatus.BadRequest:
       return fieldsError(details);
     case HttpStatus.Conflict:
-      return { kind: PostErrorKind.MediaConflict };
+      return conflictError(details);
     case HttpStatus.UnprocessableEntity:
       return reusedError(details);
     default:

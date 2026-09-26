@@ -249,6 +249,21 @@ export function cancelUpload(id: string) {
   }
 }
 
+/** `POST /products` refused these media (409): their tiles ask for another file. */
+export function markUnusableMedia(mediaIds: string[]) {
+  for (const media of draftMedia()) {
+    if (media.mediaId && mediaIds.includes(media.mediaId)) {
+      update(media.id, {
+        server: {
+          ...(media.server ?? NOTHING_YET),
+          status: ServerMediaStatus.Failed,
+          error: MediaError.Missing,
+        },
+      });
+    }
+  }
+}
+
 /**
  * The listing was posted: its media is the server's now. Stops watching every file,
  * deleting nothing.

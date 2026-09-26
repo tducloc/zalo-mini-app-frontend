@@ -4,6 +4,7 @@ import { createListing, readPostError } from '@/features/listings/api/create-lis
 import { postMessages } from '@/features/listings/constants/messages';
 import type { ListingFieldValues } from '@/features/listings/schemas';
 import { forgetPostedDraft } from '@/features/listings/services/add-media';
+import { markUnusableMedia } from '@/features/listings/services/upload-media';
 import type { DraftFields } from '@/features/listings/types/listing-draft';
 import { PostErrorKind, type PostError } from '@/features/listings/types/post-error';
 import { mediaIdsForPost, postBlocker } from '@/features/listings/utils/listing-draft';
@@ -19,9 +20,12 @@ import { warnInDev } from '@/utils/dev-log';
  */
 export function usePostListing({
   onFieldErrors,
+  onMediaErrors,
 }: {
   /** The server refused these fields; the form marks them. */
   onFieldErrors: (fields: (keyof DraftFields)[]) => void;
+  /** The server refused files, now marked on their tiles; the form shows them. */
+  onMediaErrors: () => void;
 }) {
   const navigate = useNavigate();
   const { showError, showInfo, showSuccess } = useToast();
@@ -38,7 +42,9 @@ export function usePostListing({
         navigate(`/products/${encodeURIComponent(error.productId)}`, { replace: true });
         return;
       case PostErrorKind.MediaConflict:
+        markUnusableMedia(error.mediaIds);
         showError(postMessages.mediaConflict);
+        onMediaErrors();
         return;
       case PostErrorKind.Invalid:
         showError(postMessages.invalid);

@@ -38,9 +38,22 @@ describe('readPostError', () => {
     expect(readPostError(apiError(400)).kind).toBe(PostErrorKind.Invalid);
   });
 
-  it('tells a file the server cannot use apart (409)', () => {
-    const error = apiError(409, [{ mediaId: 'm1', reason: 'ATTACHED' }]);
-    expect(readPostError(error)).toEqual({ kind: PostErrorKind.MediaConflict });
+  it('names the files the server cannot use (409)', () => {
+    const error = apiError(409, [
+      { mediaId: 'm1', reason: 'ATTACHED' },
+      { mediaId: 'm2', reason: 'NOT_FOUND' },
+    ]);
+    expect(readPostError(error)).toEqual({
+      kind: PostErrorKind.MediaConflict,
+      mediaIds: ['m1', 'm2'],
+    });
+  });
+
+  it('still reads a 409 whose details it cannot parse', () => {
+    expect(readPostError(apiError(409, 'unexpected'))).toEqual({
+      kind: PostErrorKind.MediaConflict,
+      mediaIds: [],
+    });
   });
 
   it('gives the listing a reused key already made', () => {

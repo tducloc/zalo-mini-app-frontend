@@ -145,7 +145,7 @@ export const postMessages = {
   published: 'Đã đăng tin.',
   alreadyPosted: 'Tin này đã được đăng trước đó.',
   fields: 'Vui lòng sửa các mục được đánh dấu đỏ rồi đăng lại.',
-  mediaConflict: 'Vui lòng xoá rồi chọn lại ảnh, video: có tệp máy chủ không dùng được.',
+  mediaConflict: 'Vui lòng xoá rồi chọn lại các tệp được đánh dấu.',
   invalid: 'Vui lòng thử lại sau: máy chủ chưa nhận tin này, tin chưa được đăng.',
   failed: 'Vui lòng kiểm tra mạng rồi bấm Đăng tin lại: tin chưa được đăng.',
 };

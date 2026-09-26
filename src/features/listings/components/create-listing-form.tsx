@@ -60,7 +60,12 @@ export default function CreateListingForm() {
       form.setError(field, { message: listingFormMessages[field] }, { shouldFocus: index === 0 });
     });
   };
-  const postListing = usePostListing({ onFieldErrors: handleServerFieldErrors });
+  const scrollToMedia = () =>
+    mediaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const postListing = usePostListing({
+    onFieldErrors: handleServerFieldErrors,
+    onMediaErrors: scrollToMedia,
+  });
 
   useEffect(() => {
     const subscription = form.watch((values) => setFields(values));
@@ -80,7 +85,7 @@ export default function CreateListingForm() {
   /** Scrolls to the photos when they block Post, else focuses the first field in error. */
   const showFirstProblem = (fieldErrors: FieldErrors<DraftFields>) => {
     if (postBlocker(useListingDraftStore.getState().media) !== null) {
-      mediaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      scrollToMedia();
       return;
     }
 

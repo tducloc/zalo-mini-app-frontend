@@ -234,4 +234,29 @@ describe('media-upload', () => {
     expect(api.fetchMediaStatuses).toHaveBeenCalledTimes(asked);
     expect(api.deleteMedia).not.toHaveBeenCalled();
   });
+
+  it('marks the files a post was refused for (409), and only those', () => {
+    const { ServerMediaStatus, MediaError, DraftMediaStatus } = modules;
+    addPhotos('a', 'b');
+    const server = {
+      status: ServerMediaStatus.Ready,
+      thumbnailUrl: 't',
+      placeholder: null,
+      error: null,
+    };
+    for (const id of ['a', 'b']) {
+      modules.useListingDraftStore
+        .getState()
+        .updateMedia(id, { status: DraftMediaStatus.Uploaded, mediaId: `m-${id}`, server });
+    }
+
+    modules.upload.markUnusableMedia(['m-b', 'm-unknown']);
+
+    expect(find('a')?.server).toEqual(server);
+    expect(find('b')?.server).toEqual({
+      ...server,
+      status: ServerMediaStatus.Failed,
+      error: MediaError.Missing,
+    });
+  });
 });

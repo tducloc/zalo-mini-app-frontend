@@ -14,6 +14,7 @@ import {
   sellForm,
   tab,
 } from './support';
+import type { Route } from '@playwright/test';
 
 /**
  * L6.5 and L6.6 around the happy path of create-listing.spec.ts: the form's checks, and
@@ -181,18 +182,45 @@ test('keeps the draft and its key through failed posts, then posts once', async 
   await expect(photoTiles(page)).toHaveCount(0);
 });
 
-test('says a file cannot be used (409), keeping the draft', async ({ page }) => {
+test('marks the files the server cannot use (409), keeping the draft', async ({ page }) => {
   await openSellPage(page);
-  await addPhotos(page, ['photo-a.jpg']);
+  await addPhotos(page, ['photo-a.jpg', 'photo-b.jpg']);
   await fillFields(page, title('conflict'));
   await expectReadyToPost(page);
 
-  await answerPost(page, 409, { code: 'CONFLICT' }, { times: 1 });
+  // The server refuses the second photo, whichever id it got.
+  await page.route(
+    (url) => url.pathname.endsWith('/products'),
+    (route: Route) => {
+      if (!isPostListing(route.request())) {
+        return route.fallback();
+      }
+      const { mediaIds } = route.request().postDataJSON() as { mediaIds: string[] };
+      return route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: {
+            code: 'CONFLICT',
+            message: 'Mocked.',
+            details: [{ mediaId: mediaIds[1], reason: 'NOT_FOUND' }],
+          },
+        }),
+      });
+    },
+    { times: 1 },
+  );
   await postButton(page).click();
 
-  await expect(page.getByText(/có tệp máy chủ không dùng được/)).toBeVisible();
-  await expect(photoTiles(page)).toHaveCount(1);
+  await expect(page.getByText('Vui lòng xoá rồi chọn lại các tệp được đánh dấu.')).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Ảnh 2, có lỗi\./ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Ảnh 1, đã sẵn sàng\./ })).toBeVisible();
+  await expect(postButton(page)).toBeDisabled();
   await expect(sellForm(page).getByLabel('Tiêu đề')).not.toHaveValue('');
+
+  // Without it, the listing goes.
+  await page.getByRole('button', { name: 'Xoá Ảnh 2' }).click();
+  await expect(postButton(page)).toBeEnabled();
 });
 
 test('opens the listing a reused key already made (422)', async ({ page, request }) => {

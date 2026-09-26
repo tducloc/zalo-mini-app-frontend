@@ -6,7 +6,7 @@ export enum PostErrorKind {
   Fields = 'FIELDS',
   /** 400 on what the app built (`mediaIds`, the key): the seller cannot fix it. */
   Invalid = 'INVALID',
-  /** 409: a file the server cannot use (removed, or on another listing). */
+  /** 409: files the server cannot use (removed, still uploading, failed, on another listing). */
   MediaConflict = 'MEDIA_CONFLICT',
   /** 422: the draft's key already made a listing, whose answer was lost. */
   AlreadyPosted = 'ALREADY_POSTED',
@@ -17,6 +17,6 @@ export enum PostErrorKind {
 export type PostError =
   | { kind: PostErrorKind.Fields; fields: (keyof DraftFields)[] }
   | { kind: PostErrorKind.Invalid }
-  | { kind: PostErrorKind.MediaConflict }
+  | { kind: PostErrorKind.MediaConflict; mediaIds: string[] }
   | { kind: PostErrorKind.AlreadyPosted; productId: string }
   | { kind: PostErrorKind.Other };
