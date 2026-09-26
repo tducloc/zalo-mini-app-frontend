@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Page, useNavigate, useParams } from 'zmp-ui';
 
 import FeedbackState from '@/components/feedback/feedback-state';
+import { pageClass } from '@/components/layout/styles';
 import { useSession } from '@/features/auth/hooks/use-session';
 import DraftBanner from '@/features/listings/components/draft/draft-banner';
 import { useProductDetail } from '@/features/products/api/get-product-detail';
@@ -24,6 +25,10 @@ const reportErrorMessages: Partial<Record<number, string>> = {
   429: 'Bạn đã gửi quá nhiều báo cáo. Vui lòng thử lại sau.',
 };
 const NOT_FOUND_STATUS = 404;
+
+// No tab bar: room for the contact bar (and the draft banner in it, 52px and 12px).
+const detailPageClass =
+  'bg-white pb-[calc(76px_+_var(--zaui-safe-area-inset-bottom))] [.has-draft-banner_&]:pb-[calc(140px_+_var(--zaui-safe-area-inset-bottom))]';
 
 export default function ProductDetailPage() {
   const { productId = '' } = useParams<{ productId: string }>();
@@ -63,7 +68,7 @@ export default function ProductDetailPage() {
 
   if (productQuery.isPending || isWaitingForViewer) {
     return (
-      <Page className="marketplace-page">
+      <Page className={pageClass}>
         <ProductDetailHeader />
         <DetailSkeleton />
       </Page>
@@ -75,9 +80,9 @@ export default function ProductDetailPage() {
 
     // Nothing to retry once the listing is gone: offer the way back instead.
     return (
-      <Page className="marketplace-page">
+      <Page className={pageClass}>
         <ProductDetailHeader isOverMedia={false} />
-        <main className="marketplace-content product-detail-feedback">
+        <main className="px-4 pb-4 pt-[calc(72px_+_var(--zaui-safe-area-inset-top))]">
           {isGone ? (
             <FeedbackState
               type="empty"
@@ -102,11 +107,11 @@ export default function ProductDetailPage() {
   const product = productQuery.data;
   const isOwner = product.viewer.isOwner || session?.user.id === product.seller.id;
   return (
-    <Page className="marketplace-page product-detail-page">
+    <Page className={detailPageClass}>
       <ProductDetailHeader />
-      <main className="product-detail-content">
+      <main className="bg-white">
         <ProductMediaGallery media={product.media} productTitle={product.title} />
-        <section className="product-detail-body">
+        <section className="px-4">
           <ProductInformation product={product} onOpenActions={() => setActionsOpen(true)} />
           <ProductSellerContact product={product} />
         </section>

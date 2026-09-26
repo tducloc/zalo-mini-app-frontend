@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Modal } from 'zmp-ui';
 
+import ActionButton from '@/components/action-button';
 import { discardMessages } from '@/features/listings/constants/messages';
 
 /**
@@ -34,14 +35,15 @@ export default function DiscardDraftButton({
 
   return (
     <>
-      <button
+      <ActionButton
         type="button"
-        className="ui-button secondary mt-3"
+        variant="secondary"
+        className="mt-3"
         disabled={isDisabled}
         onClick={() => setIsAsking(true)}
       >
         Huỷ tin
-      </button>
+      </ActionButton>
       <Modal
         visible={isAsking}
         title={discardMessages.title}

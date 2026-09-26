@@ -95,7 +95,7 @@ test('shows the draft on other pages, and Huỷ tin ends it', async ({ page }) =
     .getByRole('button', { name: /^Xem chi tiết/ })
     .first()
     .click();
-  await expect(page.locator('.product-detail-actions').getByRole('complementary')).toBeVisible();
+  await expect(page.getByRole('contentinfo').getByRole('complementary')).toBeVisible();
   await banner.getByRole('button', { name: 'Tiếp tục' }).click();
   await expect(sellForm(page).getByLabel('Tiêu đề')).toHaveValue(TITLE);
 

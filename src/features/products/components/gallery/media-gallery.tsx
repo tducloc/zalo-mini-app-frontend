@@ -34,7 +34,7 @@ export default function ProductMediaGallery({
   };
 
   if (media.length === 0) {
-    return <div className="product-detail-image-placeholder" />;
+    return <div className="aspect-square w-full bg-marketplace-skeleton" />;
   }
 
   const handleSlideChange = (nextIndex: number) => {
@@ -44,14 +44,14 @@ export default function ProductMediaGallery({
 
   return (
     <>
-      <div className="product-detail-gallery" ref={galleryRef}>
+      <div className="relative aspect-square w-full overflow-hidden bg-black" ref={galleryRef}>
         <Swiper
           ref={swiperRef}
           afterChange={handleSlideChange}
           // zmp-ui dims inactive slides to 0.8, but with `loop` it also dims the
           // active one on the last slide (its index check skips the clones),
           // and on iOS that dimmed slide paints over the counter.
-          className="product-detail-swiper [&_.zaui-swiper-item]:!opacity-100"
+          className="aspect-square size-full overflow-hidden rounded-none bg-black [&_.zaui-swiper-item]:!opacity-100"
           defaultActive={0}
           dots={false}
           loop={media.length > 1}
@@ -92,7 +92,7 @@ export default function ProductMediaGallery({
         </Swiper>
 
         <span
-          className="product-detail-gallery-counter"
+          className="pointer-events-none absolute bottom-3 right-3 z-[2] rounded-full bg-black/[.58] px-[9px] py-[5px] text-xs tabular-nums text-white"
           aria-label={`Nội dung ${activeIndex + 1} trên ${media.length}`}
         >
           {activeIndex + 1} / {media.length}

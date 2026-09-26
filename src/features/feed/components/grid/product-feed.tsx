@@ -4,7 +4,7 @@ import FeedbackState from '@/components/feedback/feedback-state';
 import InlineRetry from '@/components/feedback/inline-retry';
 import ListingCard from '@/features/feed/components/grid/listing-card';
 import ListingGridSkeleton from '@/features/feed/components/grid/listing-grid-skeleton';
-import { listingGridClass, loadMoreButtonClass } from '@/features/feed/constants/styles';
+import { listingGridClass, surfaceClass } from '@/features/feed/constants/styles';
 import type { useProductFeed } from '@/features/products/api/get-product-feed';
 
 type FeedQuery = ReturnType<typeof useProductFeed>;
@@ -13,6 +13,7 @@ type FeedQuery = ReturnType<typeof useProductFeed>;
 const ABOVE_FOLD_CARDS = 4;
 const INITIAL_SKELETON_CARDS = 6;
 const NEXT_PAGE_SKELETON_CARDS = 2;
+const loadMoreButtonClass = `block min-h-11 w-full rounded-[10px] font-semibold text-marketplace-blue ${surfaceClass}`;
 // Start the next request about one screen before the user reaches the end.
 const PREFETCH_MARGIN = '0px 0px 800px 0px';
 // zmp-ui scrolls inside the Page element, not the window.

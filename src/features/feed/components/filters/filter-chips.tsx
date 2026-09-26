@@ -1,7 +1,10 @@
 import { Icon } from 'zmp-ui';
 
-import { chipClass, hiddenScrollbarClass } from '@/features/feed/constants/styles';
 import type { FilterChip, FilterKey } from '@/features/feed/types/filters';
+
+const hiddenScrollbarClass = '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
+const chipClass =
+  'inline-flex min-h-8 flex-none items-center gap-1 rounded-2xl border border-solid text-caption font-semibold';
 
 export default function FilterChips({
   chips,

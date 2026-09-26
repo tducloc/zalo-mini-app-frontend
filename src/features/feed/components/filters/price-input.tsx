@@ -68,7 +68,7 @@ export default function PriceInput({
         onChange={handleChange}
       />
       {error && (
-        <small className="field-error block" id={errorId}>
+        <small className="my-1.5 block text-xs leading-5 text-marketplace-danger" id={errorId}>
           {error}
         </small>
       )}

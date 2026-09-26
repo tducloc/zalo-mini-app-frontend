@@ -13,7 +13,10 @@ export default function DraftIndicator() {
 
   return (
     <>
-      <span aria-hidden="true" className="marketplace-draft-indicator" />
+      <span
+        aria-hidden="true"
+        className="absolute right-px top-px size-2 rounded-full border-[1.5px] border-solid border-white bg-red-500"
+      />
       {/* Hidden, yet read as the tab's description. */}
       <span id={DRAFT_STATUS_ID} aria-hidden="true" className="sr-only">
         {UNFINISHED_DRAFT}

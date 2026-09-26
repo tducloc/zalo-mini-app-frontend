@@ -48,13 +48,16 @@ export default function ProductContactAction({
   const isPhoneFallbackShown = showPhoneFallback && Boolean(contact?.phoneNumber);
 
   return (
-    <footer className="product-detail-actions">
+    <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-solid border-marketplace-line bg-white px-4 pb-[calc(12px_+_var(--zaui-safe-area-inset-bottom))] pt-3">
       {banner}
-      <Button fullWidth disabled={!canContact || isSold} onClick={contactSeller}>
+      <Button className="h-11" fullWidth disabled={!canContact || isSold} onClick={contactSeller}>
         {contactLabel}
       </Button>
       {isPhoneFallbackShown && (
-        <button className="product-contact-fallback" onClick={callSeller}>
+        <button
+          className="mt-2 block w-full border-0 p-1.5 text-caption font-semibold text-marketplace-blue"
+          onClick={callSeller}
+        >
           Gọi số điện thoại người bán
         </button>
       )}

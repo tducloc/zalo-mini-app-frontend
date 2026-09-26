@@ -12,10 +12,12 @@ import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { type ChangeEvent, useState } from 'react';
 import { Icon } from 'zmp-ui';
 
+import RequiredMark from '@/features/listings/components/form/required-mark';
 import MediaAddTile from '@/features/listings/components/media/media-add-tile';
 import MediaTile from '@/features/listings/components/media/media-tile';
 import MediaViewer from '@/features/listings/components/media/media-viewer';
 import { missingPhotoMessage, refusedFilesMessage } from '@/features/listings/constants/messages';
+import { formNoteClass, formSectionTitleClass } from '@/features/listings/constants/styles';
 import { addDraftFiles, removeDraftMedia } from '@/features/listings/services/add-media';
 import { retryUpload } from '@/features/listings/services/upload-media';
 import type { DraftMedia } from '@/features/listings/types/draft-media';
@@ -29,6 +31,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useListingDraftStore } from '@/stores/listing-draft';
 
 const TILE_GRID_CLASS = 'm-0 grid list-none grid-cols-4 gap-2.5 p-0';
+const FIELD_HEADING_CLASS = 'mb-2.5 mt-5 flex justify-between gap-2';
+const FIELD_HINT_CLASS = 'text-xs leading-normal text-marketplace-muted';
 const VIDEO_NAME = 'Video';
 /**
  * A drag starts after a still press, so a quick swipe over the grid still scrolls the
@@ -119,17 +123,17 @@ export default function MediaSection({
   };
 
   return (
-    <section className="form-section">
-      <h2>Hình ảnh sản phẩm</h2>
-      <p className="ui-muted">
+    <section className="mb-6">
+      <h2 className={formSectionTitleClass}>Hình ảnh sản phẩm</h2>
+      <p className={formNoteClass}>
         Ảnh đầu tiên là ảnh bìa, hiển thị trên thẻ tin. Nhấn giữ rồi kéo để đổi thứ tự.
       </p>
 
-      <div className="field-heading">
+      <div className={FIELD_HEADING_CLASS}>
         <b>
-          Ảnh <em>*</em>
+          Ảnh <RequiredMark />
         </b>
-        <span>
+        <span className={FIELD_HINT_CLASS}>
           {photos.length}/{MAX_IMAGES_PER_LISTING} ảnh
         </span>
       </div>
@@ -158,14 +162,14 @@ export default function MediaSection({
         </SortableContext>
 
         {isPhotoMissing && (
-          <p className="field-error" role="alert">
+          <p className="my-1.5 text-xs leading-normal text-marketplace-danger" role="alert">
             {missingPhotoMessage}
           </p>
         )}
 
-        <div className="field-heading">
+        <div className={FIELD_HEADING_CLASS}>
           <b>Video</b>
-          <span>Tuỳ chọn · tối đa {MAX_VIDEO_SECONDS} giây</span>
+          <span className={FIELD_HINT_CLASS}>Tuỳ chọn · tối đa {MAX_VIDEO_SECONDS} giây</span>
         </div>
         <ul className={TILE_GRID_CLASS}>
           {video ? (

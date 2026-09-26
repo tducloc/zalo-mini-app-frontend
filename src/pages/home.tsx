@@ -2,17 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Page, useNavigate } from 'zmp-ui';
 import { useShallow } from 'zustand/react/shallow';
 
+import { pageClass } from '@/components/layout/styles';
 import { useCategories } from '@/features/categories/api/get-categories';
 import CategoryStrip from '@/features/categories/components/category-strip';
 import FilterChips from '@/features/feed/components/filters/filter-chips';
 import FilterSheet from '@/features/feed/components/filters/filter-sheet';
 import HomeHeader from '@/features/feed/components/home-header';
 import ProductFeed from '@/features/feed/components/grid/product-feed';
-import {
-  homeContentClass,
-  homePageVarsClass,
-  sectionHeadingClass,
-} from '@/features/feed/constants/styles';
 import type { FeedFilters, FilterKey } from '@/features/feed/types/filters';
 import {
   getFilterChips,
@@ -26,6 +22,12 @@ import { useProductFeed } from '@/features/products/api/get-product-feed';
 import { useHomeFeedStore } from '@/stores/home-feed';
 
 const SEARCH_DEBOUNCE_MS = 300;
+
+// Safe-area-aware fixed header (HomeHeader reads these); the content starts below it.
+const homePageVarsClass =
+  '[--home-safe-top:max(24px,var(--zaui-safe-area-inset-top,env(safe-area-inset-top,0px)))] [--home-header-height:calc(var(--home-safe-top)_+_108px)]';
+const homeContentClass = 'px-4 pb-4 pt-[calc(var(--home-header-height)_+_20px)]';
+const sectionHeadingClass = 'mb-3 text-lg font-bold leading-6';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -99,7 +101,7 @@ export default function HomePage() {
     setFilters(toggleCategory(filters, categoryId));
 
   return (
-    <Page ref={pageRef} className={`marketplace-page ${homePageVarsClass}`} restoreScroll>
+    <Page ref={pageRef} className={`${pageClass} ${homePageVarsClass}`} restoreScroll>
       <HomeHeader
         activeFilterCount={chips.length}
         searchValue={searchInput}

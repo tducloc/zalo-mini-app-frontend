@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useRef } from 'react';
 import { type FieldErrors, useForm } from 'react-hook-form';
 
+import ActionButton from '@/components/action-button';
 import DiscardDraftButton from '@/features/listings/components/form/discard-draft-button';
 import ListingFields from '@/features/listings/components/form/listing-fields';
 import MediaSection from '@/features/listings/components/media/media-section';
@@ -11,6 +12,7 @@ import {
   listingFormMessages,
   postMessages,
 } from '@/features/listings/constants/messages';
+import { formNoteClass } from '@/features/listings/constants/styles';
 import { usePostListing } from '@/features/listings/hooks/use-post-listing';
 import { type ListingFieldValues, listingFieldsSchema } from '@/features/listings/schemas';
 import { discardDraft } from '@/features/listings/services/add-media';
@@ -111,7 +113,7 @@ export default function CreateListingForm() {
   return (
     <form
       // A focused field stops below the page header with its label in view (80px).
-      className="listing-form [&_:is(input,select,textarea)]:scroll-mt-20"
+      className="text-sm leading-normal [&_:is(input,select,textarea)]:scroll-mt-20"
       aria-label="Tin đăng mới"
       noValidate
       onSubmit={handlePost}
@@ -124,12 +126,12 @@ export default function CreateListingForm() {
         <ListingFields form={form} />
       </fieldset>
 
-      <div className="form-actions">
-        <button className="ui-button" type="submit" disabled={isPostDisabled}>
+      <div className="mt-6">
+        <ActionButton type="submit" disabled={isPostDisabled}>
           {isPosting ? 'Đang đăng…' : 'Đăng tin'}
-        </button>
+        </ActionButton>
         {isWorking && (
-          <p role="status" className="ui-muted">
+          <p role="status" className={formNoteClass}>
             {postMessages.working}
           </p>
         )}

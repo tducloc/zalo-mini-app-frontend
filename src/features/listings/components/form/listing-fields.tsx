@@ -8,12 +8,14 @@ import {
 
 import InlineRetry from '@/components/feedback/inline-retry';
 import { useCategories } from '@/features/categories/api/get-categories';
+import RequiredMark from '@/features/listings/components/form/required-mark';
 import {
   TITLE_MIN_LENGTH,
   TITLE_MAX_LENGTH,
   DESCRIPTION_MIN_LENGTH,
   DESCRIPTION_MAX_LENGTH,
 } from '@/features/listings/constants/listing-fields';
+import { formSectionTitleClass } from '@/features/listings/constants/styles';
 import type { ListingFieldValues } from '@/features/listings/schemas';
 import type { DraftFields } from '@/features/listings/types/listing-draft';
 import { useLocations } from '@/features/locations/api/get-locations';
@@ -25,6 +27,11 @@ interface Option {
   id: string;
   label: string;
 }
+
+const controlClass =
+  'mt-2 block w-full rounded-[10px] border border-solid border-marketplace-field-line bg-white p-3 text-base font-normal text-marketplace-ink aria-[invalid=true]:border-marketplace-danger';
+const conditionChipClass =
+  'block rounded-[22px] border border-solid px-3.5 py-2.5 peer-checked:border-marketplace-blue peer-checked:bg-marketplace-highlight peer-checked:text-marketplace-blue peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-marketplace-blue';
 
 /**
  * The listing's fields on the form's React Hook Form state: the form restores them from
@@ -52,8 +59,8 @@ export default function ListingFields({
   }));
 
   return (
-    <section className="form-section">
-      <h2>Thông tin tin đăng</h2>
+    <section className="mb-6">
+      <h2 className={formSectionTitleClass}>Thông tin tin đăng</h2>
 
       <Controller
         control={control}
@@ -79,6 +86,7 @@ export default function ListingFields({
       >
         <input
           id="listing-title"
+          className={controlClass}
           {...register('title')}
           maxLength={TITLE_MAX_LENGTH}
           placeholder="Ví dụ: iPhone 13 128GB còn đẹp"
@@ -95,6 +103,7 @@ export default function ListingFields({
       >
         <textarea
           id="listing-description"
+          className={controlClass}
           {...register('description')}
           rows={4}
           maxLength={DESCRIPTION_MAX_LENGTH}
@@ -107,6 +116,7 @@ export default function ListingFields({
       <FieldShell id="listing-price" label="Giá bán (VNĐ)" error={errors.price?.message}>
         <input
           id="listing-price"
+          className={controlClass}
           {...register('price')}
           // Text, not number: a number input drops the "6.990.000" a seller types.
           inputMode="numeric"
@@ -117,25 +127,27 @@ export default function ListingFields({
         />
       </FieldShell>
 
-      <fieldset
-        className={`condition-field ${errors.condition ? 'invalid' : ''}`}
-        aria-describedby="listing-condition-note"
-      >
-        <legend>
-          Tình trạng <em>*</em>
+      <fieldset className="my-5 border-0 p-0" aria-describedby="listing-condition-note">
+        <legend className="mb-2.5 font-semibold">
+          Tình trạng <RequiredMark />
         </legend>
         {productConditions.map((condition) => (
-          <label key={condition}>
+          <label key={condition} className="relative mb-2 me-1.5 inline-block">
             <input
               type="radio"
               value={condition}
               aria-invalid={!!errors.condition}
+              className="peer absolute opacity-0"
               {...register('condition')}
             />
-            <span>{conditionLabels[condition]}</span>
+            <span
+              className={`${conditionChipClass} ${errors.condition ? 'border-marketplace-danger' : 'border-marketplace-field-line'}`}
+            >
+              {conditionLabels[condition]}
+            </span>
           </label>
         ))}
-        <FieldNote id="listing-condition-note" error={errors.condition?.message} />
+        <FieldNote id="listing-condition-note" className="mt-2" error={errors.condition?.message} />
       </fieldset>
 
       <Controller
@@ -175,24 +187,35 @@ function FieldShell({
   children: ReactNode;
 }) {
   return (
-    <div className="ui-field">
+    <div className="my-[18px] font-semibold">
       <label htmlFor={id}>
-        {label} <em>*</em>
+        {label} <RequiredMark />
       </label>
       {children}
-      <FieldNote id={`${id}-note`} error={error} hint={hint} />
+      <FieldNote id={`${id}-note`} className="mt-[5px] font-normal" error={error} hint={hint} />
     </div>
   );
 }
 
-/** A field's error, else its hint. */
-function FieldNote({ id, error, hint }: { id: string; error?: string; hint?: string }) {
+/** A field's error, else its hint; `className` places it. */
+function FieldNote({
+  id,
+  className,
+  error,
+  hint,
+}: {
+  id: string;
+  className: string;
+  error?: string;
+  hint?: string;
+}) {
   if (!error && !hint) {
     return null;
   }
 
+  const toneClass = error ? 'mb-1.5 text-marketplace-danger' : 'mb-2 text-marketplace-muted';
   return (
-    <small id={id} className={error ? 'field-error' : 'ui-muted'}>
+    <small id={id} className={`block text-xs leading-normal ${toneClass} ${className}`}>
       {error ?? hint}
     </small>
   );
@@ -223,6 +246,7 @@ function SelectField({
       <select
         ref={field.ref}
         id={id}
+        className={controlClass}
         name={field.name}
         value={field.value}
         onChange={(event) => field.onChange(event.target.value)}

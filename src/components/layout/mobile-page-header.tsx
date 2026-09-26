@@ -1,5 +1,9 @@
 import { Header, Icon, useLocation, useNavigate } from 'zmp-ui';
 
+// Over media: no divider, and the back arrow on a dark disc.
+const transparentHeaderClass =
+  'after:hidden [&_.zaui-header-back]:rounded-full [&_.zaui-header-back]:bg-black/45';
+
 export default function MobilePageHeader({
   title,
   showBack = false,
@@ -32,7 +36,7 @@ export default function MobilePageHeader({
         </span>
       }
       onBackClick={goBack}
-      className={transparent ? 'product-detail-header' : undefined}
+      className={transparent ? transparentHeaderClass : undefined}
       backgroundColor={transparent ? 'transparent' : undefined}
       textColor={transparent ? '#ffffff' : undefined}
     />

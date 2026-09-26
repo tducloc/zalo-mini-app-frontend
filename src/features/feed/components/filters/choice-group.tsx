@@ -1,9 +1,11 @@
 import {
-  choicePillClass,
   filterLabelClass,
   filterSectionClass,
+  surfaceClass,
 } from '@/features/feed/constants/styles';
 import { nextChoice } from '@/features/feed/utils/filters';
+
+const choicePillClass = `min-h-9 rounded-[18px] px-3.5 text-sm text-marketplace-ink ${surfaceClass} aria-pressed:border-marketplace-blue aria-pressed:bg-marketplace-tint aria-pressed:font-semibold aria-pressed:text-marketplace-blue`;
 
 interface ChoiceGroupProps<T extends string> {
   label: string;

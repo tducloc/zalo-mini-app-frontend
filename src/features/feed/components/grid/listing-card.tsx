@@ -6,13 +6,15 @@ import {
   listingCardClass,
   listingCopyClass,
   listingImageClass,
-  videoBadgeClass,
 } from '@/features/feed/constants/styles';
 import type { ProductCard } from '@/features/products/types/product';
 import { formatShortRelativeTime } from '@/utils/format';
 
 // Square 400×400 thumbnails; the attributes reserve space before the image loads.
 const THUMBNAIL_SIZE = 400;
+
+const videoBadgeClass =
+  'absolute bottom-2 left-2 inline-flex items-center gap-[3px] rounded-[10px] bg-marketplace-ink/70 py-0.5 pl-1.5 pr-2 text-micro font-semibold leading-4 text-white';
 
 export default function ListingCard({
   product,

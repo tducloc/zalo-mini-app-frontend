@@ -1,4 +1,4 @@
-/** Brand color backed by the `--marketplace-*-rgb` variables in app.scss. */
+/** Brand color backed by the `--marketplace-*-rgb` variables in src/css/app.scss. */
 const token = (name) => `rgb(var(--marketplace-${name}-rgb) / <alpha-value>)`;
 
 module.exports = {
@@ -22,11 +22,15 @@ module.exports = {
           subtle: token("subtle"),
           surface: token("surface"),
           line: token("line"),
+          "field-line": token("field-line"),
           tint: token("tint"),
+          "tint-soft": token("tint-soft"),
           "tint-strong": token("tint-strong"),
+          highlight: token("highlight"),
           pale: token("pale"),
           skeleton: token("skeleton"),
           danger: token("danger"),
+          "danger-tint": token("danger-tint"),
         },
       },
       backgroundImage: {

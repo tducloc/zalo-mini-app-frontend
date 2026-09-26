@@ -1,6 +1,7 @@
 import { Button, Icon, Page, useNavigate } from 'zmp-ui';
 
 import MobilePageHeader from '@/components/layout/mobile-page-header';
+import { cardClass, pageClass, pageContentClass, stateIconClass } from '@/components/layout/styles';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { getAuthStatusLabel } from '@/features/auth/utils/auth-status';
 
@@ -13,11 +14,11 @@ export default function ProfilePage() {
   const navigate = useNavigate();
 
   return (
-    <Page className="marketplace-page">
+    <Page className={pageClass}>
       <MobilePageHeader title="Cá nhân" />
-      <main className="marketplace-content marketplace-content-with-header">
-        <section className="marketplace-card flex items-center gap-3 p-4">
-          <span className="state-icon m-0">
+      <main className={pageContentClass}>
+        <section className={`${cardClass} flex items-center gap-3 p-4`}>
+          <span className={stateIconClass}>
             <Icon icon="zi-user" size={27} />
           </span>
           <div>
@@ -29,7 +30,7 @@ export default function ProfilePage() {
         </section>
 
         {showMediaLab && (
-          <section className="marketplace-card mt-3 p-4">
+          <section className={`${cardClass} mt-3 p-4`}>
             <Button size="small" variant="tertiary" onClick={() => navigate('/media-lab')}>
               Media lab (dev)
             </Button>
