@@ -2,13 +2,21 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useRef } from 'react';
 import { type FieldErrors, useForm } from 'react-hook-form';
 
+import DiscardDraftButton from '@/features/listings/components/discard-draft-button';
 import ListingFields from '@/features/listings/components/listing-fields';
 import MediaSection from '@/features/listings/components/media-section';
-import { postMessages, listingFormMessages } from '@/features/listings/constants/messages';
+import { EMPTY_FIELDS } from '@/features/listings/constants/listing-fields';
+import {
+  discardMessages,
+  listingFormMessages,
+  postMessages,
+} from '@/features/listings/constants/messages';
 import { usePostListing } from '@/features/listings/hooks/use-post-listing';
 import { type ListingFieldValues, listingFieldsSchema } from '@/features/listings/schemas';
+import { discardDraft } from '@/features/listings/services/add-media';
 import { type DraftFields, PostBlocker } from '@/features/listings/types/listing-draft';
-import { postBlocker } from '@/features/listings/utils/listing-draft';
+import { hasDraft, postBlocker } from '@/features/listings/utils/listing-draft';
+import { useToast } from '@/hooks/use-toast';
 import { useListingDraftStore } from '@/stores/listing-draft';
 
 /** The fields top to bottom, to bring the first one with an error into view. */
@@ -28,7 +36,11 @@ const FIELDS_ON_SCREEN: (keyof DraftFields)[] = [
  * scrolls to the first section that needs it, which says what.
  */
 export default function CreateListingForm() {
+  const { showSuccess } = useToast();
+
   // draft
+  // A boolean, so typing does not re-render the whole form through the store.
+  const isDraftStarted = useListingDraftStore((state) => hasDraft(state.fields, state.media));
   const media = useListingDraftStore((state) => state.media);
   const isPosting = useListingDraftStore((state) => state.isPosting);
   const setFields = useListingDraftStore((state) => state.setFields);
@@ -78,13 +90,19 @@ export default function CreateListingForm() {
     }
   };
 
-  const handlePost = form.handleSubmit(async (fields) => {
+  const handlePost = form.handleSubmit(async (values) => {
     if (postBlocker(useListingDraftStore.getState().media) !== null) {
       showFirstProblem({});
       return;
     }
-    await postListing(fields);
+    await postListing(values);
   }, showFirstProblem);
+
+  const handleDiscard = () => {
+    discardDraft();
+    form.reset(EMPTY_FIELDS);
+    showSuccess(discardMessages.discarded);
+  };
 
   return (
     <form className="listing-form" aria-label="Tin đăng mới" noValidate onSubmit={handlePost}>
@@ -105,6 +123,7 @@ export default function CreateListingForm() {
             {postMessages.working}
           </p>
         )}
+        {isDraftStarted && <DiscardDraftButton isDisabled={isPosting} onDiscard={handleDiscard} />}
       </div>
     </form>
   );

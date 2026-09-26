@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
+import { EMPTY_FIELDS } from '@/features/listings/constants/listing-fields';
 import { DraftMediaStatus, type DraftMedia } from '@/features/listings/types/draft-media';
 import { PostBlocker } from '@/features/listings/types/listing-draft';
 import { newDraftMedia } from '@/features/listings/utils/draft-media';
 import {
+  hasDraft,
   mediaIdsForPost,
   newIdempotencyKey,
   postBlocker,
@@ -76,5 +78,14 @@ describe('newIdempotencyKey', () => {
     const key = newIdempotencyKey();
     expect(key).toMatch(/^[A-Za-z0-9_-]{8,100}$/);
     expect(newIdempotencyKey()).not.toBe(key);
+  });
+});
+
+describe('hasDraft', () => {
+  it('is a field filled or a file picked; spaces alone are nothing', () => {
+    expect(hasDraft(EMPTY_FIELDS, [])).toBe(false);
+    expect(hasDraft({ ...EMPTY_FIELDS, title: '  ' }, [])).toBe(false);
+    expect(hasDraft({ ...EMPTY_FIELDS, title: 'Bàn gỗ' }, [])).toBe(true);
+    expect(hasDraft(EMPTY_FIELDS, [rejected('a')])).toBe(true);
   });
 });

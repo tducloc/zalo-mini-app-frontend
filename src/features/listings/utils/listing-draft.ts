@@ -4,7 +4,7 @@
  */
 
 import { DraftMediaStatus, type DraftMedia } from '@/features/listings/types/draft-media';
-import { PostBlocker } from '@/features/listings/types/listing-draft';
+import { type DraftFields, PostBlocker } from '@/features/listings/types/listing-draft';
 import { isFailed } from '@/features/listings/utils/draft-media';
 import { MediaKind } from '@/features/media/types/media';
 
@@ -42,4 +42,9 @@ export function mediaIdsForPost(media: DraftMedia[]) {
   const photos = media.filter((item) => item.kind === MediaKind.Image);
   const videos = media.filter((item) => item.kind === MediaKind.Video);
   return [...photos, ...videos].flatMap((item) => (item.mediaId ? [item.mediaId] : []));
+}
+
+/** A draft to come back to: a field filled or a file picked. */
+export function hasDraft(fields: DraftFields, media: DraftMedia[]) {
+  return media.length > 0 || Object.values(fields).some((value) => value.trim() !== '');
 }

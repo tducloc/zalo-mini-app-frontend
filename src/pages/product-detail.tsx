@@ -3,6 +3,7 @@ import { Page, useNavigate, useParams } from 'zmp-ui';
 
 import FeedbackState from '@/components/feedback-state';
 import { useSession } from '@/features/auth/hooks/use-session';
+import DraftBanner from '@/features/listings/components/draft-banner';
 import { useProductDetail } from '@/features/products/api/get-product-detail';
 import ProductActionsSheet from '@/features/products/components/actions-sheet';
 import ProductContactAction from '@/features/products/components/contact-action';
@@ -114,7 +115,11 @@ export default function ProductDetailPage() {
           <ProductSellerContact product={product} />
         </section>
       </main>
-      <ProductContactAction product={product} onContactError={showError} />
+      <ProductContactAction
+        product={product}
+        banner={<DraftBanner className="mb-3" />}
+        onContactError={showError}
+      />
       <ProductActionsSheet
         isOwner={isOwner}
         hasReported={product.viewer.hasReported}

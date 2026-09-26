@@ -108,7 +108,6 @@ function Frame({ screen }: { screen: string }) {
           onPreviewNavigate={(path) =>
             location.assign(`?screen=${screenByTabPath[path] ?? 'home'}`)
           }
-          hasDraft={screen === 'processing'}
         >
           {['home', 'processing', 'filter', 'auth', 'loading', 'empty', 'error'].includes(
             screen,

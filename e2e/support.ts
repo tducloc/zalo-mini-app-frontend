@@ -51,6 +51,9 @@ export async function dragPhoto(page: Page, from: number, to: number) {
   }
   await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await touch.detach();
+  // dnd-kit blocks clicks until 50 ms after a drag ends; a tap sooner would be swallowed.
+  // A page timer set now runs after dnd-kit's.
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 100)));
 }
 
 export const postButton = (page: Page) =>

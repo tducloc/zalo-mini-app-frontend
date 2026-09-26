@@ -1,6 +1,7 @@
 /**
- * What the create-listing form says: what each field needs, why a file was refused, what an upload waits for or
- * why it failed, why the server refused a file, and how a post ended.
+ * What the create-listing form says: what each field needs, why a file was refused, what an
+ * upload waits for or why it failed, why the server refused a file, and how a post ended;
+ * and what the other pages say about an unfinished draft.
  */
 
 import {
@@ -147,4 +148,15 @@ export const postMessages = {
   mediaConflict: 'Vui lòng xoá rồi chọn lại ảnh, video: có tệp máy chủ không dùng được.',
   invalid: 'Vui lòng thử lại sau: máy chủ chưa nhận tin này, tin chưa được đăng.',
   failed: 'Vui lòng kiểm tra mạng rồi bấm Đăng tin lại: tin chưa được đăng.',
+};
+
+// ---- The draft, seen from other pages ----
+
+/** On the tab bar and the product page while a draft waits on the sell page. */
+export const UNFINISHED_DRAFT = 'Bạn có tin đăng chưa hoàn tất';
+
+export const discardMessages = {
+  title: 'Huỷ tin đang đăng?',
+  description: 'Ảnh, video và nội dung đã nhập sẽ bị xoá.',
+  discarded: 'Đã huỷ tin.',
 };

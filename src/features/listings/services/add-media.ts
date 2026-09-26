@@ -199,7 +199,12 @@ function takenSlots() {
  * never join the listing, so the form says why in a toast.
  */
 export async function addDraftFiles(files: File[]): Promise<RefusedFile[]> {
+  const { idempotencyKey } = draft();
   const picked = await Promise.all(files.map((file) => new MediaDetector(file).detect()));
+  // The draft ended (Huỷ tin, or posted) while the files were read: they were for it.
+  if (draft().idempotencyKey !== idempotencyKey) {
+    return [];
+  }
 
   // No await from here to adding them, so two quick picks cannot both take the last slot.
   const refusals = refusePicked(picked, takenSlots());
