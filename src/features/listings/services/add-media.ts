@@ -83,8 +83,8 @@ async function takeImage({ id, file, photo, signal }: PickedFile) {
   }
 
   update(id, { status: DraftMediaStatus.Optimizing, original });
-  const outcome = await imageQueue.optimize(id, file);
-  if (outcome.kind === 'cancelled' || signal.aborted) {
+  const outcome = await imageQueue.optimize(file, signal);
+  if (signal.aborted) {
     return;
   }
 
@@ -240,7 +240,6 @@ function revokePreview(media: DraftMedia) {
 
 /** Stops checking, optimizing or converting the file, and frees its preview. */
 function stopLocalWork(media: DraftMedia) {
-  imageQueue.cancel(media.id);
   inProgress.get(media.id)?.abort();
   inProgress.delete(media.id);
   revokePreview(media);

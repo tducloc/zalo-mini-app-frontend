@@ -147,7 +147,7 @@ describe('FileUpload, photo', () => {
 
     const result = await run(newUpload(photoRequest, photoBlob, transport));
 
-    expect(result).toEqual({ kind: 'failed', failure: FailureKind.Server, isRetryable: true });
+    expect(result).toEqual({ kind: 'failed', isRetryable: true });
     expect(transport.put).toHaveBeenCalledTimes(MAX_UPLOAD_ATTEMPTS);
   });
 
@@ -158,7 +158,7 @@ describe('FileUpload, photo', () => {
 
     const result = await run(newUpload(photoRequest, photoBlob, transport));
 
-    expect(result).toEqual({ kind: 'failed', failure: FailureKind.Rejected, isRetryable: false });
+    expect(result).toEqual({ kind: 'failed', isRetryable: false });
     expect(transport.put).toHaveBeenCalledTimes(1);
   });
 
@@ -387,7 +387,7 @@ describe('FileUpload, waits between attempts', () => {
       await vi.advanceTimersByTimeAsync(1);
       expect(transport.put).toHaveBeenCalledTimes(3);
 
-      await expect(result).resolves.toMatchObject({ kind: 'failed', failure: FailureKind.Server });
+      await expect(result).resolves.toEqual({ kind: 'failed', isRetryable: true });
     },
   );
 
@@ -491,7 +491,7 @@ describe('FileUpload, video', () => {
 
     const result = await run(newUpload(videoRequest, videoBlob, transport));
 
-    expect(result).toEqual({ kind: 'failed', failure: FailureKind.Rejected, isRetryable: false });
+    expect(result).toEqual({ kind: 'failed', isRetryable: false });
     expect(transport.completeParts).not.toHaveBeenCalled();
   });
 
