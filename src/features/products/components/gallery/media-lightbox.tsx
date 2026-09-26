@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Icon } from 'zmp-ui';
 
+import FullscreenDialog from '@/components/fullscreen-dialog';
 import { usePinchZoom } from '@/features/products/hooks/use-pinch-zoom';
 import type { ProductDetail } from '@/features/products/types/product';
 
@@ -26,7 +26,6 @@ export default function MediaLightbox({
   productTitle,
   onClose,
 }: MediaLightboxProps) {
-  const closeRef = useRef<HTMLButtonElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
   const [activeIndex, setActiveIndex] = useState(startIndex);
@@ -41,10 +40,6 @@ export default function MediaLightbox({
     }
   }, [startIndex]);
 
-  useEffect(() => {
-    closeRef.current?.focus();
-  }, []);
-
   const handleScroll = () => {
     const track = trackRef.current;
     if (track && track.clientWidth > 0) {
@@ -53,28 +48,15 @@ export default function MediaLightbox({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Ảnh và video: ${productTitle}`}
-      // Above the page's header and sheets, as the listing form's viewer.
-      className="fixed inset-0 z-[1050] flex flex-col bg-black text-white"
-    >
-      <div className="flex items-center justify-between px-2 pb-2 pt-[max(8px,env(safe-area-inset-top))]">
+    <FullscreenDialog
+      label={`Ảnh và video: ${productTitle}`}
+      header={
         <span className="px-2 text-sm tabular-nums" aria-live="polite">
           {activeIndex + 1} / {media.length}
         </span>
-        <button
-          ref={closeRef}
-          type="button"
-          aria-label="Đóng"
-          onClick={() => onClose(activeIndex)}
-          className="grid h-11 w-11 place-items-center border-0 bg-transparent text-white"
-        >
-          <Icon icon="zi-close" size={24} />
-        </button>
-      </div>
-
+      }
+      onClose={() => onClose(activeIndex)}
+    >
       <div
         ref={trackRef}
         onScroll={handleScroll}
@@ -96,7 +78,7 @@ export default function MediaLightbox({
         ))}
       </div>
       <div className="pb-[max(12px,env(safe-area-inset-bottom))]" />
-    </div>
+    </FullscreenDialog>
   );
 }
 

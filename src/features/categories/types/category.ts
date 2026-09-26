@@ -1,8 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
 
-// zmp-ui has no product or vehicle glyphs, so categories use Lucide icons.
-export type CategoryIcon = LucideIcon;
-
 /** Category as returned by `GET /categories`. */
 export interface CategoryResponse {
   id: string;
@@ -14,5 +11,6 @@ export interface CategoryResponse {
 export interface CategoryOption {
   id: string;
   label: string;
-  icon: CategoryIcon;
+  // zmp-ui has no product or vehicle glyphs, so categories use Lucide icons.
+  icon: LucideIcon;
 }

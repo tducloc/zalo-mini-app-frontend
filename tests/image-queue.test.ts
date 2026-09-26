@@ -97,7 +97,7 @@ describe('image queue', () => {
 
     current().succeed();
     await flush();
-    expect(outcomes.get('a')?.kind).toBe('optimized');
+    expect(outcomes.get('a')).toMatchObject({ kind: 'optimized' });
     expect(await sentIds(current())).toEqual(['b']);
   });
 
@@ -181,7 +181,7 @@ describe('image queue', () => {
     current().succeed();
     await flush();
 
-    expect(outcomes.get('c')?.kind).toBe('optimized');
+    expect(outcomes.get('c')).toMatchObject({ kind: 'optimized' });
     expect(workers).toHaveLength(3);
   });
 

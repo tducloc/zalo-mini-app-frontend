@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Icon } from 'zmp-ui';
 
+import FullscreenDialog from '@/components/fullscreen-dialog';
 import { useObjectUrl } from '@/features/listings/hooks/use-object-url';
 import { TileTone, type TileView } from '@/features/listings/types/tile-view';
 
@@ -37,15 +38,10 @@ export default function MediaViewer({
   onRemove,
   onClose,
 }: MediaViewerProps) {
-  const closeRef = useRef<HTMLButtonElement>(null);
   const fileUrl = useObjectUrl(isVideo || !view.imageUrl ? file : null);
   // A file the WebView cannot show (e.g. an HEVC clip) gets an icon instead of black. Per
   // source: the converted clip that replaces it can play.
   const [failedSource, setFailedSource] = useState<string | null>(null);
-
-  useEffect(() => {
-    closeRef.current?.focus();
-  }, []);
 
   const isError = view.tone === TileTone.Error;
   const source = isVideo ? fileUrl : (view.imageUrl ?? fileUrl);
@@ -53,26 +49,11 @@ export default function MediaViewer({
   const handleMediaError = () => setFailedSource(source);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={name}
-      // Above zmp-ui's header and sheets; the toast (1100, use-toast) stays above it.
-      className="fixed inset-0 z-[1050] flex flex-col bg-black text-white"
+    <FullscreenDialog
+      label={name}
+      header={<span className="px-2 text-base font-semibold">{name}</span>}
+      onClose={onClose}
     >
-      <div className="flex items-center justify-between px-2 pb-2 pt-[max(8px,env(safe-area-inset-top))]">
-        <span className="px-2 text-base font-semibold">{name}</span>
-        <button
-          ref={closeRef}
-          type="button"
-          aria-label="Đóng"
-          onClick={onClose}
-          className="grid h-11 w-11 place-items-center border-0 bg-transparent text-white"
-        >
-          <Icon icon="zi-close" size={24} />
-        </button>
-      </div>
-
       <div className="flex min-h-0 flex-1 items-center justify-center">
         {!isShown && (
           <Icon icon={isVideo ? 'zi-video' : 'zi-photo'} size={48} className="text-white/40" />
@@ -114,7 +95,7 @@ export default function MediaViewer({
         )}
         <ViewerAction icon="zi-delete" label="Xoá" onClick={onRemove} />
       </div>
-    </div>
+    </FullscreenDialog>
   );
 }
 

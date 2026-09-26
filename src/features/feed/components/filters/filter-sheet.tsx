@@ -22,6 +22,7 @@ import type { FeedFilters } from '@/features/feed/types/filters';
 import { parsePriceRange, priceToInputDigits } from '@/features/feed/utils/price';
 import type { LocationResponse } from '@/features/locations/types/location';
 import { conditionLabels, productConditions } from '@/features/products/constants/product';
+import type { ListQuery } from '@/lib/list-query';
 
 const conditionChoices = productConditions.map((condition) => ({
   value: condition,
@@ -33,18 +34,11 @@ const sortChoices = SORT_OPTIONS.map((sort) => ({
   label: sortOptionConfig[sort].label,
 }));
 
-/** A lookup list the sheet needs, with its own load/error state. */
-interface SheetOptions<T> {
-  data: T[] | undefined;
-  isError: boolean;
-  onRetry: () => void;
-}
-
 interface FilterSheetProps {
   visible: boolean;
   filters: FeedFilters;
-  categories: SheetOptions<CategoryOption>;
-  locations: SheetOptions<LocationResponse>;
+  categories: ListQuery<CategoryOption>;
+  locations: ListQuery<LocationResponse>;
   onApply: (filters: FeedFilters) => void;
   onReset: () => void;
   onClose: () => void;
@@ -97,7 +91,7 @@ function FilterForm({
           Khu vực
         </label>
         {locations.isError && !locations.data ? (
-          <InlineRetry message="Không tải được khu vực." onRetry={locations.onRetry} />
+          <InlineRetry message="Không tải được khu vực." onRetry={() => locations.refetch()} />
         ) : (
           <select
             className={filterControlClass}
@@ -120,7 +114,7 @@ function FilterForm({
         <InlineRetry
           className={filterSectionSpacingClass}
           message="Không tải được danh mục."
-          onRetry={categories.onRetry}
+          onRetry={() => categories.refetch()}
         />
       ) : (
         <ChoiceGroup

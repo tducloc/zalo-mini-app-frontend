@@ -6,6 +6,7 @@ import {
   type UseFormReturn,
 } from 'react-hook-form';
 
+import InlineRetry from '@/components/feedback/inline-retry';
 import { useCategories } from '@/features/categories/api/get-categories';
 import {
   TITLE_MIN_LENGTH,
@@ -17,18 +18,12 @@ import type { ListingFieldValues } from '@/features/listings/schemas';
 import type { DraftFields } from '@/features/listings/types/listing-draft';
 import { useLocations } from '@/features/locations/api/get-locations';
 import { conditionLabels, productConditions } from '@/features/products/constants/product';
+import type { ListQuery } from '@/lib/list-query';
 import { formatNumber } from '@/utils/format';
 
 interface Option {
   id: string;
   label: string;
-}
-
-/** The part of a react-query result a select needs. */
-interface OptionsQuery {
-  isPending: boolean;
-  isError: boolean;
-  refetch: () => unknown;
 }
 
 /**
@@ -208,7 +203,7 @@ interface SelectFieldProps {
   label: string;
   placeholder: string;
   options: Option[];
-  query: OptionsQuery;
+  query: ListQuery<unknown>;
   field: ControllerRenderProps<DraftFields, 'categoryId' | 'locationId'>;
   fieldState: ControllerFieldState;
 }
@@ -242,25 +237,9 @@ function SelectField({
           </option>
         ))}
       </select>
-      {query.isError && <LoadFailed onRetry={query.refetch} />}
+      {query.isError && (
+        <InlineRetry message="Chưa tải được danh sách." onRetry={() => query.refetch()} />
+      )}
     </FieldShell>
-  );
-}
-
-/** The list did not load; the seller asks again. */
-function LoadFailed({ onRetry }: { onRetry: () => unknown }) {
-  const handleRetry = () => void onRetry();
-
-  return (
-    <p className="field-error" role="alert">
-      Chưa tải được danh sách.{' '}
-      <button
-        type="button"
-        className="border-0 bg-transparent p-0 font-semibold text-marketplace-blue underline"
-        onClick={handleRetry}
-      >
-        Tải lại
-      </button>
-    </p>
   );
 }

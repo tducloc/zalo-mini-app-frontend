@@ -18,18 +18,17 @@ import type { CreateReportInput } from '@/features/reports/types/report';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorStatus } from '@/utils/api-error';
 
-const reportErrorMessages = {
+const reportErrorMessages: Partial<Record<number, string>> = {
   401: 'Bạn cần xác thực lại trước khi báo cáo.',
   403: 'Bạn không thể báo cáo tin đăng của chính mình.',
   429: 'Bạn đã gửi quá nhiều báo cáo. Vui lòng thử lại sau.',
 };
-const ALREADY_REPORTED_STATUS = 409;
 const NOT_FOUND_STATUS = 404;
 
 export default function ProductDetailPage() {
   const { productId = '' } = useParams<{ productId: string }>();
   const navigate = useNavigate();
-  const { showApiError, showError, showInfo, showSuccess } = useToast();
+  const { showError, showInfo, showSuccess } = useToast();
   const { session, isBootstrapping } = useSession();
 
   // sheets
@@ -44,21 +43,18 @@ export default function ProductDetailPage() {
 
   const handleSubmitReport = (input: CreateReportInput) =>
     reportMutation.mutate(input, {
-      onSuccess: () => {
+      onSuccess: (isNewReport) => {
         setReportOpen(false);
-        showSuccess('Cảm ơn bạn. Báo cáo đã được gửi để kiểm tra.');
-      },
-      onError: (error) => {
-        // Not a failure from the user's side: the report already exists.
-        if (getApiErrorStatus(error) === ALREADY_REPORTED_STATUS) {
-          setReportOpen(false);
-          showInfo('Bạn đã báo cáo tin này trước đó.');
+        if (isNewReport) {
+          showSuccess('Cảm ơn bạn. Báo cáo đã được gửi để kiểm tra.');
           return;
         }
-        showApiError(error, {
-          fallbackMessage: 'Không thể gửi báo cáo. Vui lòng thử lại.',
-          messages: reportErrorMessages,
-        });
+        showInfo('Bạn đã báo cáo tin này trước đó.');
+      },
+      onError: (error) => {
+        const status = getApiErrorStatus(error);
+        const message = status ? reportErrorMessages[status] : undefined;
+        showError(message ?? 'Không thể gửi báo cáo. Vui lòng thử lại.');
       },
     });
 
@@ -116,6 +112,7 @@ export default function ProductDetailPage() {
         </section>
       </main>
       <ProductContactAction
+        key={product.id}
         product={product}
         banner={<DraftBanner className="mb-3" />}
         onContactError={showError}

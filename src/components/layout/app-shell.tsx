@@ -5,8 +5,7 @@ import DraftBanner from '@/features/listings/components/draft/draft-banner';
 import DraftIndicator, {
   DRAFT_STATUS_ID,
 } from '@/features/listings/components/draft/draft-indicator';
-import { hasDraft } from '@/features/listings/utils/listing-draft';
-import { useListingDraftStore } from '@/stores/listing-draft';
+import { useHasDraft } from '@/stores/listing-draft';
 
 type NavigationItem = {
   label: string;
@@ -30,8 +29,7 @@ export default function AppShell({ children }: PropsWithChildren) {
   const shouldShowTabbar = !currentPath.startsWith('/products/');
   // On the sell page the draft is in front of the seller.
   const shouldShowDraft = currentPath !== '/sell';
-  const isDraftBannerShown =
-    useListingDraftStore((state) => hasDraft(state.fields, state.media)) && shouldShowDraft;
+  const isDraftBannerShown = useHasDraft() && shouldShowDraft;
 
   return (
     <>

@@ -1,9 +1,10 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Button } from 'zmp-ui';
 import { openPhone, openProfile } from 'zmp-sdk';
 
 import { ProductDetail } from '@/features/products/types/product';
 
+/** Keyed by the product at the call site, so another product starts without the fallback. */
 export default function ProductContactAction({
   product,
   banner,
@@ -16,9 +17,8 @@ export default function ProductContactAction({
 }) {
   const contact = product.seller.contact;
   const canContact = Boolean(contact);
+  const isSold = product.status === 'SOLD';
   const [showPhoneFallback, setShowPhoneFallback] = useState(false);
-
-  useEffect(() => setShowPhoneFallback(false), [product.id, contact?.phoneNumber]);
 
   const contactSeller = async () => {
     if (!contact) return;
@@ -42,17 +42,18 @@ export default function ProductContactAction({
     }
   };
 
+  const openLabel = canContact ? 'Liên hệ người bán' : 'Người bán chưa bật liên hệ';
+  const contactLabel = isSold ? 'Sản phẩm đã bán' : openLabel;
+  // A refetch can drop the number while the fallback is up.
+  const isPhoneFallbackShown = showPhoneFallback && Boolean(contact?.phoneNumber);
+
   return (
     <footer className="product-detail-actions">
       {banner}
-      <Button fullWidth disabled={!canContact || product.status === 'SOLD'} onClick={contactSeller}>
-        {product.status === 'SOLD'
-          ? 'Sản phẩm đã bán'
-          : canContact
-            ? 'Liên hệ người bán'
-            : 'Người bán chưa bật liên hệ'}
+      <Button fullWidth disabled={!canContact || isSold} onClick={contactSeller}>
+        {contactLabel}
       </Button>
-      {showPhoneFallback && (
+      {isPhoneFallbackShown && (
         <button className="product-contact-fallback" onClick={callSeller}>
           Gọi số điện thoại người bán
         </button>

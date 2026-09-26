@@ -1,6 +1,7 @@
 import InlineRetry from '@/components/feedback/inline-retry';
 import Skeleton from '@/components/feedback/skeleton';
 import type { CategoryOption } from '@/features/categories/types/category';
+import type { ListQuery } from '@/lib/list-query';
 
 const SKELETON_ITEMS = 5;
 
@@ -12,32 +13,24 @@ const iconClass = 'mx-auto mb-1.5 grid size-[52px] place-items-center rounded-fu
 const stripPlaceholderClass = 'min-h-[79px]';
 
 interface CategoryStripProps {
-  categories: CategoryOption[] | undefined;
-  isPending: boolean;
-  isError: boolean;
+  query: ListQuery<CategoryOption>;
   selectedId: string | undefined;
-  onRetry: () => void;
   onSelect: (categoryId: string) => void;
 }
 
-export default function CategoryStrip({
-  categories,
-  isPending,
-  isError,
-  selectedId,
-  onRetry,
-  onSelect,
-}: CategoryStripProps) {
-  if (isPending) {
+export default function CategoryStrip({ query, selectedId, onSelect }: CategoryStripProps) {
+  const categories = query.data;
+
+  if (query.isPending) {
     return <CategoryStripSkeleton />;
   }
 
-  if (isError && !categories) {
+  if (query.isError && !categories) {
     return (
       <InlineRetry
         className={stripPlaceholderClass}
         message="Không tải được danh mục."
-        onRetry={onRetry}
+        onRetry={() => query.refetch()}
       />
     );
   }

@@ -1,3 +1,5 @@
+import { Motorbike } from 'lucide-react';
+
 import { SEARCH_MAX_LENGTH, DEFAULT_FILTERS } from '@/features/feed/constants/filters';
 import type { FeedFilters } from '@/features/feed/types/filters';
 import {
@@ -11,7 +13,7 @@ import {
 } from '@/features/feed/utils/filters';
 
 const lookups = {
-  categories: [{ id: 'cat_vehicles', label: 'Xe cộ', icon: 'zi-auto' as const }],
+  categories: [{ id: 'cat_vehicles', label: 'Xe cộ', icon: Motorbike }],
   locations: [{ id: 'loc_hanoi', code: 'hanoi', name: 'Hà Nội' }],
 };
 

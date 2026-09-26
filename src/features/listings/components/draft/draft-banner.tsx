@@ -1,8 +1,7 @@
 import { useNavigate } from 'zmp-ui';
 
 import { UNFINISHED_DRAFT } from '@/features/listings/constants/messages';
-import { hasDraft } from '@/features/listings/utils/listing-draft';
-import { useListingDraftStore } from '@/stores/listing-draft';
+import { useHasDraft } from '@/stores/listing-draft';
 
 /**
  * A draft waiting on the sell page, with the way back to it, on every other page: above
@@ -11,7 +10,7 @@ import { useListingDraftStore } from '@/stores/listing-draft';
 export default function DraftBanner({ className }: { className: string }) {
   const navigate = useNavigate();
 
-  const isShown = useListingDraftStore((state) => hasDraft(state.fields, state.media));
+  const isShown = useHasDraft();
   if (!isShown) {
     return null;
   }

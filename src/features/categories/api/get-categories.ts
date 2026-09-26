@@ -1,6 +1,5 @@
-import { queryOptions, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
-import { categoryKeys } from '@/features/categories/api/keys';
 import type { CategoryResponse } from '@/features/categories/types/category';
 import { presentCategories } from '@/features/categories/utils/presentation';
 import { apiClient } from '@/lib/api-client';
@@ -13,16 +12,12 @@ export async function getCategories(signal?: AbortSignal) {
   return response.data.data;
 }
 
-export function categoriesQueryOptions() {
-  return queryOptions({
-    queryKey: categoryKeys.all,
-    queryFn: ({ signal }) => getCategories(signal),
-    staleTime: CATEGORIES_STALE_TIME_MS,
-    retry: 1,
-  });
-}
-
 /** Categories with Vietnamese labels and icons, in display order. */
 export function useCategories() {
-  return useQuery({ ...categoriesQueryOptions(), select: presentCategories });
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: ({ signal }) => getCategories(signal),
+    staleTime: CATEGORIES_STALE_TIME_MS,
+    select: presentCategories,
+  });
 }

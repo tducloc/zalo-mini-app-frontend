@@ -15,9 +15,9 @@ import { usePostListing } from '@/features/listings/hooks/use-post-listing';
 import { type ListingFieldValues, listingFieldsSchema } from '@/features/listings/schemas';
 import { discardDraft } from '@/features/listings/services/add-media';
 import { type DraftFields, PostBlocker } from '@/features/listings/types/listing-draft';
-import { hasDraft, postBlocker } from '@/features/listings/utils/listing-draft';
+import { postBlocker } from '@/features/listings/utils/listing-draft';
 import { useToast } from '@/hooks/use-toast';
-import { useListingDraftStore } from '@/stores/listing-draft';
+import { useHasDraft, useListingDraftStore } from '@/stores/listing-draft';
 
 /** The fields top to bottom, to bring the first one with an error into view. */
 const FIELDS_ON_SCREEN: (keyof DraftFields)[] = [
@@ -39,8 +39,7 @@ export default function CreateListingForm() {
   const { showSuccess } = useToast();
 
   // draft
-  // A boolean, so typing does not re-render the whole form through the store.
-  const isDraftStarted = useListingDraftStore((state) => hasDraft(state.fields, state.media));
+  const isDraftStarted = useHasDraft();
   const media = useListingDraftStore((state) => state.media);
   const isPosting = useListingDraftStore((state) => state.isPosting);
   const setFields = useListingDraftStore((state) => state.setFields);
@@ -97,7 +96,7 @@ export default function CreateListingForm() {
 
   const handlePost = form.handleSubmit(async (values) => {
     if (postBlocker(useListingDraftStore.getState().media) !== null) {
-      showFirstProblem({});
+      scrollToMedia();
       return;
     }
     await postListing(values);

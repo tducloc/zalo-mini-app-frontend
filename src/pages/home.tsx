@@ -31,18 +31,17 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   // search and filters (store survives navigation to detail)
-  const { searchInput, searchTerm, filters } = useHomeFeedStore(
-    useShallow(({ searchInput, searchTerm, filters }) => ({ searchInput, searchTerm, filters })),
-  );
-  const { setSearchInput, commitSearch, clearSearch, setFilters, resetFilters } = useHomeFeedStore(
-    useShallow(({ setSearchInput, commitSearch, clearSearch, setFilters, resetFilters }) => ({
-      setSearchInput,
-      commitSearch,
-      clearSearch,
-      setFilters,
-      resetFilters,
-    })),
-  );
+  // Shallow, so a commitSearch that changes nothing (as on mount) does not re-render.
+  const {
+    searchInput,
+    searchTerm,
+    filters,
+    setSearchInput,
+    commitSearch,
+    clearSearch,
+    setFilters,
+    resetFilters,
+  } = useHomeFeedStore(useShallow((state) => state));
 
   // local UI state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -113,11 +112,8 @@ export default function HomePage() {
       <main className={homeContentClass}>
         <h2 className={`${sectionHeadingClass} mt-0`}>Danh mục</h2>
         <CategoryStrip
-          categories={categoriesQuery.data}
-          isError={categoriesQuery.isError}
-          isPending={categoriesQuery.isPending}
+          query={categoriesQuery}
           selectedId={filters.categoryId}
-          onRetry={() => categoriesQuery.refetch()}
           onSelect={handleSelectCategory}
         />
 
@@ -134,17 +130,9 @@ export default function HomePage() {
       </main>
 
       <FilterSheet
-        categories={{
-          data: categoriesQuery.data,
-          isError: categoriesQuery.isError,
-          onRetry: () => categoriesQuery.refetch(),
-        }}
+        categories={categoriesQuery}
         filters={filters}
-        locations={{
-          data: locationsQuery.data,
-          isError: locationsQuery.isError,
-          onRetry: () => locationsQuery.refetch(),
-        }}
+        locations={locationsQuery}
         visible={isFilterOpen}
         onApply={handleApplyFilters}
         onClose={() => setIsFilterOpen(false)}

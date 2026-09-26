@@ -35,7 +35,7 @@ const product: ProductDetail = {
   price: 250_000,
   condition: 'NEW',
   status: 'PUBLISHED',
-  location: 'Quận 3, Hồ Chí Minh',
+  location: { id: null, name: 'Quận 3, Hồ Chí Minh' },
   category: { id: 'cat_home', name: 'Nhà cửa', slug: 'home' },
   media: [
     {

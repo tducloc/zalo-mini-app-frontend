@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   mediaErrorMessage,
@@ -14,8 +14,6 @@ import { isFailed, newDraftMedia } from '@/features/listings/utils/draft-media';
 import { tileView } from '@/features/listings/utils/tile-view';
 import { MediaKind, RejectReason } from '@/features/media/types/media';
 import { MediaError, ServerMediaStatus, UploadWait } from '@/features/media/types/upload';
-
-vi.mock('zmp-ui', () => ({ Icon: () => null }));
 
 const file = new File(['x'], 'x.jpg');
 const base = newDraftMedia('a', MediaKind.Image, file);

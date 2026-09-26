@@ -27,11 +27,11 @@
     "removeComments": true,
     "sourceMap": true,
     "resolveJsonModule": true,
-    "types": ["vite/client"],
+    "types": ["vite/client", "vitest/globals"],
     "paths": {
       "@/*": ["./src/*"]
     }
   },
   "exclude": ["node_modules"],
-  "include": ["src"]
+  "include": ["src", "tests", "e2e"]
 }

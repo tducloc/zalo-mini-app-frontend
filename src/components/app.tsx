@@ -9,6 +9,7 @@ import MyListingsPage from '@/pages/my-listings';
 import ProductDetailPage from '@/pages/product-detail';
 import ProfilePage from '@/pages/profile';
 import SellPage from '@/pages/sell';
+import { warnInDev } from '@/utils/dev-log';
 
 // Dev-only measurement page. Remove once the media numbers are recorded. Loaded lazily so
 // none of its code reaches a build without the flag.
@@ -21,9 +22,7 @@ export default function MyApp() {
     void configAppView({
       actionBar: { hide: true },
       statusBarType: 'transparent',
-    }).catch((error: unknown) => {
-      if (import.meta.env.DEV) console.warn('[app] Cannot configure native header', error);
-    });
+    }).catch((error: unknown) => warnInDev('app', 'Cannot configure native header', error));
   }, []);
 
   return (
