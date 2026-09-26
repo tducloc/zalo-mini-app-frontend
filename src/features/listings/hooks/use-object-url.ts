@@ -11,7 +11,11 @@ export function useObjectUrl(blob: Blob | null) {
 
     const url = URL.createObjectURL(blob);
     setCreated({ blob, url });
-    return () => URL.revokeObjectURL(url);
+    return () => {
+      URL.revokeObjectURL(url);
+      // Forgotten with it: the same blob asked for again later gets a new URL, never this one.
+      setCreated((current) => (current?.url === url ? null : current));
+    };
   }, [blob]);
 
   // Never the URL of a blob no longer asked for: it is revoked, or about to be.
