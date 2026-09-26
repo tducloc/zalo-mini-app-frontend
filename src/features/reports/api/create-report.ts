@@ -1,11 +1,10 @@
 import { QueryClient, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { productKeys } from '@/features/products/api/keys';
-import type { ProductDetail } from '@/features/products/types';
-import { getApiErrorStatus } from '@/utils/api-error';
+import type { ProductDetail } from '@/features/products/types/product';
+import type { CreateReportInput } from '@/features/reports/types/report';
 import { http } from '@/lib/http';
-
-import type { CreateReportInput } from '../types';
+import { getApiErrorStatus } from '@/utils/api-error';
 
 const ALREADY_REPORTED_STATUS = 409;
 

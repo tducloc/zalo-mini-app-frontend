@@ -1,9 +1,8 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
 
+import { locationKeys } from '@/features/locations/api/keys';
+import type { LocationResponse } from '@/features/locations/types/location';
 import { apiClient } from '@/lib/api-client';
-
-import { locationKeys } from './keys';
-import type { LocationResponse } from '../types';
 
 // The versioned province list changes only with a backend release.
 const LOCATIONS_STALE_TIME_MS = 60 * 60_000;

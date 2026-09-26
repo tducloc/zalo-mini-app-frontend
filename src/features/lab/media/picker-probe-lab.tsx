@@ -2,12 +2,6 @@ import { useState } from 'react';
 import { openMediaPicker } from 'zmp-sdk';
 import { Button } from 'zmp-ui';
 
-import { rejectMessages } from '@/features/listings/draft/media-messages';
-import {
-  IMAGE_HEAD_BYTES,
-  photoProblem,
-  readPhotoHeader,
-} from '@/features/media/image/image-utils';
 import {
   type ByteReader,
   describeCodec,
@@ -15,13 +9,16 @@ import {
   rangeReaderFor,
 } from '@/features/lab/media/byte-access';
 import { createStageBreadcrumb } from '@/features/lab/media/stage-breadcrumb';
-import { MIB, RejectReason } from '@/features/media/media-utils';
+import { rejectMessage } from '@/features/listings/constants/messages';
+import { MIB, IMAGE_HEAD_BYTES } from '@/features/media/constants/limits';
+import { RejectReason } from '@/features/media/types/media';
+import { photoProblem, readPhotoHeader } from '@/features/media/utils/image';
 import {
   videoLengthProblem,
   originalVideoProblem,
   readVideoMetadata,
   shouldConvertVideo,
-} from '@/features/media/video/video-utils';
+} from '@/features/media/utils/video';
 
 /**
  * openMediaPicker for a photo or a video, with or without silentRequest, then reads what it
@@ -71,7 +68,7 @@ async function probePhoto(read: ByteReader, size: number) {
   return [
     `  ↳ header · ${Date.now() - started} ms · ${photo?.format ?? 'định dạng không nhận'}`,
     `  ↳ kích thước · ${photo ? `${photo.width} × ${photo.height}` : 'không đọc được'}`,
-    `  ↳ L4 sẽ · ${problem ? `từ chối: ${rejectMessages[problem]}` : 'nhận, tối ưu trong worker'}`,
+    `  ↳ L4 sẽ · ${problem ? `từ chối: ${rejectMessage(problem)}` : 'nhận, tối ưu trong worker'}`,
   ];
 }
 
@@ -87,7 +84,7 @@ async function probeVideo(path: string, size: number) {
     `  ↳ khung hình · ${meta.width ?? '?'} × ${meta.height ?? '?'} · ${
       meta.durationMs === null ? '? s' : `${(meta.durationMs / 1000).toFixed(1)} s`
     } · xoay ${meta.rotation}°`,
-    `  ↳ L4 sẽ · ${plan}${problem ? `; bản gốc bị từ chối: ${rejectMessages[problem]}` : ''}`,
+    `  ↳ L4 sẽ · ${plan}${problem ? `; bản gốc bị từ chối: ${rejectMessage(problem)}` : ''}`,
   ];
 }
 

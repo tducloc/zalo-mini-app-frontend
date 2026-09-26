@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  ImageQueue,
   FallbackReason,
   type ImageOutcome,
-  ImageQueue,
   type QueueWorker,
-} from '@/features/media/image/image-queue';
-import { type OptimizedImage, PipelineError } from '@/features/media/image/image-worker';
+} from '@/features/media/services/image-queue';
+import { PipelineError } from '@/features/media/services/image-worker';
+import type { OptimizedImage } from '@/features/media/types/image';
 
 interface FakeJob {
   file: Blob;

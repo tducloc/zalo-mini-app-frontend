@@ -2,11 +2,10 @@ import { useEffect, useRef } from 'react';
 
 import FeedbackState from '@/components/feedback-state';
 import InlineRetry from '@/components/inline-retry';
+import ListingCard from '@/features/feed/components/listing-card';
+import ListingGridSkeleton from '@/features/feed/components/listing-grid-skeleton';
+import { listingGridClass, loadMoreButtonClass } from '@/features/feed/constants/styles';
 import type { useProductFeed } from '@/features/products/api/get-product-feed';
-
-import ListingCard from './listing-card';
-import ListingGridSkeleton from './listing-grid-skeleton';
-import { listingGridClass, loadMoreButtonClass } from '../styles';
 
 type FeedQuery = ReturnType<typeof useProductFeed>;
 

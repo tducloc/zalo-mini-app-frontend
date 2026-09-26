@@ -1,4 +1,4 @@
-import { DEFAULT_CATEGORY_ICON } from '@/features/categories/constants';
+import { DEFAULT_CATEGORY_ICON } from '@/features/categories/constants/categories';
 import { getCategoryLabel, presentCategories } from '@/features/categories/utils/presentation';
 
 const apiCategories = [

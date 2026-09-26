@@ -6,27 +6,23 @@
 
 import { z } from 'zod';
 
-import type { DraftFields } from '@/features/listings/draft/listing-draft';
-import { productConditions } from '@/features/products/constants';
+import {
+  TITLE_MIN_LENGTH,
+  TITLE_MAX_LENGTH,
+  DESCRIPTION_MIN_LENGTH,
+  DESCRIPTION_MAX_LENGTH,
+} from '@/features/listings/constants/listing-fields';
+import { listingFormMessages } from '@/features/listings/constants/messages';
+import type { DraftFields } from '@/features/listings/types/listing-draft';
+import { MAX_PRICE_VND } from '@/features/products/constants/product';
+import { productConditions } from '@/features/products/constants/product';
 
-export const TITLE_MIN_LENGTH = 3;
-export const TITLE_MAX_LENGTH = 120;
-export const DESCRIPTION_MIN_LENGTH = 10;
-export const DESCRIPTION_MAX_LENGTH = 5000;
-/** The server keeps prices in a 32-bit integer column. */
-export const PRICE_MAX = 2_147_483_647;
-
-export const listingFormMessages = {
-  title: `Vui lòng nhập tiêu đề từ ${TITLE_MIN_LENGTH} đến ${TITLE_MAX_LENGTH} ký tự.`,
-  description: `Vui lòng nhập mô tả từ ${DESCRIPTION_MIN_LENGTH} đến 5.000 ký tự.`,
-  price: 'Vui lòng nhập giá bán là số lớn hơn 0.',
-  priceTooHigh: 'Vui lòng nhập giá bán không quá 2.147.483.647 đ.',
-  categoryId: 'Vui lòng chọn danh mục.',
-  condition: 'Vui lòng chọn tình trạng.',
-  locationId: 'Vui lòng chọn địa điểm.',
-};
-
-/** Separators a seller may type in a price: "6.990.000", "6,990,000", "6 990 000". */
+/**
+ * Whole đồng, grouped in threes by one kind of separator as a seller types it
+ * ("6.990.000", "6,990,000", "6 990 000"), or not at all. "1.5" or "25,5" are refused, not
+ * read as 15 đ or 255 đ, and so is "1.000,000".
+ */
+const PRICE_FORMAT = /^\d{1,3}([.,\s])\d{3}(\1\d{3})*$|^\d+$/;
 const PRICE_SEPARATORS = /[\s.,]/g;
 
 const text = (min: number, max: number, message: string) =>
@@ -34,15 +30,15 @@ const text = (min: number, max: number, message: string) =>
 
 const price = z
   .string()
-  .transform((typed) => typed.replace(PRICE_SEPARATORS, ''))
-  .pipe(z.string().regex(/^\d+$/, listingFormMessages.price))
-  .transform(Number)
+  .trim()
+  .regex(PRICE_FORMAT, listingFormMessages.price)
+  .transform((typed) => Number(typed.replace(PRICE_SEPARATORS, '')))
   .pipe(
     z
       .number()
       .int()
       .min(1, listingFormMessages.price)
-      .max(PRICE_MAX, listingFormMessages.priceTooHigh),
+      .max(MAX_PRICE_VND, listingFormMessages.priceTooHigh),
   );
 
 export const listingFieldsSchema = z.object({
@@ -63,4 +59,4 @@ export const listingFieldsSchema = z.object({
 }) satisfies z.ZodType<unknown, DraftFields>;
 
 /** What the form gives when valid: the fields of `POST /products` without the media. */
-export type ListingFields = z.output<typeof listingFieldsSchema>;
+export type ListingFieldValues = z.output<typeof listingFieldsSchema>;

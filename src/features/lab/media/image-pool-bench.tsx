@@ -9,8 +9,8 @@ import {
 } from '@/features/lab/media/pool-bench-summary';
 import { ALL_AT_ONCE, BENCH_CONFIGS, runPoolBench } from '@/features/lab/media/run-pool-bench';
 import { createStageBreadcrumb } from '@/features/lab/media/stage-breadcrumb';
-import { MIB } from '@/features/media/media-utils';
-import { canOptimizeImages } from '@/features/media/image/image-worker';
+import { MIB } from '@/features/media/constants/limits';
+import { canOptimizeImages } from '@/features/media/services/image-worker';
 
 const breadcrumb = createStageBreadcrumb('medialab.poolStage');
 // Lets the previous run's memory be released before the next one starts.

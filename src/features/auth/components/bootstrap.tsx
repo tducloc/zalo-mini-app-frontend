@@ -1,10 +1,9 @@
 import { PropsWithChildren, useEffect, useState } from 'react';
 
 import { restoreSession, settleAuthBootstrap } from '@/features/auth/api/session';
+import AuthRetryNotice from '@/features/auth/components/auth-retry-notice';
+import { AUTH_ERROR_MESSAGE } from '@/features/auth/constants/auth';
 import { useAuthStore } from '@/stores/auth';
-
-import AuthRetryNotice from './auth-retry-notice';
-import { AUTH_ERROR_MESSAGE } from '../constants';
 
 /**
  * Signs in with Zalo in the background. Public screens (Home, detail) render

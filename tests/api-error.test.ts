@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { getApiErrorStatus, resolveApiErrorMessage } from '@/utils/api-error';
+import { getApiErrorDetails, getApiErrorStatus, resolveApiErrorMessage } from '@/utils/api-error';
 
 function apiError(status: number) {
   return new axios.AxiosError('Request failed', 'ERR_BAD_RESPONSE', undefined, undefined, {
@@ -31,5 +31,17 @@ describe('API error messages', () => {
   it('uses the fallback for network and unconfigured HTTP errors', () => {
     expect(resolveApiErrorMessage(new Error('offline'), options)).toBe(options.fallbackMessage);
     expect(resolveApiErrorMessage(apiError(500), options)).toBe(options.fallbackMessage);
+  });
+});
+
+describe('getApiErrorDetails', () => {
+  it('reads details from the error envelope, and nothing from anything else', () => {
+    const withDetails = apiError(409);
+    if (withDetails.response) {
+      withDetails.response.data = { error: { code: 'CONFLICT', details: [{ mediaId: 'm1' }] } };
+    }
+    expect(getApiErrorDetails(withDetails)).toEqual([{ mediaId: 'm1' }]);
+    expect(getApiErrorDetails(apiError(500))).toBeUndefined();
+    expect(getApiErrorDetails(new Error('bug'))).toBeUndefined();
   });
 });

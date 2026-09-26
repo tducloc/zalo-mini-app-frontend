@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
-import type { FeedFilters } from '@/features/feed/types';
-import { DEFAULT_FILTERS } from '@/features/feed/utils/filters';
+import { DEFAULT_FILTERS } from '@/features/feed/constants/filters';
+import type { FeedFilters } from '@/features/feed/types/filters';
 
 // Home unmounts when a route is pushed, so the search and filters live here to
 // survive a round trip to product detail.

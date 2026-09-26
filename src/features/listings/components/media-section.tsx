@@ -1,51 +1,77 @@
-import { type ChangeEvent, useCallback, useState } from 'react';
+import {
+  type Announcements,
+  DndContext,
+  type DragEndEvent,
+  MouseSensor,
+  TouchSensor,
+  type UniqueIdentifier,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
+import { type ChangeEvent, useState } from 'react';
 import { Icon } from 'zmp-ui';
 
 import MediaAddTile from '@/features/listings/components/media-add-tile';
-import MediaViewer from '@/features/listings/components/media-viewer';
 import MediaTile from '@/features/listings/components/media-tile';
-import { useReplaceMedia } from '@/features/listings/hooks/use-replace-media';
-import { addDraftFiles, removeDraftMedia } from '@/features/listings/draft/media-intake';
-import { refusedFilesMessage } from '@/features/listings/draft/media-messages';
-import { type DraftMedia, MediaActionType } from '@/features/listings/draft/media-reducer';
-import { retryUpload } from '@/features/listings/draft/media-upload';
-import { countNeedingAttention, tileView } from '@/features/listings/draft/media-view';
-import { ImageFormat } from '@/features/media/image/image-utils';
-import { MAX_IMAGES_PER_LISTING, MediaKind } from '@/features/media/media-utils';
-import { MAX_VIDEO_DURATION_MS, VideoFormat } from '@/features/media/video/video-utils';
+import MediaViewer from '@/features/listings/components/media-viewer';
+import { missingPhotoMessage, refusedFilesMessage } from '@/features/listings/constants/messages';
+import { addDraftFiles, removeDraftMedia } from '@/features/listings/services/add-media';
+import { retryUpload } from '@/features/listings/services/upload-media';
+import type { DraftMedia } from '@/features/listings/types/draft-media';
+import { isFailed } from '@/features/listings/utils/draft-media';
+import { tileView } from '@/features/listings/utils/tile-view';
+import { PHOTO_ACCEPT, VIDEO_ACCEPT } from '@/features/media/constants/formats';
+import { MAX_IMAGES_PER_LISTING, MAX_VIDEO_SECONDS } from '@/features/media/constants/limits';
+import { MediaKind } from '@/features/media/types/media';
+import { takePickedFiles } from '@/features/media/utils/media';
 import { useToast } from '@/hooks/use-toast';
 import { useListingDraftStore } from '@/stores/listing-draft';
 
-// Only the formats the app takes: iOS then hands over a HEIC photo as JPEG.
-const PHOTO_TYPES = Object.values(ImageFormat).join(',');
-const VIDEO_TYPES = Object.values(VideoFormat).join(',');
+const TILE_GRID_CLASS = 'm-0 grid list-none grid-cols-4 gap-2.5 p-0';
+const VIDEO_NAME = 'Video';
+/**
+ * A drag starts after a still press, so a quick swipe over the grid still scrolls the
+ * page, and a tap, even a slow one, still opens the tile.
+ */
+const HOLD_TO_DRAG = { delay: 350, tolerance: 5 };
+
+/** What will be uploaded (a shrunk photo, a converted clip), else what was picked. */
+const fileOf = (item: DraftMedia) => item.upload?.blob ?? item.file;
+
+const photoName = (index: number) => `Ảnh ${index + 1}`;
 
 /**
- * The form's photos (the first is the cover) and its video, on the draft store: picking
- * adds files to the draft, where they are checked, optimized and uploaded (L4, L5) while
- * the seller fills in the rest.
+ * The form's photos (the first is the cover; hold and drag to reorder) and its video, on
+ * the draft store: picking adds files to the draft, where they are checked, optimized and
+ * uploaded (L4, L5) while the seller fills in the rest.
  */
-export default function MediaSection() {
+export default function MediaSection({
+  isPhotoMissing,
+}: {
+  /** Post was tapped without a photo. */
+  isPhotoMissing: boolean;
+}) {
   const { showError } = useToast();
 
   const media = useListingDraftStore((state) => state.media);
-  const dispatchMedia = useListingDraftStore((state) => state.dispatchMedia);
+  const moveMedia = useListingDraftStore((state) => state.moveMedia);
+  const isPosting = useListingDraftStore((state) => state.isPosting);
   const [openId, setOpenId] = useState<string | null>(null);
+
+  // Mouse too, for Zalo on PC and testing in a desktop browser.
+  const sensors = useSensors(
+    useSensor(TouchSensor, { activationConstraint: HOLD_TO_DRAG }),
+    useSensor(MouseSensor, { activationConstraint: HOLD_TO_DRAG }),
+  );
 
   const photos = media.filter((item) => item.kind === MediaKind.Image);
   const video = media.find((item) => item.kind === MediaKind.Video);
-  const attentionCount = countNeedingAttention(media);
-
-  // What will be uploaded (a shrunk photo, a converted clip), else what was picked.
-  const fileOf = (item: DraftMedia) => ('upload' in item ? item.upload.blob : item.file);
-  const nameOf = (item: DraftMedia) =>
-    item.kind === MediaKind.Video ? 'Video' : `Ảnh ${photos.indexOf(item) + 1}`;
-  const opened = media.find((item) => item.id === openId) ?? null;
+  const failedCount = media.filter(isFailed).length;
+  const opened = media.find((item) => item.id === openId);
 
   const handlePick = async (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    // Picking the same file again must fire change again.
-    event.target.value = '';
+    const files = takePickedFiles(event.target);
     if (files.length === 0) {
       return;
     }
@@ -56,41 +82,37 @@ export default function MediaSection() {
     }
   };
 
-  // Stable: the viewer listens for Escape with it, and tiles re-render as files upload.
-  const handleClose = useCallback(() => setOpenId(null), []);
-
-  const { startReplace: handleReplaceStart, replaceInputs } = useReplaceMedia({
-    photoTypes: PHOTO_TYPES,
-    videoTypes: VIDEO_TYPES,
-    onReplaced: handleClose,
-    onRefused: (refused) => showError(refusedFilesMessage(refused)),
-  });
-
-  const handleRetry = () => {
-    if (openId) {
-      retryUpload(openId);
-    }
-    handleClose();
+  // What a screen reader hears while a photo is dragged, instead of dnd-kit's English.
+  const positionOf = (id: UniqueIdentifier) => photos.findIndex((item) => item.id === id) + 1;
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => `Đã nhấc ảnh ${positionOf(active.id)}.`,
+    onDragOver: ({ over }) => (over ? `Vị trí ${positionOf(over.id)}.` : undefined),
+    onDragEnd: ({ over }) => (over ? `Đã đặt vào vị trí ${positionOf(over.id)}.` : undefined),
+    onDragCancel: () => 'Đã huỷ kéo ảnh.',
   };
 
-  const handleMakeCover = () => {
-    if (openId) {
-      dispatchMedia({ type: MediaActionType.CoverChosen, id: openId });
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (over && active.id !== over.id) {
+      moveMedia(String(active.id), String(over.id));
     }
-    handleClose();
   };
 
-  const handleRemove = () => {
-    if (openId) {
-      removeDraftMedia(openId);
-    }
+  const handleClose = () => setOpenId(null);
+
+  const makeCover = (id: string) => moveMedia(id, photos[0].id);
+
+  /** A viewer action: do it to the opened file, then close. */
+  const actOn = (id: string, action: (id: string) => void) => () => {
+    action(id);
     handleClose();
   };
 
   return (
     <section className="form-section">
       <h2>Hình ảnh sản phẩm</h2>
-      <p className="ui-muted">Ảnh đầu tiên là ảnh bìa, hiển thị trên thẻ tin.</p>
+      <p className="ui-muted">
+        Ảnh đầu tiên là ảnh bìa, hiển thị trên thẻ tin. Nhấn giữ rồi kéo để đổi thứ tự.
+      </p>
 
       <div className="field-heading">
         <b>
@@ -100,75 +122,86 @@ export default function MediaSection() {
           {photos.length}/{MAX_IMAGES_PER_LISTING} ảnh
         </span>
       </div>
-      <ul className="m-0 grid list-none grid-cols-4 gap-2.5 p-0">
-        {photos.map((item, index) => (
-          <MediaTile
-            key={item.id}
-            name={nameOf(item)}
-            view={tileView(item)}
-            isVideo={false}
-            file={fileOf(item)}
-            isCover={index === 0}
-            onOpen={() => setOpenId(item.id)}
-            onRemove={() => removeDraftMedia(item.id)}
-            onReplace={() => handleReplaceStart(item)}
-          />
-        ))}
-        {photos.length < MAX_IMAGES_PER_LISTING && (
-          <MediaAddTile label="Thêm ảnh" accept={PHOTO_TYPES} isMultiple onPick={handlePick} />
-        )}
-      </ul>
+      {/* Around the video too, whose tile uses the same hook, disabled. */}
+      <DndContext sensors={sensors} accessibility={{ announcements }} onDragEnd={handleDragEnd}>
+        {/* The draft stays as sent while the post is on its way. */}
+        <SortableContext items={photos} strategy={rectSortingStrategy} disabled={isPosting}>
+          <ul className={TILE_GRID_CLASS}>
+            {photos.map((item, index) => (
+              <MediaTile
+                key={item.id}
+                id={item.id}
+                name={photoName(index)}
+                view={tileView(item)}
+                isVideo={false}
+                file={fileOf(item)}
+                isCover={index === 0}
+                onOpen={() => setOpenId(item.id)}
+                onRemove={() => removeDraftMedia(item.id)}
+              />
+            ))}
+            {photos.length < MAX_IMAGES_PER_LISTING && (
+              <MediaAddTile label="Thêm ảnh" accept={PHOTO_ACCEPT} isMultiple onPick={handlePick} />
+            )}
+          </ul>
+        </SortableContext>
 
-      <div className="field-heading">
-        <b>Video</b>
-        <span>Tuỳ chọn · tối đa {MAX_VIDEO_DURATION_MS / 1000} giây</span>
-      </div>
-      <ul className="m-0 grid list-none grid-cols-4 gap-2.5 p-0">
-        {video ? (
-          <MediaTile
-            name="Video"
-            view={tileView(video)}
-            isVideo
-            file={fileOf(video)}
-            isCover={false}
-            onOpen={() => setOpenId(video.id)}
-            onRemove={() => removeDraftMedia(video.id)}
-            onReplace={() => handleReplaceStart(video)}
-          />
-        ) : (
-          <MediaAddTile
-            label="Thêm video"
-            accept={VIDEO_TYPES}
-            isMultiple={false}
-            onPick={handlePick}
-          />
+        {isPhotoMissing && (
+          <p className="field-error" role="alert">
+            {missingPhotoMessage}
+          </p>
         )}
-      </ul>
 
-      {attentionCount > 0 && (
+        <div className="field-heading">
+          <b>Video</b>
+          <span>Tuỳ chọn · tối đa {MAX_VIDEO_SECONDS} giây</span>
+        </div>
+        <ul className={TILE_GRID_CLASS}>
+          {video ? (
+            <MediaTile
+              id={video.id}
+              name={VIDEO_NAME}
+              view={tileView(video)}
+              isVideo
+              file={fileOf(video)}
+              isCover={false}
+              onOpen={() => setOpenId(video.id)}
+              onRemove={() => removeDraftMedia(video.id)}
+            />
+          ) : (
+            <MediaAddTile
+              label="Thêm video"
+              accept={VIDEO_ACCEPT}
+              isMultiple={false}
+              onPick={handlePick}
+            />
+          )}
+        </ul>
+      </DndContext>
+
+      {failedCount > 0 && (
         <p
           role="status"
           className="m-0 mt-3 flex items-center gap-2 rounded-lg bg-marketplace-danger/10 px-3 py-2 text-sm text-marketplace-danger"
         >
           <Icon icon="zi-warning-circle-solid" size={18} className="shrink-0" />
-          {attentionCount} tệp cần xử lý. Vui lòng chạm vào ô có dấu chấm than để xem.
+          {failedCount} tệp cần xử lý. Vui lòng chạm vào ô có dấu chấm than để xem.
         </p>
       )}
 
-      <MediaViewer
-        name={opened ? nameOf(opened) : ''}
-        view={opened && tileView(opened)}
-        isVideo={opened?.kind === MediaKind.Video}
-        file={opened && fileOf(opened)}
-        canBeCover={!!opened && opened.kind === MediaKind.Image && photos[0] !== opened}
-        onMakeCover={handleMakeCover}
-        onRetry={handleRetry}
-        onReplace={() => opened && handleReplaceStart(opened)}
-        onRemove={handleRemove}
-        onClose={handleClose}
-      />
-
-      {replaceInputs}
+      {opened && (
+        <MediaViewer
+          key={opened.id}
+          name={opened.kind === MediaKind.Video ? VIDEO_NAME : photoName(photos.indexOf(opened))}
+          view={tileView(opened)}
+          isVideo={opened.kind === MediaKind.Video}
+          file={fileOf(opened)}
+          onRetry={actOn(opened.id, retryUpload)}
+          onMakeCover={photos.indexOf(opened) > 0 ? actOn(opened.id, makeCover) : null}
+          onRemove={actOn(opened.id, removeDraftMedia)}
+          onClose={handleClose}
+        />
+      )}
     </section>
   );
 }

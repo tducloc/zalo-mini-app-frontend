@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from 'zmp-ui';
 
-import { addDraftFiles, clearDraftMedia } from '@/features/listings/draft/media-intake';
-import { refusedFilesMessage } from '@/features/listings/draft/media-messages';
-import { type DraftMedia, DraftMediaStatus } from '@/features/listings/draft/media-reducer';
-import { useListingDraftStore } from '@/stores/listing-draft';
-import { canConvertVideos } from '@/features/media/video/convert-video';
-import { startFrameMeter } from '@/features/lab/media/frame-meter';
 import DraftMediaRow, { type RowTimes } from '@/features/lab/media/draft-media-row';
+import { startFrameMeter } from '@/features/lab/media/frame-meter';
 import { createStageBreadcrumb } from '@/features/lab/media/stage-breadcrumb';
-import { canOptimizeImages } from '@/features/media/image/image-worker';
+import { addDraftFiles, discardDraft } from '@/features/listings/services/add-media';
+import { refusedFilesMessage } from '@/features/listings/constants/messages';
+import { DraftMediaStatus, type DraftMedia } from '@/features/listings/types/draft-media';
+import { canOptimizeImages } from '@/features/media/services/image-worker';
+import { takePickedFiles } from '@/features/media/utils/media';
+import { canConvertVideos } from '@/features/media/services/convert-video';
+import { useListingDraftStore } from '@/stores/listing-draft';
 
 /**
  * The real create-listing pipeline (draft store, intake L4, uploads L5) on files picked
@@ -92,10 +93,7 @@ export default function DraftMediaLab() {
   }, [workingCount]);
 
   const handlePick = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    // Lets the same file be picked again.
-    event.target.value = '';
-    const refused = await addDraftFiles(files);
+    const refused = await addDraftFiles(takePickedFiles(event.target));
     setRefusedMessage(refused.length > 0 ? refusedFilesMessage(refused) : null);
   };
 
@@ -136,7 +134,7 @@ export default function DraftMediaLab() {
         <Button size="small" onClick={() => videoInputRef.current?.click()}>
           Thêm video
         </Button>
-        <Button size="small" variant="secondary" disabled={!media.length} onClick={clearDraftMedia}>
+        <Button size="small" variant="secondary" disabled={!media.length} onClick={discardDraft}>
           Xoá hết
         </Button>
       </div>

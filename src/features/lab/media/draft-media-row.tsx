@@ -1,20 +1,18 @@
 import { Button } from 'zmp-ui';
 
-import { removeDraftMedia } from '@/features/listings/draft/media-intake';
-import {
-  type DraftMedia,
-  DraftMediaStatus,
-  type UploadedDraftMedia,
-} from '@/features/listings/draft/media-reducer';
 import {
   mediaErrorMessage,
-  rejectMessages,
+  rejectMessage,
   uploadFailedMessages,
   uploadWaitMessages,
-} from '@/features/listings/draft/media-messages';
-import { retryUpload } from '@/features/listings/draft/media-upload';
-import { MediaKind, MIB } from '@/features/media/media-utils';
-import { ServerMediaStatus } from '@/features/media/upload/upload-types';
+} from '@/features/listings/constants/messages';
+import { removeDraftMedia } from '@/features/listings/services/add-media';
+import { retryUpload } from '@/features/listings/services/upload-media';
+import { DraftMediaStatus, type DraftMedia } from '@/features/listings/types/draft-media';
+import { isFailed } from '@/features/listings/utils/draft-media';
+import { MIB } from '@/features/media/constants/limits';
+import { MediaKind, RejectReason } from '@/features/media/types/media';
+import { ServerMediaStatus, UploadWait } from '@/features/media/types/upload';
 
 export interface RowTimes {
   /** Seconds from picking to ready to upload. */
@@ -23,10 +21,10 @@ export interface RowTimes {
   uploading: string | null;
 }
 
-const percent = (fraction: number) => `${Math.round(fraction * 100)}%`;
+const percent = (fraction: number | null) => `${Math.round((fraction ?? 0) * 100)}%`;
 
-function describeServer(media: UploadedDraftMedia) {
-  switch (media.server.status) {
+function describeServer(media: DraftMedia) {
+  switch (media.server?.status) {
     case ServerMediaStatus.Ready:
       return 'Máy chủ xử lý xong';
     case ServerMediaStatus.Failed:
@@ -41,20 +39,23 @@ function describeStatus(media: DraftMedia) {
     case DraftMediaStatus.Checking:
       return 'Đang kiểm tra';
     case DraftMediaStatus.Rejected:
-      return `Từ chối: ${rejectMessages[media.reason]}`;
+      return `Từ chối: ${rejectMessage(media.reason ?? RejectReason.Unreadable)}`;
     case DraftMediaStatus.Optimizing:
       return media.progress === null
         ? 'Đang tối ưu'
         : `Đang chuyển 720p ${percent(media.progress)}`;
     case DraftMediaStatus.ReadyToUpload: {
       const { upload } = media;
+      if (!upload) {
+        return 'Chờ tải lên';
+      }
       const size = `${(upload.blob.size / MIB).toFixed(2)} MB ${upload.contentType}`;
       return `Chờ tải lên · ${size} · ${upload.optimized ? 'đã tối ưu' : 'bản gốc'}`;
     }
     case DraftMediaStatus.Uploading:
       return `Đang tải lên ${percent(media.progress)}`;
     case DraftMediaStatus.Retrying:
-      return `${uploadWaitMessages[media.waitingFor]} (${percent(media.progress)})`;
+      return `${uploadWaitMessages[media.waitingFor ?? UploadWait.Retry]} (${percent(media.progress)})`;
     case DraftMediaStatus.UploadFailed:
       return media.isRetryable ? uploadFailedMessages.retryable : uploadFailedMessages.permanent;
     case DraftMediaStatus.Uploaded:
@@ -62,21 +63,9 @@ function describeStatus(media: DraftMedia) {
   }
 }
 
-const needsAttention = (media: DraftMedia) =>
-  media.status === DraftMediaStatus.Rejected ||
-  media.status === DraftMediaStatus.UploadFailed ||
-  (media.status === DraftMediaStatus.Uploaded && media.server.status === ServerMediaStatus.Failed);
-
-function previewOf(media: DraftMedia) {
-  if (media.status === DraftMediaStatus.Uploaded && media.server.thumbnailUrl) {
-    return media.server.thumbnailUrl;
-  }
-  return 'previewUrl' in media ? media.previewUrl : null;
-}
-
 export default function DraftMediaRow({ media, times }: { media: DraftMedia; times: RowTimes }) {
-  const previewUrl = previewOf(media);
-  const original = 'original' in media ? media.original : null;
+  const previewUrl = media.server?.thumbnailUrl ?? media.previewUrl;
+  const { original } = media;
   const canRetry = media.status === DraftMediaStatus.UploadFailed && media.isRetryable;
 
   return (
@@ -94,9 +83,7 @@ export default function DraftMediaRow({ media, times }: { media: DraftMedia; tim
           {times.preparing && ` · chuẩn bị ${times.preparing} s`}
           {times.uploading && ` · tải lên ${times.uploading} s`}
         </p>
-        <p className={needsAttention(media) ? 'm-0 text-red-600' : 'm-0'}>
-          {describeStatus(media)}
-        </p>
+        <p className={isFailed(media) ? 'm-0 text-red-600' : 'm-0'}>{describeStatus(media)}</p>
         {media.status === DraftMediaStatus.Uploaded && (
           <p className="m-0 break-all text-slate-400">{media.mediaId}</p>
         )}

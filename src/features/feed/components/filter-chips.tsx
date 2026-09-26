@@ -1,7 +1,7 @@
 import { Icon } from 'zmp-ui';
 
-import { chipClass, hiddenScrollbarClass } from '../styles';
-import type { FilterChip, FilterKey } from '../types';
+import { chipClass, hiddenScrollbarClass } from '@/features/feed/constants/styles';
+import type { FilterChip, FilterKey } from '@/features/feed/types/filters';
 
 export default function FilterChips({
   chips,

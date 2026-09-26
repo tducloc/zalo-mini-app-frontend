@@ -3,22 +3,25 @@ import { Button } from 'zmp-ui';
 
 import AppSheet from '@/components/app-sheet';
 import InlineRetry from '@/components/inline-retry';
-import type { CategoryOption } from '@/features/categories/types';
-import type { LocationResponse } from '@/features/locations/types';
-import { conditionLabels, productConditions } from '@/features/products/constants';
-
-import ChoiceGroup from './choice-group';
-import PriceInput from './price-input';
-import { HAS_VIDEO_LABEL, SORT_OPTIONS, sortOptionConfig } from '../constants';
+import type { CategoryOption } from '@/features/categories/types/category';
+import ChoiceGroup from '@/features/feed/components/choice-group';
+import PriceInput from '@/features/feed/components/price-input';
+import {
+  HAS_VIDEO_LABEL,
+  SORT_OPTIONS,
+  sortOptionConfig,
+  DEFAULT_FILTERS,
+} from '@/features/feed/constants/filters';
 import {
   filterControlClass,
   filterLabelClass,
   filterSectionClass,
   filterSectionSpacingClass,
-} from '../styles';
-import type { FeedFilters } from '../types';
-import { DEFAULT_FILTERS } from '../utils/filters';
-import { parsePriceRange, priceToInputDigits } from '../utils/price';
+} from '@/features/feed/constants/styles';
+import type { FeedFilters } from '@/features/feed/types/filters';
+import { parsePriceRange, priceToInputDigits } from '@/features/feed/utils/price';
+import type { LocationResponse } from '@/features/locations/types/location';
+import { conditionLabels, productConditions } from '@/features/products/constants/product';
 
 const conditionChoices = productConditions.map((condition) => ({
   value: condition,

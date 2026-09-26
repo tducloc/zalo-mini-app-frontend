@@ -1,15 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-
 import { describe, expect, it } from 'vitest';
 
-import {
-  ImageFormat,
-  MAX_IMAGE_BYTES,
-  photoProblem,
-  readPhotoHeader,
-} from '@/features/media/image/image-utils';
-import { RejectReason } from '@/features/media/media-utils';
+import { MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS } from '@/features/media/constants/limits';
+import { ImageFormat } from '@/features/media/types/image';
+import { RejectReason } from '@/features/media/types/media';
+import { photoProblem, readPhotoHeader } from '@/features/media/utils/image';
 
 // Fixtures were encoded by sharp (libvips), so they are real files, not hand-built headers.
 function fixture(name: string) {
@@ -59,9 +55,21 @@ describe('readPhotoHeader', () => {
 describe('photoProblem', () => {
   const phone = { format: ImageFormat.Jpeg, width: 4032, height: 3024 };
 
-  it('takes a photo of any pixel size up to 15 MB', () => {
+  it('takes a photo up to 15 MB and 50 MP, however small', () => {
     expect(photoProblem(phone, MAX_IMAGE_BYTES)).toBeNull();
     expect(photoProblem({ ...phone, width: 40, height: 20 }, 1_000)).toBeNull();
+    // A 50 MP phone mode.
+    expect(photoProblem({ ...phone, width: 8160, height: 6120 }, 1_000)).toBeNull();
+  });
+
+  it('refuses a photo over 50 MP even when it is light', () => {
+    // A 108 MP phone mode: 12000 × 9000.
+    expect(photoProblem({ ...phone, width: 12_000, height: 9_000 }, 12 * 1024 * 1024)).toBe(
+      RejectReason.ImageTooManyPixels,
+    );
+    expect(photoProblem({ ...phone, width: MAX_IMAGE_PIXELS + 1, height: 1 }, 1_000)).toBe(
+      RejectReason.ImageTooManyPixels,
+    );
   });
 
   it('refuses a format the app does not take, or a photo too heavy to work on', () => {

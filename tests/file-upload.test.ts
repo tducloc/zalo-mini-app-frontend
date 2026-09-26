@@ -1,24 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { MediaKind } from '@/features/media/media-utils';
-import {
-  FileUpload,
-  type PutOptions,
-  type UploadListener,
-  type UploadTransport,
-  UploadWait,
-} from '@/features/media/upload/file-upload';
-import {
-  FailureKind,
-  MAX_UPLOAD_ATTEMPTS,
-  UPLOAD_URL_LIFETIME_MS,
-  UploadFailure,
-} from '@/features/media/upload/retry-policy';
+import { MAX_UPLOAD_ATTEMPTS, UPLOAD_URL_LIFETIME_MS } from '@/features/media/constants/upload';
+import { FileUpload } from '@/features/media/services/file-upload';
+import { MediaKind } from '@/features/media/types/media';
 import {
   ServerMediaStatus,
   type UploadRequestFile,
   type UploadTarget,
-} from '@/features/media/upload/upload-types';
+  type PutOptions,
+  type UploadTransport,
+  UploadWait,
+  type UploadListener,
+  FailureKind,
+} from '@/features/media/types/upload';
+import { UploadFailure } from '@/features/media/utils/retry-policy';
 
 const NOW = Date.parse('2026-09-25T10:00:00Z');
 const LATER = '2026-09-25T10:15:00Z';

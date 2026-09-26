@@ -1,11 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-
 import { describe, expect, it } from 'vitest';
 
-import { MediaDetector } from '@/features/media/media-detector';
-import { ImageFormat } from '@/features/media/image/image-utils';
-import { MediaKind, RejectReason } from '@/features/media/media-utils';
+import { ImageFormat } from '@/features/media/types/image';
+import { MediaKind, RejectReason } from '@/features/media/types/media';
+import { MediaDetector } from '@/features/media/utils/media-detector';
 
 function fixture(folder: string, name: string) {
   const path = fileURLToPath(new URL(`./fixtures/${folder}/${name}`, import.meta.url));

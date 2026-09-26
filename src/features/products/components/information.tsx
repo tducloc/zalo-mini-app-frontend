@@ -1,9 +1,8 @@
 import Price from '@/components/price';
 import { getCategoryLabel } from '@/features/categories/utils/presentation';
-
-import ProductDescription from './description';
-import { conditionLabels } from '../constants';
-import { ProductDetail } from '../types';
+import ProductDescription from '@/features/products/components/description';
+import { conditionLabels } from '@/features/products/constants/product';
+import { ProductDetail } from '@/features/products/types/product';
 
 export default function ProductInformation({
   product,

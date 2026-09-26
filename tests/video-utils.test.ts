@@ -1,18 +1,16 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-
 import { describe, expect, it } from 'vitest';
 
-import { RejectReason } from '@/features/media/media-utils';
+import { MAX_VIDEO_BYTES } from '@/features/media/constants/limits';
+import { RejectReason } from '@/features/media/types/media';
+import { VideoFormat, type VideoFacts } from '@/features/media/types/video';
 import {
   videoLengthProblem,
-  MAX_VIDEO_BYTES,
   originalVideoProblem,
   readVideoMetadata,
   shouldConvertVideo,
-  type VideoFacts,
-  VideoFormat,
-} from '@/features/media/video/video-utils';
+} from '@/features/media/utils/video';
 
 const MB = 1024 * 1024;
 
@@ -60,7 +58,7 @@ describe('readVideoMetadata', () => {
     };
 
     expect(await problemOf('h264-aac.mp4')).toBeNull();
-    expect(await problemOf('hevc.mp4')).toBe(RejectReason.VideoHevc);
+    expect(await problemOf('hevc.mp4')).toBe(RejectReason.VideoNotPlayable);
     expect(await problemOf('high10.mp4')).toBe(RejectReason.VideoNotPlayable);
     expect(await problemOf('two-audio.mp4')).toBe(RejectReason.VideoNotPlayable);
   });
@@ -96,9 +94,9 @@ describe('originalVideoProblem', () => {
     expect(originalVideoProblem({ ...IPHONE_1080P, videoCodecString: 'avc1.42E01E' })).toBeNull();
   });
 
-  it('names HEVC on its own: iPhones record it by default and a setting changes that', () => {
+  it('refuses HEVC the phone could not convert: not every phone plays it', () => {
     expect(originalVideoProblem({ ...IPHONE_1080P, videoCodec: 'hevc' })).toBe(
-      RejectReason.VideoHevc,
+      RejectReason.VideoNotPlayable,
     );
   });
 

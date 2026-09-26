@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  MediaKind,
-  type PickedMedia,
-  refusePicked,
-  RejectReason,
-} from '@/features/media/media-utils';
+import { MediaKind, RejectReason, type PickedMedia } from '@/features/media/types/media';
+import { refusePicked } from '@/features/media/utils/media';
 
 describe('refusePicked', () => {
   const none = { [MediaKind.Image]: 0, [MediaKind.Video]: 0 };

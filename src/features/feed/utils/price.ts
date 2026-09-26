@@ -1,7 +1,6 @@
+import { MAX_PRICE_VND } from '@/features/products/constants/product';
 import { formatNumber, formatVnd } from '@/utils/format';
 
-// Backend price column is a 32-bit signed integer.
-export const MAX_PRICE_VND = 2_147_483_647;
 // Longer than any valid price so an oversized paste shows the "too large"
 // error instead of being silently cut down to a valid-looking number.
 const MAX_INPUT_DIGITS = 15;

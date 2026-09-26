@@ -7,12 +7,13 @@
  * chrome://inspect while the run is going.
  */
 
-import { IMAGE_HEAD_BYTES, readPhotoHeader } from '@/features/media/image/image-utils';
-import { MIB, readHead } from '@/features/media/media-utils';
 import { startFrameMeter } from '@/features/lab/media/frame-meter';
-import { ImageWorker, MAX_EDGE, PipelineError } from '@/features/media/image/image-worker';
-import { estimateJobBytes, pickWorker, type PoolState } from '@/features/lab/media/pool-budget';
 import type { BenchConfig, BenchResult, JobRecord } from '@/features/lab/media/pool-bench-summary';
+import { estimateJobBytes, pickWorker, type PoolState } from '@/features/lab/media/pool-budget';
+import { MIB, IMAGE_HEAD_BYTES, PHOTO_MAX_EDGE } from '@/features/media/constants/limits';
+import { ImageWorker, PipelineError } from '@/features/media/services/image-worker';
+import { readPhotoHeader } from '@/features/media/utils/image';
+import { readHead } from '@/features/media/utils/media';
 
 interface QueuedJob {
   file: File;
@@ -149,7 +150,7 @@ export const BENCH_CONFIGS: BenchConfig[] = [
     label: 'N1 × M2, decode 1280',
     workers: 1,
     perWorker: 2,
-    decodeWidth: MAX_EDGE,
+    decodeWidth: PHOTO_MAX_EDGE,
   },
 ];
 

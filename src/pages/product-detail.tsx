@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Page, useNavigate, useParams } from 'zmp-ui';
 
 import FeedbackState from '@/components/feedback-state';
-import { useSession } from '@/features/auth/hooks/session';
+import { useSession } from '@/features/auth/hooks/use-session';
 import { useProductDetail } from '@/features/products/api/get-product-detail';
 import ProductActionsSheet from '@/features/products/components/actions-sheet';
 import ProductContactAction from '@/features/products/components/contact-action';
@@ -13,7 +13,7 @@ import ProductMediaGallery from '@/features/products/components/media-gallery';
 import ProductSellerContact from '@/features/products/components/seller-card';
 import { useCreateReport } from '@/features/reports/api/create-report';
 import ProductReportSheet from '@/features/reports/components/report-sheet';
-import type { CreateReportInput } from '@/features/reports/types';
+import type { CreateReportInput } from '@/features/reports/types/report';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorStatus } from '@/utils/api-error';
 

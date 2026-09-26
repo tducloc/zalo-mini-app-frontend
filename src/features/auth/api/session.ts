@@ -1,11 +1,11 @@
 import { getAccessToken } from 'zmp-sdk';
 
+import { AUTH_ERROR_MESSAGE, ZALO_PLACEHOLDER_TOKEN } from '@/features/auth/constants/auth';
+import type { Session } from '@/features/auth/types/session';
+import { resolveExchangeToken } from '@/features/auth/utils/exchange-token';
 import { apiClient } from '@/lib/api-client';
-import { saveSession, Session } from '@/lib/session.storage';
+import { saveSession } from '@/lib/session.storage';
 import { useAuthStore } from '@/stores/auth';
-
-import { AUTH_ERROR_MESSAGE } from '../constants';
-import { resolveExchangeToken, ZALO_PLACEHOLDER_TOKEN } from '../utils/exchange-token';
 
 const SDK_TOKEN_TIMEOUT_MS = 15_000;
 // Automatic retries wait this long after a failure; a manual retry does not.

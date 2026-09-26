@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import ProductActionsSheet from '@/features/products/components/actions-sheet';
 import ProductDescription from '@/features/products/components/description';
 import ProductMediaGallery from '@/features/products/components/media-gallery';
-import { ProductDetail } from '@/features/products/types';
+import { ProductDetail } from '@/features/products/types/product';
 
 vi.mock('zmp-sdk', () => ({ openShareSheet: vi.fn() }));
 
@@ -20,7 +20,7 @@ vi.mock('zmp-ui', () => {
   );
 
   return {
-    ImageViewer: () => null,
+    Icon: () => null,
     Sheet: ({ children, visible }: { children: ReactNode; visible: boolean }) =>
       visible ? <section>{children}</section> : null,
     Swiper,
@@ -72,6 +72,19 @@ describe('product detail UI', () => {
     vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined);
     fireEvent.click(screen.getByRole('button', { name: 'Slide tiếp theo' }));
     expect(screen.getByText('2 / 2')).toBeTruthy();
+  });
+
+  it('opens every photo and video full screen, counted as the gallery counts them', () => {
+    render(<ProductMediaGallery media={product.media} productTitle={product.title} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Phóng to ảnh' }));
+    const lightbox = screen.getByRole('dialog', { name: `Ảnh và video: ${product.title}` });
+    expect(lightbox.textContent).toContain('1 / 2');
+    expect(lightbox.querySelectorAll('img')).toHaveLength(1);
+    expect(lightbox.querySelectorAll('video')).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('shows a disabled reported state instead of allowing a duplicate report', () => {

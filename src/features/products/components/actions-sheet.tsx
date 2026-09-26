@@ -1,8 +1,7 @@
 import { openShareSheet } from 'zmp-sdk';
 
 import AppSheet from '@/components/app-sheet';
-
-import type { ProductDetail } from '../types';
+import type { ProductDetail } from '@/features/products/types/product';
 
 export default function ProductActionsSheet({
   product,

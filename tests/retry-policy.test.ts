@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import { FailureKind } from '@/features/media/types/upload';
 import {
   failureFromApiStatus,
   failureFromStorageStatus,
-  FailureKind,
   isRetryable,
   isUrlExpiring,
-} from '@/features/media/upload/retry-policy';
+} from '@/features/media/utils/retry-policy';
 
 describe('failureFromApiStatus', () => {
   it.each([

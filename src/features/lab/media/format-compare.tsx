@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from 'zmp-ui';
 
-import { readPhotoHeader } from '@/features/media/image/image-utils';
-import { readHead } from '@/features/media/media-utils';
+import { readPhotoHeader } from '@/features/media/utils/image';
+import { readHead } from '@/features/media/utils/media';
 
 /** Enough for image-size to read what a canvas encoder wrote (no EXIF before the size). */
 const FORMAT_HEAD_BYTES = 4096;

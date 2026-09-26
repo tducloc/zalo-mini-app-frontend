@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react';
-import { ImageViewer, Swiper } from 'zmp-ui';
+import { useRef, useState } from 'react';
+import { Swiper } from 'zmp-ui';
 
-import { ProductDetail } from '../types';
-import { getViewerIndex, isNearSlide } from '../utils/gallery';
+import MediaLightbox from '@/features/products/components/media-lightbox';
+import { ProductDetail } from '@/features/products/types/product';
+import { isNearSlide } from '@/features/products/utils/gallery';
 
 type ProductMedia = ProductDetail['media'];
 
@@ -19,18 +20,12 @@ export default function ProductMediaGallery({
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   // Looping clones the first and last slides, so videos are found in the DOM.
   const galleryRef = useRef<HTMLDivElement>(null);
 
-  const viewerImages = useMemo(
-    () =>
-      media
-        .filter((item) => item.type === 'IMAGE' && (item.mediumUrl || item.thumbnailUrl))
-        .map((item) => ({ src: item.mediumUrl ?? item.thumbnailUrl ?? '', alt: productTitle })),
-    [media, productTitle],
-  );
+  const handleLightboxClose = () => setIsLightboxOpen(false);
 
   if (media.length === 0) {
     return <div className="product-detail-image-placeholder" />;
@@ -73,7 +68,7 @@ export default function ProductMediaGallery({
                   aria-label="Phóng to ảnh"
                   className={slideClass}
                   type="button"
-                  onClick={() => setImageViewerOpen(true)}
+                  onClick={() => setIsLightboxOpen(true)}
                 >
                   {/* One image per slide: swapping a thumbnail for the larger
                       file mid-swipe changed its aspect ratio and made it jump. */}
@@ -97,12 +92,12 @@ export default function ProductMediaGallery({
         </span>
       </div>
 
-      {imageViewerOpen && viewerImages.length > 0 && (
-        <ImageViewer
-          activeIndex={getViewerIndex(media, activeIndex)}
-          images={viewerImages}
-          visible={imageViewerOpen}
-          onClose={() => setImageViewerOpen(false)}
+      {isLightboxOpen && (
+        <MediaLightbox
+          media={media}
+          startIndex={activeIndex}
+          productTitle={productTitle}
+          onClose={handleLightboxClose}
         />
       )}
     </>

@@ -1,55 +1,63 @@
 # Media
 
-Photos and videos for a listing, from the seller's pick to the server's READY. Two folders
+Photos and videos for a listing, from the seller's pick to the server's READY. Two features
 share the work:
 
 - `features/media/` — tools for **one file**; they know nothing about listings.
-- `features/listings/draft/` — the **listing draft**: puts the tools together for every file the
-  seller picks, and keeps each file's state in the draft store (`src/stores/listing-draft.ts`).
+- `features/listings/` — the **listing draft's files**: `services/` puts the tools together
+  for every file the seller picks; each file's state is in the draft store
+  (`src/stores/listing-draft.ts`).
 
 ## Where to start reading
 
-`listings/draft/media-intake.ts` (`addDraftFiles`) → `listings/draft/media-upload.ts`, with
-`listings/draft/media-reducer.ts` open for the states a file goes through.
+`listings/services/add-media.ts` (`addDraftFiles`) → `listings/services/upload-media.ts`,
+with `listings/types/draft-media.ts` open for the states a file goes through.
 
 ## The flow
 
 ```
 pick ─► MediaDetector ─► photo: image-queue ─► image-worker ─► ready ─► FileUpload ─► poll status
-        (media-detector)  video: video-utils ─► convert-video ─┘        (upload/)     (media-upload)
+        (utils/)         video: utils/video ─► convert-video ─┘         (services/)   (upload-media)
 ```
 
-1. **Detect** (`media-detector.ts`): photo, video, or refused, from the first bytes.
-2. **Check and optimize** (`listings/draft/media-intake.ts`): a photo is shrunk to 1280 px in a
-   worker (`image/`); a video is checked and, when worth it, converted to 720p (`video/`).
-3. **Upload** (`listings/draft/media-upload.ts`): two files at a time, each through
-   `upload/file-upload.ts` (presigned PUT or parts, retries, network waits).
+1. **Detect** (`utils/media-detector.ts`): photo, video, or refused, from the first bytes.
+2. **Check and optimize** (`listings/services/add-media.ts`): a photo is shrunk to 1280 px in
+   a worker (`services/image-*`); a video is checked (`utils/video.ts`) and, when worth it,
+   converted to 720p (`services/convert-video.ts`).
+3. **Upload** (`listings/services/upload-media.ts`): two files at a time, each through
+   `services/file-upload.ts` (presigned PUT or parts, retries, network waits).
 4. **Processing**: the server makes thumbnails and checks the file; the app asks every 3 s
    until it says READY or FAILED.
 
-## Files
+## `features/media/`
 
-| File                           | What it holds                                                            |
-| ------------------------------ | ------------------------------------------------------------------------ |
-| `media-utils.ts`               | What photos and videos share: kinds, refusal reasons, per-listing limits |
-| `media-detector.ts`            | What a picked file is, from its first bytes                              |
-| `image/image-utils.ts`         | Photo formats, size limits, reading format and size (image-size)         |
-| `image/image-queue.ts`         | One photo at a time to the worker; originals when it fails               |
-| `image/image-worker.ts`        | The page's side of the worker thread                                     |
-| `image/image-worker-thread.ts` | Runs inside the worker: decode, scale, encode JPEG                       |
-| `video/video-utils.ts`         | Video metadata (mediabunny) and whether the server would take it         |
-| `video/convert-video.ts`       | Conversion to 720p H.264 (mediabunny + WebCodecs)                        |
-| `upload/upload-types.ts`       | Shapes of the upload endpoints                                           |
-| `upload/upload-api.ts`         | HTTP calls: media endpoints and the PUT to storage                       |
-| `upload/browser-transport.ts`  | Those calls plus the browser's online/offline signals                    |
-| `upload/retry-policy.ts`       | Which failures to retry, how many times, how long between                |
-| `upload/file-upload.ts`        | Uploads one file; remembers what reached storage                         |
+- `api/media-uploads.ts`: the media endpoints and the PUT to storage.
+- `constants/`: `limits.ts` (sizes, counts, lengths), `formats.ts` (the pickers' accept),
+  `upload.ts` (retries, URL lifetime).
+- `types/`: `media.ts` (kinds, refusal reasons), `image.ts`, `video.ts`, `upload.ts`.
+- `utils/`: `media-detector.ts`, `media.ts`, `image.ts`, `video.ts`, `retry-policy.ts`.
+- `services/`:
+  - `image-queue.ts` → `image-worker.ts` → `image-worker-thread.ts`: one photo at a time in a
+    worker;
+  - `convert-video.ts`: conversion to 720p (mediabunny + WebCodecs);
+  - `file-upload.ts` + `browser-transport.ts`: one file's upload.
 
-| `listings/draft/`   | What it holds                                           |
-| ------------------- | ------------------------------------------------------- |
-| `media-reducer.ts`  | Each file's state and the actions that move it, by flow |
-| `media-intake.ts`   | Detect, check, optimize each picked file                |
-| `media-upload.ts`   | Upload queue and processing status                      |
-| `media-messages.ts` | What the seller reads under a file                      |
+`video/video-utils.ts` only re-exports `readVideoMetadata` for the uncommitted media lab
+page; it goes once that page imports `utils/video`.
+
+## `features/listings/` (the media part)
+
+| File                       | What it holds                                             |
+| -------------------------- | --------------------------------------------------------- |
+| `types/draft-media.ts`     | A draft file and its states                               |
+| `utils/draft-media.ts`     | `newDraftMedia`, `isFailed`                               |
+| `utils/listing-draft.ts`   | What Post needs from the whole draft                      |
+| `utils/tile-view.ts`       | What a tile and the viewer show for a file                |
+| `services/add-media.ts`    | Detect, check, optimize each picked file; end a draft     |
+| `services/upload-media.ts` | Upload queue and processing status                        |
+| `constants/messages.ts`    | What the seller reads: refusals, upload and server errors |
+
+Photos are reordered by holding one and dragging it (`@dnd-kit/sortable`); the first photo
+is the cover.
 
 Device experiments live in `features/lab/media/` (the media lab page), not here.

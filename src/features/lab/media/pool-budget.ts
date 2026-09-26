@@ -5,8 +5,8 @@
  * it needs no budget; the bench still measures whether running more at once would pay.
  */
 
-import type { ImageDimensions } from '@/features/media/image/image-utils';
-import { MAX_EDGE } from '@/features/media/image/image-worker';
+import { PHOTO_MAX_EDGE } from '@/features/media/constants/limits';
+import type { ImageDimensions } from '@/features/media/types/image';
 
 const BYTES_PER_PIXEL = 4;
 
@@ -37,7 +37,7 @@ export function estimateJobBytes(dimensions: ImageDimensions | null, decodeWidth
   const bitmapBytes =
     Math.round(width * decodeScale) * Math.round(height * decodeScale) * BYTES_PER_PIXEL;
 
-  const outputScale = Math.min(1, MAX_EDGE / Math.max(width, height));
+  const outputScale = Math.min(1, PHOTO_MAX_EDGE / Math.max(width, height));
   const canvasBytes =
     Math.round(width * outputScale) * Math.round(height * outputScale) * BYTES_PER_PIXEL;
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from 'zmp-ui';
 import { openPhone, openProfile } from 'zmp-sdk';
 
-import { ProductDetail } from '../types';
+import { ProductDetail } from '@/features/products/types/product';
 
 export default function ProductContactAction({
   product,

@@ -1,12 +1,11 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import type { z } from 'zod';
 
-import {
-  listingFieldsSchema,
-  listingFormMessages as messages,
-  PRICE_MAX,
-} from '@/features/listings/schemas';
-import { type DraftFields, EMPTY_FIELDS } from '@/features/listings/draft/listing-draft';
+import { EMPTY_FIELDS } from '@/features/listings/constants/listing-fields';
+import { listingFormMessages as messages } from '@/features/listings/constants/messages';
+import { listingFieldsSchema } from '@/features/listings/schemas';
+import type { DraftFields } from '@/features/listings/types/listing-draft';
+import { MAX_PRICE_VND } from '@/features/products/constants/product';
 
 const filled: DraftFields = {
   title: '  iPhone 13 128GB  ',
@@ -61,16 +60,29 @@ describe('listingFieldsSchema', () => {
     expect(errorFor({ title: 'a'.repeat(121) }, 'title')).toBe(messages.title);
     expect(errorFor({ description: 'short' }, 'description')).toBe(messages.description);
     expect(errorFor({ description: 'x'.repeat(5001) }, 'description')).toBe(messages.description);
+    expect(messages.description).toContain('5.000');
   });
 
   it('reads a price typed with separators, and refuses one that is not a whole number above 0', () => {
-    for (const typed of ['6.990.000', '6,990,000', '6 990 000']) {
+    for (const typed of ['6.990.000', '6,990,000', '6 990 000', ' 6990000 ']) {
       expect(listingFieldsSchema.parse({ ...filled, price: typed }).price).toBe(6_990_000);
     }
-    for (const typed of ['0', '-5', '12k', '1.5e6', '']) {
+    for (const typed of [
+      '0',
+      '-5',
+      '12k',
+      '1.5e6',
+      '',
+      '1.5',
+      '25,5',
+      '1.50.000',
+      '6.990.00',
+      '1.000,000',
+    ]) {
       expect(errorFor({ price: typed }, 'price')).toBe(messages.price);
     }
-    expect(errorFor({ price: String(PRICE_MAX) }, 'price')).toBeUndefined();
-    expect(errorFor({ price: String(PRICE_MAX + 1) }, 'price')).toBe(messages.priceTooHigh);
+    expect(errorFor({ price: String(MAX_PRICE_VND) }, 'price')).toBeUndefined();
+    expect(errorFor({ price: String(MAX_PRICE_VND + 1) }, 'price')).toBe(messages.priceTooHigh);
+    expect(messages.priceTooHigh).toContain('2.147.483.647 đ');
   });
 });

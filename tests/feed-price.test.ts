@@ -1,11 +1,11 @@
 import {
-  MAX_PRICE_VND,
   applyPriceEdit,
   caretAfterDigits,
   formatPriceDigits,
   parsePriceRange,
   priceToInputDigits,
 } from '@/features/feed/utils/price';
+import { MAX_PRICE_VND } from '@/features/products/constants/product';
 
 const group = (value: number) => new Intl.NumberFormat('vi-VN').format(value);
 
