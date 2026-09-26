@@ -16,7 +16,7 @@ export type ProductDetail = {
   description: string;
   price: number;
   condition: ProductCondition;
-  status: 'PROCESSING' | 'PUBLISHED' | 'SOLD' | 'ARCHIVED';
+  status: 'PROCESSING' | 'FAILED' | 'PUBLISHED' | 'SOLD' | 'ARCHIVED';
   location: ProductLocation;
   category: {
     id: string;

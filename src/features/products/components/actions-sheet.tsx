@@ -51,7 +51,7 @@ export default function ProductActionsSheet({
   };
 
   return (
-    <AppSheet visible={visible} title="Tùy chọn" autoHeight onClose={onClose}>
+    <AppSheet visible={visible} title="Tuỳ chọn" autoHeight onClose={onClose}>
       <div className="product-actions-sheet">
         <button onClick={shareProduct}>
           <span aria-hidden="true">↗</span>

@@ -20,7 +20,7 @@ export default function ProductInformation({
       <div className="product-detail-title-row">
         <h1 className="product-detail-title">{product.title}</h1>
         <button
-          aria-label="Tùy chọn tin đăng"
+          aria-label="Tuỳ chọn tin đăng"
           className="product-detail-action-menu"
           onClick={onOpenActions}
         >

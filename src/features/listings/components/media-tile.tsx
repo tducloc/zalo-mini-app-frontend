@@ -51,7 +51,8 @@ export default function MediaTile({
   const isPictureShown = !!pictureUrl && pictureUrl !== failedUrl;
   const isVideoFrame = isVideo && !view.imageUrl;
   // The reason is in the viewer, which the tap opens.
-  const statusText = isError ? 'có lỗi' : (view.label ?? 'đã sẵn sàng');
+  // Mid-sentence in the label, so lower case: the tile shows the same words capitalized.
+  const statusText = isError ? 'có lỗi' : (view.label?.toLocaleLowerCase('vi') ?? 'đã sẵn sàng');
 
   const handlePictureError = () => setFailedUrl(pictureUrl);
 

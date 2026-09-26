@@ -48,7 +48,7 @@ function ListingSummary({ onEdit, onStatus }: { onEdit?: () => void; onStatus?: 
         <p className="ui-muted">Hà Nội · 2 giờ trước</p>
       </div>
       {onEdit && (
-        <button className="listing-menu-trigger" aria-label="Tùy chọn tin đăng" onClick={onEdit}>
+        <button className="listing-menu-trigger" aria-label="Tuỳ chọn tin đăng" onClick={onEdit}>
           •••
         </button>
       )}
@@ -263,14 +263,14 @@ function Frame({ screen }: { screen: string }) {
                   Xác nhận
                 </button>
                 <button className="text-action" onClick={() => setDialog('')}>
-                  Hủy
+                  Huỷ
                 </button>
               </section>
             </div>
           )}
           <Sheet
             visible={screen === 'manage' && listingMenuOpen}
-            title="Tùy chọn tin đăng"
+            title="Tuỳ chọn tin đăng"
             autoHeight
             unmountOnClose
             onClose={() => setListingMenuOpen(false)}
@@ -295,7 +295,7 @@ function Frame({ screen }: { screen: string }) {
                 Ẩn tin
               </button>
               <button className="cancel" onClick={() => setListingMenuOpen(false)}>
-                Hủy
+                Huỷ
               </button>
             </div>
           </Sheet>

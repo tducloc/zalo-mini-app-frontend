@@ -84,16 +84,27 @@ export default function MediaSection({
 
   // What a screen reader hears while a photo is dragged, instead of dnd-kit's English.
   const positionOf = (id: UniqueIdentifier) => photos.findIndex((item) => item.id === id) + 1;
+  // The video tile shares the DndContext, so it is a drop target too; a photo only goes
+  // where another photo is.
+  const photoUnder = (over: { id: UniqueIdentifier } | null) =>
+    over && positionOf(over.id) > 0 ? over : null;
   const announcements: Announcements = {
     onDragStart: ({ active }) => `Đã nhấc ảnh ${positionOf(active.id)}.`,
-    onDragOver: ({ over }) => (over ? `Vị trí ${positionOf(over.id)}.` : undefined),
-    onDragEnd: ({ over }) => (over ? `Đã đặt vào vị trí ${positionOf(over.id)}.` : undefined),
+    onDragOver: ({ over }) => {
+      const target = photoUnder(over);
+      return target ? `Vị trí ${positionOf(target.id)}.` : undefined;
+    },
+    onDragEnd: ({ over }) => {
+      const target = photoUnder(over);
+      return target ? `Đã đặt vào vị trí ${positionOf(target.id)}.` : 'Đã huỷ kéo ảnh.';
+    },
     onDragCancel: () => 'Đã huỷ kéo ảnh.',
   };
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    if (over && active.id !== over.id) {
-      moveMedia(String(active.id), String(over.id));
+    const target = photoUnder(over);
+    if (target && active.id !== target.id) {
+      moveMedia(String(active.id), String(target.id));
     }
   };
 

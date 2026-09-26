@@ -110,7 +110,13 @@ export default function CreateListingForm() {
   };
 
   return (
-    <form className="listing-form" aria-label="Tin đăng mới" noValidate onSubmit={handlePost}>
+    <form
+      // A focused field stops below the page header with its label in view (80px).
+      className="listing-form [&_:is(input,select,textarea)]:scroll-mt-20"
+      aria-label="Tin đăng mới"
+      noValidate
+      onSubmit={handlePost}
+    >
       {/* The draft stays as sent while the post is on its way. */}
       <fieldset disabled={isPosting} className="m-0 min-w-0 border-0 p-0">
         <div ref={mediaRef} className="scroll-mt-16">

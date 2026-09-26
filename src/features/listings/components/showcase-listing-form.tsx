@@ -164,7 +164,7 @@ export default function ListingForm({
         {errors.main && <p className="field-error">{errors.main}</p>}
         <div className="field-heading">
           <b>Thư viện ảnh</b>
-          <span>Tùy chọn · {gallery.length} ảnh</span>
+          <span>Tuỳ chọn · {gallery.length} ảnh</span>
         </div>
         <div className="gallery-picker">
           {gallery.map((url, i) => {
