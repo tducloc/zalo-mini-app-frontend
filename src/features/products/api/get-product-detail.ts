@@ -1,9 +1,8 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
 
+import { productKeys } from '@/features/products/api/keys';
+import type { ProductDetail } from '@/features/products/types/product';
 import { http } from '@/lib/http';
-
-import { productKeys } from './keys';
-import type { ProductDetail } from '../types';
 
 const DETAIL_STALE_TIME_MS = 60_000;
 const DETAIL_GC_TIME_MS = 10 * 60_000;

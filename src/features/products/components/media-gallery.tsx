@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react';
-import { ImageViewer, Swiper } from 'zmp-ui';
+import { type ComponentRef, useRef, useState } from 'react';
+import { Swiper } from 'zmp-ui';
 
-import { ProductDetail } from '../types';
-import { getViewerIndex, isNearSlide } from '../utils/gallery';
+import MediaLightbox from '@/features/products/components/media-lightbox';
+import { ProductDetail } from '@/features/products/types/product';
+import { isNearSlide } from '@/features/products/utils/gallery';
 
 type ProductMedia = ProductDetail['media'];
 
@@ -19,18 +20,18 @@ export default function ProductMediaGallery({
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   // Looping clones the first and last slides, so videos are found in the DOM.
   const galleryRef = useRef<HTMLDivElement>(null);
+  // zmp-ui does not export the ref's type from its entry.
+  const swiperRef = useRef<ComponentRef<typeof Swiper>>(null);
 
-  const viewerImages = useMemo(
-    () =>
-      media
-        .filter((item) => item.type === 'IMAGE' && (item.mediumUrl || item.thumbnailUrl))
-        .map((item) => ({ src: item.mediumUrl ?? item.thumbnailUrl ?? '', alt: productTitle })),
-    [media, productTitle],
-  );
+  // Back on the slide the lightbox was left on, not the one it was opened from.
+  const handleLightboxClose = (index: number) => {
+    setIsLightboxOpen(false);
+    swiperRef.current?.goTo(index);
+  };
 
   if (media.length === 0) {
     return <div className="product-detail-image-placeholder" />;
@@ -45,6 +46,7 @@ export default function ProductMediaGallery({
     <>
       <div className="product-detail-gallery" ref={galleryRef}>
         <Swiper
+          ref={swiperRef}
           afterChange={handleSlideChange}
           // zmp-ui dims inactive slides to 0.8, but with `loop` it also dims the
           // active one on the last slide (its index check skips the clones),
@@ -73,7 +75,7 @@ export default function ProductMediaGallery({
                   aria-label="Phóng to ảnh"
                   className={slideClass}
                   type="button"
-                  onClick={() => setImageViewerOpen(true)}
+                  onClick={() => setIsLightboxOpen(true)}
                 >
                   {/* One image per slide: swapping a thumbnail for the larger
                       file mid-swipe changed its aspect ratio and made it jump. */}
@@ -97,12 +99,12 @@ export default function ProductMediaGallery({
         </span>
       </div>
 
-      {imageViewerOpen && viewerImages.length > 0 && (
-        <ImageViewer
-          activeIndex={getViewerIndex(media, activeIndex)}
-          images={viewerImages}
-          visible={imageViewerOpen}
-          onClose={() => setImageViewerOpen(false)}
+      {isLightboxOpen && (
+        <MediaLightbox
+          media={media}
+          startIndex={activeIndex}
+          productTitle={productTitle}
+          onClose={handleLightboxClose}
         />
       )}
     </>

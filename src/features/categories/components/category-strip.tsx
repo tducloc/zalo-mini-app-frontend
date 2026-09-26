@@ -1,7 +1,6 @@
 import InlineRetry from '@/components/inline-retry';
 import Skeleton from '@/components/skeleton';
-
-import type { CategoryOption } from '../types';
+import type { CategoryOption } from '@/features/categories/types/category';
 
 const SKELETON_ITEMS = 5;
 

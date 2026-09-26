@@ -1,8 +1,8 @@
 import { FormEvent, useRef } from 'react';
 import { Icon } from 'zmp-ui';
 
-import { SEARCH_MAX_LENGTH } from '../constants';
-import { filterBadgeClass } from '../styles';
+import { SEARCH_MAX_LENGTH } from '@/features/feed/constants/filters';
+import { filterBadgeClass } from '@/features/feed/constants/styles';
 
 // The fixed header height and safe-area inset are CSS variables set on the
 // Home page (`homePageClass`), so the content padding can follow them.

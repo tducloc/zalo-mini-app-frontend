@@ -1,4 +1,5 @@
-import { ZALO_PLACEHOLDER_TOKEN, resolveExchangeToken } from '@/features/auth/utils/exchange-token';
+import { ZALO_PLACEHOLDER_TOKEN } from '@/features/auth/constants/auth';
+import { resolveExchangeToken } from '@/features/auth/utils/exchange-token';
 
 describe('resolveExchangeToken', () => {
   it('uses the SDK token inside Zalo, even when a dev token is configured', () => {

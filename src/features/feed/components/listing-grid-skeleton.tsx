@@ -1,6 +1,10 @@
 import Skeleton from '@/components/skeleton';
-
-import { listingCardClass, listingCopyClass, listingGridClass, listingImageClass } from '../styles';
+import {
+  listingCardClass,
+  listingCopyClass,
+  listingGridClass,
+  listingImageClass,
+} from '@/features/feed/constants/styles';
 
 const lineClass = 'h-2.5 rounded-lg';
 

@@ -1,5 +1,22 @@
 # Zalo Mini App
 
+## Code layout
+
+`src/features/<feature>/` holds one feature, in the folders it needs:
+
+- `api/`: HTTP calls (and their React Query hooks)
+- `components/`
+- `constants/`: values other files use
+- `hooks/`
+- `services/`: work that runs on its own, outside components (processing and uploading files)
+- `types/`: enums and interfaces other files use
+- `utils/`: functions that answer from their inputs
+- `schemas.ts`: a form's zod schema
+
+A constant or type used by one file stays in that file. Shared app code is in `src/components`,
+`src/hooks`, `src/lib`, `src/stores` and `src/utils`. Media is explained in
+`src/features/media/README.md`.
+
 ## Development
 
 ### Using Zalo Mini App Extension

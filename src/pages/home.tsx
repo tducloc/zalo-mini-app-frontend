@@ -2,15 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { Page, useNavigate } from 'zmp-ui';
 import { useShallow } from 'zustand/react/shallow';
 
-import CategoryStrip from '@/features/categories/components/category-strip';
 import { useCategories } from '@/features/categories/api/get-categories';
+import CategoryStrip from '@/features/categories/components/category-strip';
 import FilterChips from '@/features/feed/components/filter-chips';
 import FilterSheet from '@/features/feed/components/filter-sheet';
 import HomeHeader from '@/features/feed/components/home-header';
 import ProductFeed from '@/features/feed/components/product-feed';
-import { useHomeFeedStore } from '@/features/feed/store';
-import { homeContentClass, homePageVarsClass, sectionHeadingClass } from '@/features/feed/styles';
-import type { FeedFilters, FilterKey } from '@/features/feed/types';
+import {
+  homeContentClass,
+  homePageVarsClass,
+  sectionHeadingClass,
+} from '@/features/feed/constants/styles';
+import type { FeedFilters, FilterKey } from '@/features/feed/types/filters';
 import {
   getFilterChips,
   normalizeSearch,
@@ -20,6 +23,7 @@ import {
 } from '@/features/feed/utils/filters';
 import { useLocations } from '@/features/locations/api/get-locations';
 import { useProductFeed } from '@/features/products/api/get-product-feed';
+import { useHomeFeedStore } from '@/stores/home-feed';
 
 const SEARCH_DEBOUNCE_MS = 300;
 

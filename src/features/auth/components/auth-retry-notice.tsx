@@ -1,4 +1,4 @@
-import { AUTH_ERROR_MESSAGE } from '../constants';
+import { AUTH_ERROR_MESSAGE } from '@/features/auth/constants/auth';
 
 /** Floating notice above the tab bar; the app stays usable underneath. */
 export default function AuthRetryNotice({

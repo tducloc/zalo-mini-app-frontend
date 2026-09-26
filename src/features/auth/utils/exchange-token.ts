@@ -1,5 +1,4 @@
-// What the SDK returns outside Zalo (desktop browser, simulator).
-export const ZALO_PLACEHOLDER_TOKEN = 'DEFAULT ACCESS TOKEN';
+import { ZALO_PLACEHOLDER_TOKEN } from '@/features/auth/constants/auth';
 
 /**
  * The Zalo token to exchange at `POST /auth/zalo`: the SDK token inside Zalo,

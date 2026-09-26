@@ -1,9 +1,8 @@
 import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 
+import { productKeys } from '@/features/products/api/keys';
+import type { ProductFeedPage, ProductFeedParams } from '@/features/products/types/product';
 import { apiClient } from '@/lib/api-client';
-
-import { productKeys } from './keys';
-import type { ProductFeedPage, ProductFeedParams } from '../types';
 
 const FEED_PAGE_SIZE = 20;
 const FEED_STALE_TIME_MS = 5 * 60_000;

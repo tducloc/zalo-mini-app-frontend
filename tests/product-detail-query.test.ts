@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { productDetailQueryOptions } from '@/features/products/api/get-product-detail';
 import { productKeys } from '@/features/products/api/keys';
-import type { ProductDetail } from '@/features/products/types';
+import type { ProductDetail } from '@/features/products/types/product';
 
 const product = (id: string) => ({ id, title: id }) as unknown as ProductDetail;
 

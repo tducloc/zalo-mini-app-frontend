@@ -1,19 +1,16 @@
-import type { CategoryOption } from '@/features/categories/types';
-import type { LocationResponse } from '@/features/locations/types';
-import { conditionLabels } from '@/features/products/constants';
-import type { ProductFeedParams } from '@/features/products/types';
-import { formatVnd } from '@/utils/format';
-
+import type { CategoryOption } from '@/features/categories/types/category';
 import {
   DEFAULT_SORT,
   FILTER_KEYS,
   HAS_VIDEO_LABEL,
   SEARCH_MAX_LENGTH,
   sortOptionConfig,
-} from '../constants';
-import type { FeedFilters, FilterChip, FilterKey } from '../types';
-
-export const DEFAULT_FILTERS: FeedFilters = { sort: DEFAULT_SORT };
+} from '@/features/feed/constants/filters';
+import type { FeedFilters, FilterChip, FilterKey } from '@/features/feed/types/filters';
+import type { LocationResponse } from '@/features/locations/types/location';
+import { conditionLabels } from '@/features/products/constants/product';
+import type { ProductFeedParams } from '@/features/products/types/product';
+import { formatVnd } from '@/utils/format';
 
 /** Trimmed search term, or undefined when there is nothing to search for. */
 export function normalizeSearch(input: string) {

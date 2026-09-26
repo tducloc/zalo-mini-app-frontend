@@ -1,7 +1,6 @@
-import { SEARCH_MAX_LENGTH } from '@/features/feed/constants';
-import type { FeedFilters } from '@/features/feed/types';
+import { SEARCH_MAX_LENGTH, DEFAULT_FILTERS } from '@/features/feed/constants/filters';
+import type { FeedFilters } from '@/features/feed/types/filters';
 import {
-  DEFAULT_FILTERS,
   getActiveFilterKeys,
   getFilterChips,
   nextChoice,

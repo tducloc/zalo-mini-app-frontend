@@ -1,6 +1,11 @@
 import { PropsWithChildren } from 'react';
 import { Icon, useLocation, useNavigate } from 'zmp-ui';
 
+import DraftBanner from '@/features/listings/components/draft-banner';
+import DraftIndicator, { DRAFT_STATUS_ID } from '@/features/listings/components/draft-indicator';
+import { hasDraft } from '@/features/listings/utils/listing-draft';
+import { useListingDraftStore } from '@/stores/listing-draft';
+
 type NavigationItem = {
   label: string;
   icon: 'zi-home' | 'zi-file' | 'zi-plus' | 'zi-video' | 'zi-user';
@@ -20,22 +25,27 @@ export default function AppShell({
   children,
   previewPath,
   onPreviewNavigate,
-  hasDraft = false,
 }: PropsWithChildren<{
   previewPath?: string;
   onPreviewNavigate?: (path: string) => void;
-  /** Signals that an unfinished listing draft still needs the seller's attention. */
-  hasDraft?: boolean;
 }>) {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = previewPath ?? location.pathname;
-  const showTabbar = !currentPath.startsWith('/products/');
+  const shouldShowTabbar = !currentPath.startsWith('/products/');
+  // On the sell page the draft is in front of the seller.
+  const shouldShowDraft = currentPath !== '/sell';
+  const isDraftBannerShown =
+    useListingDraftStore((state) => hasDraft(state.fields, state.media)) && shouldShowDraft;
 
   return (
     <>
-      {children}
-      {showTabbar && (
+      {/* The pages leave room at their end for the draft banner (app.scss). */}
+      <div className={isDraftBannerShown ? 'has-draft-banner contents' : 'contents'}>
+        {children}
+      </div>
+      {shouldShowTabbar && shouldShowDraft && <DraftBanner className="marketplace-draft-banner" />}
+      {shouldShowTabbar && (
         <nav className="marketplace-tabbar" aria-label="Điều hướng chính">
           <svg
             className="marketplace-tabbar-shape"
@@ -59,6 +69,7 @@ export default function AppShell({
                 key={item.label}
                 className={`marketplace-tab ${item.primary ? 'marketplace-tab-primary' : ''} ${item.disabled ? 'bottom-nav-disabled' : ''} ${isActive ? 'marketplace-tab-active' : ''}`}
                 aria-current={isActive ? 'page' : undefined}
+                aria-describedby={item.primary && shouldShowDraft ? DRAFT_STATUS_ID : undefined}
                 disabled={item.disabled}
                 onClick={() =>
                   item.path &&
@@ -68,10 +79,10 @@ export default function AppShell({
                 <span className="marketplace-tab-icon">
                   {item.primary ? (
                     <span className="marketplace-create-button">
-                      <span className="marketplace-plus">+</span>
-                      {hasDraft && (
-                        <span className="marketplace-draft-indicator" aria-hidden="true" />
-                      )}
+                      <span className="marketplace-plus" aria-hidden="true">
+                        +
+                      </span>
+                      {shouldShowDraft && <DraftIndicator />}
                     </span>
                   ) : (
                     <Icon icon={item.icon} size={23} />

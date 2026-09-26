@@ -385,6 +385,19 @@ body {
   font-size: 14px;
   line-height: 1.5;
 }
+/* Above the tab bar (74px), below its raised "+". */
+.marketplace-draft-banner {
+  position: fixed;
+  right: 12px;
+  bottom: 84px;
+  left: 12px;
+  z-index: 899;
+  box-shadow: 0 4px 12px rgb(23 57 108 / 18%);
+}
+/* Room for it at the end of every page: 52px and a 10px gap. */
+.has-draft-banner .marketplace-page {
+  padding-bottom: 144px;
+}
 .marketplace-tabbar {
   position: fixed;
   right: 0;
@@ -495,6 +508,12 @@ body {
 
 .product-detail-page {
   padding-bottom: calc(76px + var(--zaui-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+}
+/* The draft banner (DraftBanner: 52px and a 12px gap) sits in the bottom bar. */
+.has-draft-banner .product-detail-page {
+  padding-bottom: calc(
+    140px + var(--zaui-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+  );
 }
 .product-detail-header.zaui-header {
   background: transparent;

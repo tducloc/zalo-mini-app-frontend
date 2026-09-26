@@ -1,6 +1,7 @@
 import { Button, Icon, Page, useNavigate } from 'zmp-ui';
+
 import MobilePageHeader from '@/components/mobile-page-header';
-import { useSession } from '@/features/auth/hooks/session';
+import { useSession } from '@/features/auth/hooks/use-session';
 import { getAuthStatusLabel } from '@/features/auth/utils/auth-status';
 
 // Dev-only entry to the media measurement page. Remove with src/pages/media-lab.tsx.

@@ -1,4 +1,4 @@
-import type { ProductFeedParams } from '../types';
+import type { ProductFeedParams } from '@/features/products/types/product';
 
 // Hierarchical keys (broad → specific) so mutations can invalidate a whole
 // branch, e.g. every feed after a listing is sold: productKeys.feeds().

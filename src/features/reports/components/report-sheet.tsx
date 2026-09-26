@@ -2,8 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Button } from 'zmp-ui';
 
 import AppSheet from '@/components/app-sheet';
-
-import type { CreateReportInput, ReportReason } from '../types';
+import type { CreateReportInput, ReportReason } from '@/features/reports/types/report';
 
 const reasons: Array<{ value: ReportReason; label: string }> = [
   { value: 'SCAM', label: 'Nghi ngờ lừa đảo' },

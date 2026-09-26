@@ -1,9 +1,8 @@
 import Price from '@/components/price';
 import { getCategoryLabel } from '@/features/categories/utils/presentation';
-
-import ProductDescription from './description';
-import { conditionLabels } from '../constants';
-import { ProductDetail } from '../types';
+import ProductDescription from '@/features/products/components/description';
+import { conditionLabels } from '@/features/products/constants/product';
+import { ProductDetail } from '@/features/products/types/product';
 
 export default function ProductInformation({
   product,
@@ -21,7 +20,7 @@ export default function ProductInformation({
       <div className="product-detail-title-row">
         <h1 className="product-detail-title">{product.title}</h1>
         <button
-          aria-label="Tùy chọn tin đăng"
+          aria-label="Tuỳ chọn tin đăng"
           className="product-detail-action-menu"
           onClick={onOpenActions}
         >

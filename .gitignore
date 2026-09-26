@@ -39,3 +39,7 @@ Thumbs.db
 www/
 ui-review/
 ui-review.zip
+
+# Playwright
+/test-results/
+/playwright-report/

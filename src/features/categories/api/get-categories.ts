@@ -1,10 +1,9 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
 
+import { categoryKeys } from '@/features/categories/api/keys';
+import type { CategoryResponse } from '@/features/categories/types/category';
+import { presentCategories } from '@/features/categories/utils/presentation';
 import { apiClient } from '@/lib/api-client';
-
-import { categoryKeys } from './keys';
-import type { CategoryResponse } from '../types';
-import { presentCategories } from '../utils/presentation';
 
 // The category list is fixed per backend release.
 const CATEGORIES_STALE_TIME_MS = 60 * 60_000;

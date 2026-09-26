@@ -1,4 +1,4 @@
-import { ProductDetail } from '../types';
+import { ProductDetail } from '@/features/products/types/product';
 
 export default function ProductSellerContact({ product }: { product: ProductDetail }) {
   return (
