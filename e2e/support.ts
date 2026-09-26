@@ -17,7 +17,19 @@ export const tab = (page: Page, name: string) =>
 export async function openSellPage(page: Page) {
   await page.goto('/');
   await tab(page, 'Đăng tin').click();
-  await expect(page.getByRole('heading', { name: 'Hình ảnh sản phẩm' })).toBeVisible();
+  const heading = page.getByRole('heading', { name: 'Hình ảnh sản phẩm' });
+  await expect(heading).toBeVisible();
+
+  // The page slides in: touch points taken mid-slide miss their tile, so wait for it to rest.
+  let lastX: number | undefined;
+  await expect
+    .poll(async () => {
+      const x = (await heading.boundingBox())?.x;
+      const isResting = x !== undefined && x === lastX;
+      lastX = x;
+      return isResting;
+    })
+    .toBe(true);
 }
 
 export const photoTiles = (page: Page) => page.getByRole('listitem', { name: /^Ảnh \d+$/ });

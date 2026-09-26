@@ -17,7 +17,7 @@ export function tileView(media: DraftMedia): TileView {
     progress: null,
     detail: null,
     canRetry: false,
-    // The optimized photo, else the server's thumbnail once it has one.
+    // The photo on the phone, else the server's thumbnail once it has one.
     imageUrl: media.previewUrl ?? media.server?.thumbnailUrl ?? null,
   };
 

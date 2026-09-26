@@ -52,8 +52,9 @@ export interface DraftMedia {
   /** From ReadyToUpload on. */
   upload: UploadSource | null;
   /**
-   * Object URL of the optimized photo. Null for originals: decoding a full-size photo for
-   * an <img> is what the worker exists to keep off the main thread.
+   * Object URL of the optimized photo, or of the picked one when it is already small. Null
+   * for a full-size original: decoding one for an <img> is what the worker exists to keep
+   * off the main thread.
    */
   previewUrl: string | null;
   /** 0–1: a video's conversion, then the upload; null when there is none to show. */

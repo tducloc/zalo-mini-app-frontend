@@ -88,8 +88,15 @@ async function takeImage({ id, file, photo, signal }: PickedFile) {
     return;
   }
 
-  if (outcome.kind === 'original' || outcome.image.keptOriginal) {
+  // The worker could not shrink it: likely too big to decode here too.
+  if (outcome.kind === 'original') {
     markReady(id, original, asPicked);
+    return;
+  }
+
+  // Already small: the picked file is cheap to show as it is.
+  if (outcome.image.keptOriginal) {
+    markReady(id, original, asPicked, URL.createObjectURL(file));
     return;
   }
 
@@ -224,7 +231,7 @@ export async function addDraftFiles(files: File[]): Promise<RefusedFile[]> {
   });
 }
 
-/** Frees the optimized photo's object URL. */
+/** Frees the photo preview's object URL. */
 function revokePreview(media: DraftMedia) {
   if (media.previewUrl) {
     URL.revokeObjectURL(media.previewUrl);
