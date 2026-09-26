@@ -11,7 +11,8 @@ interface MediaLightboxProps {
   /** The slide the seller tapped. */
   startIndex: number;
   productTitle: string;
-  onClose: () => void;
+  /** With the slide on screen, for the gallery to show it too. */
+  onClose: (index: number) => void;
 }
 
 /**
@@ -67,7 +68,7 @@ export default function MediaLightbox({
           ref={closeRef}
           type="button"
           aria-label="Đóng"
-          onClick={onClose}
+          onClick={() => onClose(activeIndex)}
           className="grid h-11 w-11 place-items-center border-0 bg-transparent text-white"
         >
           <Icon icon="zi-close" size={24} />

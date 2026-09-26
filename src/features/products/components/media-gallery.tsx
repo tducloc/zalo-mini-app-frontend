@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { type ComponentRef, useRef, useState } from 'react';
 import { Swiper } from 'zmp-ui';
 
 import MediaLightbox from '@/features/products/components/media-lightbox';
@@ -24,8 +24,14 @@ export default function ProductMediaGallery({
 
   // Looping clones the first and last slides, so videos are found in the DOM.
   const galleryRef = useRef<HTMLDivElement>(null);
+  // zmp-ui does not export the ref's type from its entry.
+  const swiperRef = useRef<ComponentRef<typeof Swiper>>(null);
 
-  const handleLightboxClose = () => setIsLightboxOpen(false);
+  // Back on the slide the lightbox was left on, not the one it was opened from.
+  const handleLightboxClose = (index: number) => {
+    setIsLightboxOpen(false);
+    swiperRef.current?.goTo(index);
+  };
 
   if (media.length === 0) {
     return <div className="product-detail-image-placeholder" />;
@@ -40,6 +46,7 @@ export default function ProductMediaGallery({
     <>
       <div className="product-detail-gallery" ref={galleryRef}>
         <Swiper
+          ref={swiperRef}
           afterChange={handleSlideChange}
           // zmp-ui dims inactive slides to 0.8, but with `loop` it also dims the
           // active one on the last slide (its index check skips the clones),

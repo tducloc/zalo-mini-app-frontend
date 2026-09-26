@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import ProductActionsSheet from '@/features/products/components/actions-sheet';
 import ProductDescription from '@/features/products/components/description';
+import MediaLightbox from '@/features/products/components/media-lightbox';
 import ProductMediaGallery from '@/features/products/components/media-gallery';
 import { ProductDetail } from '@/features/products/types/product';
 
@@ -85,6 +86,16 @@ describe('product detail UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Đóng' }));
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('hands the slide it closes on back to the gallery', () => {
+    const onClose = vi.fn();
+    render(
+      <MediaLightbox media={product.media} startIndex={1} productTitle="x" onClose={onClose} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng' }));
+    expect(onClose).toHaveBeenCalledWith(1);
   });
 
   it('shows a disabled reported state instead of allowing a duplicate report', () => {
