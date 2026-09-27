@@ -1,14 +1,10 @@
-import { useRef, useState } from 'react';
-import { Modal } from 'zmp-ui';
+import { useState } from 'react';
 
 import ActionButton from '@/components/action-button';
+import ConfirmDialog, { ConfirmTone } from '@/components/feedback/confirm-dialog';
 import { discardMessages } from '@/features/listings/constants/messages';
 
-/**
- * "Huỷ tin", asking first: the draft's files and fields cannot be brought back. The draft
- * ends once the dialog has closed: zmp-ui unlocks the page's scrolling only then, and this
- * button goes with the draft.
- */
+/** "Huỷ tin", asking first: the draft's files and fields cannot be brought back. */
 export default function DiscardDraftButton({
   isDisabled,
   onDiscard,
@@ -17,21 +13,6 @@ export default function DiscardDraftButton({
   onDiscard: () => void;
 }) {
   const [isAsking, setIsAsking] = useState(false);
-  const isConfirmedRef = useRef(false);
-
-  const handleClose = () => setIsAsking(false);
-
-  const handleConfirm = () => {
-    isConfirmedRef.current = true;
-    setIsAsking(false);
-  };
-
-  const handleAfterClose = () => {
-    if (isConfirmedRef.current) {
-      isConfirmedRef.current = false;
-      onDiscard();
-    }
-  };
 
   return (
     <>
@@ -42,18 +23,14 @@ export default function DiscardDraftButton({
         disabled={isDisabled}
         onClick={() => setIsAsking(true)}
       >
-        Huỷ tin
+        {discardMessages.confirm}
       </ActionButton>
-      <Modal
-        visible={isAsking}
-        title={discardMessages.title}
-        description={discardMessages.description}
-        onClose={handleClose}
-        afterClose={handleAfterClose}
-        actions={[
-          { text: 'Tiếp tục đăng', onClick: handleClose },
-          { text: 'Huỷ tin', danger: true, onClick: handleConfirm },
-        ]}
+      <ConfirmDialog
+        isVisible={isAsking}
+        messages={discardMessages}
+        tone={ConfirmTone.Danger}
+        onClose={() => setIsAsking(false)}
+        onConfirm={onDiscard}
       />
     </>
   );

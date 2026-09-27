@@ -11,8 +11,11 @@ interface MediaViewerProps {
   /** What the file's tile shows. */
   view: TileView;
   isVideo: boolean;
-  /** Shown from an object URL when the view has no image: the video, or an original photo. */
-  file: Blob;
+  /**
+   * Shown from an object URL when the view has no image: the video, or an original photo.
+   * Null for media already on the listing, shown from the view's `fullUrl`.
+   */
+  file: Blob | null;
   onRetry: () => void;
   /** Null for the video and for the photo that is already the cover. */
   onMakeCover: (() => void) | null;
@@ -44,7 +47,7 @@ export default function MediaViewer({
   const [failedSource, setFailedSource] = useState<string | null>(null);
 
   const isError = view.tone === TileTone.Error;
-  const source = isVideo ? fileUrl : (view.imageUrl ?? fileUrl);
+  const source = isVideo ? (fileUrl ?? view.fullUrl) : (view.fullUrl ?? view.imageUrl ?? fileUrl);
   const isShown = !!source && source !== failedSource;
   const handleMediaError = () => setFailedSource(source);
 
@@ -61,6 +64,7 @@ export default function MediaViewer({
         {isShown && isVideo && (
           <video
             src={source}
+            poster={view.imageUrl ?? undefined}
             controls
             playsInline
             onError={handleMediaError}

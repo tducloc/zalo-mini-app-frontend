@@ -13,8 +13,11 @@ interface MediaTileProps {
   name: string;
   view: TileView;
   isVideo: boolean;
-  /** The file to draw itself when the view has no image; see `localUrl` below. */
-  file: Blob;
+  /**
+   * The file to draw itself when the view has no image; see `localUrl` below. Null for
+   * media already on the listing being edited.
+   */
+  file: Blob | null;
   isCover: boolean;
   onOpen: () => void;
   onRemove: () => void;

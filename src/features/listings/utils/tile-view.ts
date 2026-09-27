@@ -5,13 +5,13 @@ import {
   uploadFailedMessages,
   uploadWaitMessages,
 } from '@/features/listings/constants/messages';
-import { DraftMediaStatus, type DraftMedia } from '@/features/listings/types/draft-media';
+import { DraftMediaStatus, type ListingMedia } from '@/features/listings/types/draft-media';
 import { TileTone, type TileView } from '@/features/listings/types/tile-view';
 import { MediaKind, RejectReason } from '@/features/media/types/media';
 import { ServerMediaStatus, UploadWait } from '@/features/media/types/upload';
 
 /** What a draft file's tile and viewer show; pure, so each state is tested. */
-export function tileView(media: DraftMedia): TileView {
+export function tileView(media: ListingMedia): TileView {
   const base = {
     label: null,
     progress: null,
@@ -19,6 +19,7 @@ export function tileView(media: DraftMedia): TileView {
     canRetry: false,
     // The photo on the phone, else the server's thumbnail once it has one.
     imageUrl: media.previewUrl ?? media.server?.thumbnailUrl ?? null,
+    fullUrl: media.mediumUrl,
   };
 
   switch (media.status) {

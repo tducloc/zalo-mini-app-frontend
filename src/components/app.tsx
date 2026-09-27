@@ -4,6 +4,7 @@ import { AnimationRoutes, App, Route, SnackbarProvider, ZMPRouter } from 'zmp-ui
 import { AppProps } from 'zmp-ui/app';
 import AppShell from '@/components/layout/app-shell';
 import { AuthBootstrap } from '@/features/auth/components/bootstrap';
+import EditListingPage from '@/pages/edit-listing';
 import HomePage from '@/pages/home';
 import MyListingsPage from '@/pages/my-listings';
 import ProductDetailPage from '@/pages/product-detail';
@@ -47,6 +48,7 @@ export default function MyApp() {
                   />
                 )}
                 <Route path="/products/:productId" element={<ProductDetailPage />} />
+                <Route path="/products/:productId/edit" element={<EditListingPage />} />
               </AnimationRoutes>
             </AppShell>
           </ZMPRouter>

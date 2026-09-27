@@ -1,4 +1,6 @@
-import { Header, Icon, useLocation, useNavigate } from 'zmp-ui';
+import { Header, Icon } from 'zmp-ui';
+
+import { useGoBack } from '@/hooks/use-go-back';
 
 // Over media: no divider, and the back arrow on a dark disc.
 const transparentHeaderClass =
@@ -9,21 +11,16 @@ export default function MobilePageHeader({
   showBack = false,
   fallbackPath = '/',
   transparent = false,
+  onBack,
 }: {
   title: string;
   showBack?: boolean;
   fallbackPath?: string;
   transparent?: boolean;
+  /** Replaces going back, e.g. to ask first when there are unsaved changes. */
+  onBack?: () => void;
 }) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const goBack = () => {
-    if (location.key === 'default') {
-      navigate(fallbackPath);
-      return;
-    }
-    navigate(-1);
-  };
+  const goBack = useGoBack(fallbackPath);
 
   return (
     <Header
@@ -35,7 +32,7 @@ export default function MobilePageHeader({
           <Icon icon="zi-chevron-left" />
         </span>
       }
-      onBackClick={goBack}
+      onBackClick={onBack ?? goBack}
       className={transparent ? transparentHeaderClass : undefined}
       backgroundColor={transparent ? 'transparent' : undefined}
       textColor={transparent ? '#ffffff' : undefined}

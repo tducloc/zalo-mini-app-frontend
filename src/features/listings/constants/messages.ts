@@ -157,5 +157,30 @@ export const UNFINISHED_DRAFT = 'Bạn có tin đăng chưa hoàn tất';
 export const discardMessages = {
   title: 'Huỷ tin đang đăng?',
   description: 'Ảnh, video và nội dung đã nhập sẽ bị xoá.',
+  cancel: 'Tiếp tục đăng',
+  confirm: 'Huỷ tin',
   discarded: 'Đã huỷ tin.',
+};
+
+// ---- Editing a listing ----
+
+export const saveMessages = {
+  /** Next to the disabled Save button. */
+  working: 'Đang tải ảnh và video lên. Nút Lưu sẽ mở khi xong.',
+  saved: 'Đã lưu thay đổi.',
+  /** 200 with PROCESSING: new media is still being processed. */
+  processing: 'Đã lưu. Tin sẽ hiện lại khi ảnh và video xử lý xong.',
+  unchanged: 'Tin chưa có thay đổi nào.',
+  fields: 'Vui lòng sửa các mục được đánh dấu đỏ rồi lưu lại.',
+  mediaConflict: postMessages.mediaConflict,
+  invalid: 'Vui lòng thử lại sau: máy chủ chưa nhận thay đổi này.',
+  notEditable: 'Tin này không còn sửa được: tin có thể đã bán, đã ẩn hoặc đã bị gỡ.',
+  failed: 'Vui lòng kiểm tra mạng rồi bấm Lưu lại: thay đổi chưa được lưu.',
+};
+
+export const leaveEditMessages = {
+  title: 'Bỏ các thay đổi?',
+  description: 'Những gì bạn vừa sửa sẽ không được lưu.',
+  cancel: 'Tiếp tục sửa',
+  confirm: 'Bỏ thay đổi',
 };

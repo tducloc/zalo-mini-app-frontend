@@ -12,5 +12,13 @@ export const pageContentClass = 'px-4 pb-4 pt-[calc(60px_+_var(--zaui-safe-area-
 export const cardClass =
   'rounded-2xl border border-solid border-marketplace-line bg-white shadow-[0_2px_8px_rgb(23_57_108/4%)]';
 
+/** A round icon badge; where it sits is up to the caller. */
 export const stateIconClass =
-  'mx-auto mb-3 mt-0 grid size-[54px] place-items-center rounded-full bg-marketplace-pale text-marketplace-blue';
+  'grid size-[54px] shrink-0 place-items-center rounded-full bg-marketplace-pale text-marketplace-blue';
+
+/** A row of an options sheet ("Tuỳ chọn"): 16px text on the sheet's 20px line height. */
+export const sheetActionClass =
+  'flex min-h-[52px] w-full items-center gap-3 border-b border-solid border-[#eef2f8] p-0 text-left text-base leading-5';
+
+/** The round icon at the start of a sheet row; its colours are up to the caller. */
+export const sheetActionIconClass = 'grid size-7 place-items-center rounded-full text-lg leading-5';

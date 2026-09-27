@@ -11,7 +11,8 @@ export default function ProductInformation({
   onOpenActions,
 }: {
   product: ProductDetail;
-  onOpenActions: () => void;
+  /** Without it (nothing to offer) there is no "•••" button. */
+  onOpenActions?: () => void;
 }) {
   const publishedDate = new Date(product.publishedAt ?? product.createdAt).toLocaleDateString(
     'vi-VN',
@@ -23,13 +24,15 @@ export default function ProductInformation({
         <h1 className="mb-0 mt-3 flex-1 text-[22px] leading-[30px] text-marketplace-ink">
           {product.title}
         </h1>
-        <button
-          aria-label="Tuỳ chọn tin đăng"
-          className="mt-2.5 size-[34px] flex-[0_0_34px] rounded-full border-0 pb-1 text-base font-semibold leading-none tracking-normal text-marketplace-muted"
-          onClick={onOpenActions}
-        >
-          •••
-        </button>
+        {onOpenActions && (
+          <button
+            aria-label="Tuỳ chọn tin đăng"
+            className="mt-2.5 size-[34px] flex-[0_0_34px] rounded-full border-0 pb-1 text-base font-semibold leading-none tracking-normal text-marketplace-muted"
+            onClick={onOpenActions}
+          >
+            •••
+          </button>
+        )}
       </div>
       <p className={metaClass}>
         {getCategoryLabel(product.category)} · {conditionLabels[product.condition]} ·{' '}
