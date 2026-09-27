@@ -9,11 +9,14 @@ export default function MobilePageHeader({
   showBack = false,
   fallbackPath = '/',
   transparent = false,
+  onBack,
 }: {
   title: string;
   showBack?: boolean;
   fallbackPath?: string;
   transparent?: boolean;
+  /** Replaces going back, e.g. to ask first when there are unsaved changes. */
+  onBack?: () => void;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,7 +38,7 @@ export default function MobilePageHeader({
           <Icon icon="zi-chevron-left" />
         </span>
       }
-      onBackClick={goBack}
+      onBackClick={onBack ?? goBack}
       className={transparent ? transparentHeaderClass : undefined}
       backgroundColor={transparent ? 'transparent' : undefined}
       textColor={transparent ? '#ffffff' : undefined}

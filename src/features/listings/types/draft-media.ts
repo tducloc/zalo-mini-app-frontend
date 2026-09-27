@@ -7,6 +7,9 @@
  *
  * The draft store keeps the list; the services update a file by its id, so an update for
  * a file the seller removed meanwhile finds nothing and is dropped.
+ *
+ * An edit starts with the listing's media as files already Uploaded (utils/edit-listing.ts):
+ * ListingMedia, with no local `file` and the server's pictures instead.
  */
 
 import { MediaKind, type RejectReason } from '@/features/media/types/media';
@@ -39,6 +42,7 @@ export interface UploadSource {
   optimized: boolean;
 }
 
+/** A file the seller picked on this phone. */
 export interface DraftMedia {
   /** Also the upload's clientFileId. */
   id: string;
@@ -66,4 +70,14 @@ export interface DraftMedia {
   /** Uploaded: the server's id and status. */
   mediaId: string | null;
   server: ServerMedia | null;
+  /** Media already on the listing: the server's medium photo, or the video itself. */
+  mediumUrl: string | null;
+}
+
+/**
+ * A tile of a listing being written: a picked file, or, when editing, media already on the
+ * listing (no local file). What the store, the services and the form work on.
+ */
+export interface ListingMedia extends Omit<DraftMedia, 'file'> {
+  file: File | null;
 }

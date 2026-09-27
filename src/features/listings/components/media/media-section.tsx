@@ -11,6 +11,7 @@ import {
 import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { type ChangeEvent, useState } from 'react';
 import { Icon } from 'zmp-ui';
+import { useStore } from 'zustand';
 
 import RequiredMark from '@/features/listings/components/form/required-mark';
 import MediaAddTile from '@/features/listings/components/media/media-add-tile';
@@ -18,9 +19,8 @@ import MediaTile from '@/features/listings/components/media/media-tile';
 import MediaViewer from '@/features/listings/components/media/media-viewer';
 import { missingPhotoMessage, refusedFilesMessage } from '@/features/listings/constants/messages';
 import { formNoteClass, formSectionTitleClass } from '@/features/listings/constants/styles';
-import { addDraftFiles, removeDraftMedia } from '@/features/listings/services/add-media';
-import { retryUpload } from '@/features/listings/services/upload-media';
-import type { DraftMedia } from '@/features/listings/types/draft-media';
+import type { MediaPipeline } from '@/features/listings/services/media-pipeline';
+import type { ListingMedia } from '@/features/listings/types/draft-media';
 import { isFailed } from '@/features/listings/utils/draft-media';
 import { tileView } from '@/features/listings/utils/tile-view';
 import { PHOTO_ACCEPT, VIDEO_ACCEPT } from '@/features/media/constants/formats';
@@ -28,7 +28,6 @@ import { MAX_IMAGES_PER_LISTING, MAX_VIDEO_SECONDS } from '@/features/media/cons
 import { MediaKind } from '@/features/media/types/media';
 import { takePickedFiles } from '@/features/media/utils/media';
 import { useToast } from '@/hooks/use-toast';
-import { useListingDraftStore } from '@/stores/listing-draft';
 
 const TILE_GRID_CLASS = 'm-0 grid list-none grid-cols-4 gap-2.5 p-0';
 const FIELD_HEADING_CLASS = 'mb-2.5 mt-5 flex justify-between gap-2';
@@ -41,26 +40,30 @@ const VIDEO_NAME = 'Video';
 const HOLD_TO_DRAG = { delay: 350, tolerance: 5 };
 
 /** What will be uploaded (a shrunk photo, a converted clip), else what was picked. */
-const fileOf = (item: DraftMedia) => item.upload?.blob ?? item.file;
+const fileOf = (item: ListingMedia) => item.upload?.blob ?? item.file;
 
 const photoName = (index: number) => `Ảnh ${index + 1}`;
 
 /**
  * The form's photos (the first is the cover; hold and drag to reorder) and its video, on
- * the draft store: picking adds files to the draft, where they are checked, optimized and
- * uploaded (L4, L5) while the seller fills in the rest.
+ * a draft store: picking adds files to the draft, where they are checked, optimized and
+ * uploaded (L4, L5) while the seller fills in the rest. The sell page's draft, or an edit
+ * page's, which starts with the listing's media.
  */
 export default function MediaSection({
+  pipeline,
   isPhotoMissing,
 }: {
-  /** Post was tapped without a photo. */
+  pipeline: MediaPipeline;
+  /** Post (or Save) was tapped without a photo. */
   isPhotoMissing: boolean;
 }) {
   const { showError } = useToast();
 
-  const media = useListingDraftStore((state) => state.media);
-  const moveMedia = useListingDraftStore((state) => state.moveMedia);
-  const isPosting = useListingDraftStore((state) => state.isPosting);
+  const { store, addFiles, removeMedia, retryUpload } = pipeline;
+  const media = useStore(store, (state) => state.media);
+  const moveMedia = useStore(store, (state) => state.moveMedia);
+  const isPosting = useStore(store, (state) => state.isPosting);
   const [openId, setOpenId] = useState<string | null>(null);
 
   // Mouse too, for Zalo on PC and testing in a desktop browser.
@@ -80,7 +83,7 @@ export default function MediaSection({
       return;
     }
 
-    const refused = await addDraftFiles(files);
+    const refused = await addFiles(files);
     if (refused.length > 0) {
       showError(refusedFilesMessage(refused));
     }
@@ -152,7 +155,7 @@ export default function MediaSection({
                 file={fileOf(item)}
                 isCover={index === 0}
                 onOpen={() => setOpenId(item.id)}
-                onRemove={() => removeDraftMedia(item.id)}
+                onRemove={() => removeMedia(item.id)}
               />
             ))}
             {photos.length < MAX_IMAGES_PER_LISTING && (
@@ -181,7 +184,7 @@ export default function MediaSection({
               file={fileOf(video)}
               isCover={false}
               onOpen={() => setOpenId(video.id)}
-              onRemove={() => removeDraftMedia(video.id)}
+              onRemove={() => removeMedia(video.id)}
             />
           ) : (
             <MediaAddTile
@@ -213,7 +216,7 @@ export default function MediaSection({
           file={fileOf(opened)}
           onRetry={actOn(opened.id, retryUpload)}
           onMakeCover={photos.indexOf(opened) > 0 ? actOn(opened.id, makeCover) : null}
-          onRemove={actOn(opened.id, removeDraftMedia)}
+          onRemove={actOn(opened.id, removeMedia)}
           onClose={handleClose}
         />
       )}

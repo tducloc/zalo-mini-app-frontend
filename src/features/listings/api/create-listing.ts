@@ -28,8 +28,10 @@ export async function createListing(
   return response.data.data?.status === 'PUBLISHED';
 }
 
-enum HttpStatus {
+export enum HttpStatus {
   BadRequest = 400,
+  Forbidden = 403,
+  NotFound = 404,
   Conflict = 409,
   UnprocessableEntity = 422,
 }
@@ -42,16 +44,23 @@ const conflictDetails = z.array(z.object({ mediaId: z.string() }));
 const INVALID: PostError = { kind: PostErrorKind.Invalid };
 const OTHER: PostError = { kind: PostErrorKind.Other };
 
-function fieldsError(details: unknown): PostError {
-  const fields = (fieldDetails.safeParse(details).data ?? []).flatMap(
+/** The listing's fields a 400 names; the rest (`mediaIds`, the key) the seller cannot fix. */
+export const refusedFieldsOf = (details: unknown) =>
+  (fieldDetails.safeParse(details).data ?? []).flatMap(
     ({ field }) => draftField.safeParse(field).data ?? [],
   );
+
+/** The media a 409 names (`{ mediaId, reason }` entries); none for a wrong listing status. */
+export const refusedMediaOf = (details: unknown) =>
+  (conflictDetails.safeParse(details).data ?? []).map(({ mediaId }) => mediaId);
+
+function fieldsError(details: unknown): PostError {
+  const fields = refusedFieldsOf(details);
   return fields.length > 0 ? { kind: PostErrorKind.Fields, fields } : INVALID;
 }
 
 function conflictError(details: unknown): PostError {
-  const mediaIds = (conflictDetails.safeParse(details).data ?? []).map(({ mediaId }) => mediaId);
-  return { kind: PostErrorKind.MediaConflict, mediaIds };
+  return { kind: PostErrorKind.MediaConflict, mediaIds: refusedMediaOf(details) };
 }
 
 function reusedError(details: unknown): PostError {

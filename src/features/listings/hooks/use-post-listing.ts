@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'zmp-ui';
 
 import { createListing, readPostError } from '@/features/listings/api/create-listing';
@@ -8,6 +9,8 @@ import { markUnusableMedia } from '@/features/listings/services/upload-media';
 import type { DraftFields } from '@/features/listings/types/listing-draft';
 import { PostErrorKind, type PostError } from '@/features/listings/types/post-error';
 import { mediaIdsForPost, postBlocker } from '@/features/listings/utils/listing-draft';
+import { myListingKeys } from '@/features/my-listings/api/keys';
+import type { MyListingsTab } from '@/features/my-listings/types/my-listing';
 import { useToast } from '@/hooks/use-toast';
 import { useListingDraftStore } from '@/stores/listing-draft';
 import { warnInDev } from '@/utils/dev-log';
@@ -28,6 +31,7 @@ export function usePostListing({
   onMediaErrors: () => void;
 }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { showError, showInfo, showSuccess } = useToast();
 
   const handleError = (error: PostError) => {
@@ -73,8 +77,11 @@ export function usePostListing({
     }
 
     forgetPostedDraft();
+    void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
     showSuccess(isPublished ? postMessages.published : postMessages.processing);
-    // Back from My listings goes to where the seller came from, not to an empty form.
-    navigate('/my-listings', { replace: true });
+    // On the tab that lists it. Back from My listings goes to where the seller came from,
+    // not to an empty form.
+    const tab: MyListingsTab = isPublished ? 'published' : 'processing';
+    navigate('/my-listings', { replace: true, state: { tab } });
   };
 }
