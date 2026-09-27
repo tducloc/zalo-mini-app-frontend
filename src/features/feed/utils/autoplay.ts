@@ -4,7 +4,7 @@
  * less data.
  */
 
-interface Box {
+export interface Box {
   top: number;
   bottom: number;
   left: number;
@@ -19,19 +19,35 @@ const SLOW_NETWORKS = new Set(['slow-2g', '2g']);
 
 const centre = (start: number, end: number) => (start + end) / 2;
 
-/** The card nearest the viewport's centre among those mostly on screen, else null. */
-export function pickActiveCard(cards: { id: string; rect: Box }[], viewport: Box) {
-  const middleY = centre(viewport.top, viewport.bottom);
-  const middleX = centre(viewport.left, viewport.right);
+/**
+ * The part of the scroller the viewer really sees: the fixed header covers its top, and
+ * its bottom padding is kept free for the tab bar (and the draft banner) over it.
+ */
+export function visibleArea(scroller: Box, headerBottom: number, bottomPadding: number): Box {
+  return {
+    ...scroller,
+    top: Math.max(scroller.top, headerBottom),
+    bottom: scroller.bottom - bottomPadding,
+  };
+}
+
+/**
+ * The card nearest the centre of the visible area among those mostly in it, else null.
+ * Of two cards as near, the first (the left one of a row) wins.
+ */
+export function pickActiveCard(cards: { id: string; rect: Box }[], area: Box) {
+  const middleY = centre(area.top, area.bottom);
+  const middleX = centre(area.left, area.right);
 
   let best: { id: string; distance: number } | null = null;
   for (const { id, rect } of cards) {
-    const visible = Math.min(rect.bottom, viewport.bottom) - Math.max(rect.top, viewport.top);
-    if (visible < (rect.bottom - rect.top) * MIN_VISIBLE_SHARE) {
+    const height = rect.bottom - rect.top;
+    const visible = Math.min(rect.bottom, area.bottom) - Math.max(rect.top, area.top);
+    // A zero-size box is a card that is not laid out (hidden), not a visible one.
+    if (height <= 0 || visible < height * MIN_VISIBLE_SHARE) {
       continue;
     }
 
-    // Rows first; within a row of two, the card nearer the middle of the screen.
     const distance = Math.hypot(
       centre(rect.top, rect.bottom) - middleY,
       centre(rect.left, rect.right) - middleX,
@@ -45,20 +61,19 @@ export function pickActiveCard(cards: { id: string; rect: Box }[], viewport: Box
 
 export function canAutoplay({
   isEnabled,
+  wasRefused,
   prefersReducedMotion,
   saveData,
   effectiveType,
 }: {
   isEnabled: boolean;
+  /** The WebView refused to play a preview this session; it will refuse the next too. */
+  wasRefused: boolean;
   prefersReducedMotion: boolean;
   /** From the Network Information API; undefined where the browser has none. */
   saveData: boolean | undefined;
   effectiveType: string | undefined;
 }) {
-  return (
-    isEnabled &&
-    !prefersReducedMotion &&
-    !saveData &&
-    !(effectiveType !== undefined && SLOW_NETWORKS.has(effectiveType))
-  );
+  const isSlowNetwork = SLOW_NETWORKS.has(effectiveType ?? '');
+  return isEnabled && !wasRefused && !prefersReducedMotion && !saveData && !isSlowNetwork;
 }

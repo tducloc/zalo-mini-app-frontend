@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { canAutoplay, pickActiveCard } from '@/features/feed/utils/autoplay';
+import { canAutoplay, pickActiveCard, visibleArea } from '@/features/feed/utils/autoplay';
 
 // A 390×800 viewport, scrolled so its centre is at y = 400.
 const viewport = { top: 0, bottom: 800, left: 0, right: 390 };
@@ -15,6 +15,19 @@ describe('pickActiveCard', () => {
     const cards = [card('a', 20), card('b', 290), card('c', 560)];
 
     expect(pickActiveCard(cards, viewport)).toBe('b');
+  });
+
+  it('in an even row of two, picks the left card', () => {
+    // The real grid: both centres are 92 px from the middle of the screen.
+    const cards = [card('left', 280, 13), card('right', 280, 197)];
+
+    expect(pickActiveCard(cards, viewport)).toBe('left');
+  });
+
+  it('skips a card that is not laid out (a zero-size box)', () => {
+    const hidden = { id: 'hidden', rect: { top: 0, bottom: 0, left: 0, right: 0 } };
+
+    expect(pickActiveCard([hidden, card('b', 520)], viewport)).toBe('b');
   });
 
   it('in a row of two, picks the one nearer the horizontal centre', () => {
@@ -37,9 +50,32 @@ describe('pickActiveCard', () => {
   });
 });
 
+describe('visibleArea', () => {
+  // A 390×844 page under a 155 px header, with 82 px kept for the tab bar.
+  const page = { top: 0, bottom: 844, left: 0, right: 390 };
+  const area = visibleArea(page, 155, 82);
+
+  it('leaves out what the header and the tab bar cover', () => {
+    expect(area).toEqual({ top: 155, bottom: 762, left: 0, right: 390 });
+  });
+
+  it('does not pick a card hidden under the header', () => {
+    // 156 px of this card are inside the page, but only 1 px below the header.
+    const underHeader = card('under-header', -94);
+
+    expect(pickActiveCard([underHeader], page)).toBe('under-header');
+    expect(pickActiveCard([underHeader], area)).toBeNull();
+  });
+
+  it('does not pick a card mostly under the tab bar', () => {
+    expect(pickActiveCard([card('under-tab-bar', 690)], area)).toBeNull();
+  });
+});
+
 describe('canAutoplay', () => {
   const allowed = {
     isEnabled: true,
+    wasRefused: false,
     prefersReducedMotion: false,
     saveData: false,
     effectiveType: '4g',
@@ -51,8 +87,9 @@ describe('canAutoplay', () => {
     expect(canAutoplay({ ...allowed, saveData: undefined, effectiveType: undefined })).toBe(true);
   });
 
-  it('respects the flag, reduced motion, data saving and slow networks', () => {
+  it('respects the flag, a refusal, reduced motion, data saving and slow networks', () => {
     expect(canAutoplay({ ...allowed, isEnabled: false })).toBe(false);
+    expect(canAutoplay({ ...allowed, wasRefused: true })).toBe(false);
     expect(canAutoplay({ ...allowed, prefersReducedMotion: true })).toBe(false);
     expect(canAutoplay({ ...allowed, saveData: true })).toBe(false);
     expect(canAutoplay({ ...allowed, effectiveType: '2g' })).toBe(false);

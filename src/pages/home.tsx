@@ -48,6 +48,7 @@ export default function HomePage() {
   // local UI state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
 
   // queries
   const feedParams = toFeedQueryParams(filters, searchTerm);
@@ -103,6 +104,7 @@ export default function HomePage() {
   return (
     <Page ref={pageRef} className={`${pageClass} ${homePageVarsClass}`} restoreScroll>
       <HomeHeader
+        headerRef={headerRef}
         activeFilterCount={chips.length}
         searchValue={searchInput}
         onOpenFilters={() => setIsFilterOpen(true)}
@@ -127,6 +129,8 @@ export default function HomePage() {
           feed={feed}
           hasActiveCriteria={hasActiveCriteria}
           isAutoplayPaused={isFilterOpen}
+          scrollerRef={pageRef}
+          headerRef={headerRef}
           onClearCriteria={handleClearCriteria}
           onOpenProduct={(productId) => navigate(`/products/${productId}`)}
         />

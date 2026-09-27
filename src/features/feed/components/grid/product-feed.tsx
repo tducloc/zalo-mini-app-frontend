@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { type RefObject, useEffect, useRef } from 'react';
 
 import FeedbackState from '@/components/feedback/feedback-state';
 import InlineRetry from '@/components/feedback/inline-retry';
@@ -17,13 +17,13 @@ const NEXT_PAGE_SKELETON_CARDS = 2;
 const loadMoreButtonClass = `block min-h-11 w-full rounded-[10px] font-semibold text-marketplace-blue ${surfaceClass}`;
 // Start the next request about one screen before the user reaches the end.
 const PREFETCH_MARGIN = '0px 0px 800px 0px';
-// zmp-ui scrolls inside the Page element, not the window.
-const SCROLL_CONTAINER_SELECTOR = '.zaui-page';
 
 export default function ProductFeed({
   feed,
   hasActiveCriteria,
   isAutoplayPaused,
+  scrollerRef,
+  headerRef,
   onClearCriteria,
   onOpenProduct,
 }: {
@@ -31,12 +31,20 @@ export default function ProductFeed({
   hasActiveCriteria: boolean;
   /** Something covers the feed (the filter sheet): no preview plays. */
   isAutoplayPaused: boolean;
+  /** The page the feed scrolls in, and the fixed header over it: what is on screen. */
+  scrollerRef: RefObject<HTMLElement>;
+  headerRef: RefObject<HTMLElement>;
   onClearCriteria: () => void;
   onOpenProduct: (productId: string) => void;
 }) {
   const products = feed.data?.pages.flatMap((page) => page.data) ?? [];
   const previewIds = products.flatMap((product) => (product.previewUrl ? [product.id] : []));
-  const { activeId, cardRef } = useFeedAutoplay(previewIds, isAutoplayPaused);
+  const { activeId, cardRef, onRefused } = useFeedAutoplay({
+    previewIds,
+    isPaused: isAutoplayPaused,
+    scrollerRef,
+    headerRef,
+  });
 
   if (feed.isPending) {
     return <ListingGridSkeleton count={INITIAL_SKELETON_CARDS} />;
@@ -78,15 +86,22 @@ export default function ProductFeed({
             key={product.id}
             product={product}
             onOpen={onOpenProduct}
+            onPreviewRefused={onRefused}
           />
         ))}
       </div>
-      <FeedFooter feed={feed} />
+      <FeedFooter feed={feed} scrollerRef={scrollerRef} />
     </>
   );
 }
 
-function FeedFooter({ feed }: { feed: FeedQuery }) {
+function FeedFooter({
+  feed,
+  scrollerRef,
+}: {
+  feed: FeedQuery;
+  scrollerRef: RefObject<HTMLElement>;
+}) {
   const { fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, isFetchNextPageError } = feed;
 
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -110,12 +125,12 @@ function FeedFooter({ feed }: { feed: FeedQuery }) {
           void fetchNextPage();
         }
       },
-      { root: sentinel.closest(SCROLL_CONTAINER_SELECTOR), rootMargin: PREFETCH_MARGIN },
+      { root: scrollerRef.current, rootMargin: PREFETCH_MARGIN },
     );
     observer.observe(sentinel);
 
     return () => observer.disconnect();
-  }, [canAutoLoad, fetchNextPage]);
+  }, [canAutoLoad, fetchNextPage, scrollerRef]);
 
   if (isFetchingNextPage) {
     return (
