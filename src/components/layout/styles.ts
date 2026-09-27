@@ -15,3 +15,10 @@ export const cardClass =
 /** A round icon badge; where it sits is up to the caller. */
 export const stateIconClass =
   'grid size-[54px] shrink-0 place-items-center rounded-full bg-marketplace-pale text-marketplace-blue';
+
+/** A row of an options sheet ("Tuỳ chọn"): 16px text on the sheet's 20px line height. */
+export const sheetActionClass =
+  'flex min-h-[52px] w-full items-center gap-3 border-b border-solid border-[#eef2f8] p-0 text-left text-base leading-5';
+
+/** The round icon at the start of a sheet row; its colours are up to the caller. */
+export const sheetActionIconClass = 'grid size-7 place-items-center rounded-full text-lg leading-5';
