@@ -17,7 +17,6 @@ import {
   getTabForStatus,
   getTabTotal,
   readRequestedTab,
-  toStatusFilter,
   withoutListing,
 } from '@/features/my-listings/utils/my-listing';
 
@@ -71,36 +70,27 @@ describe('tabs', () => {
     expect(readRequestedTab(undefined)).toBe('published');
   });
 
-  it('puts processing and failed listings under "Đang xử lý"', () => {
+  it('gives processing and failed listings a tab each', () => {
     expect(getTabForStatus('PROCESSING')).toBe('processing');
-    expect(getTabForStatus('FAILED')).toBe('processing');
+    expect(getTabForStatus('FAILED')).toBe('failed');
     expect(getTabForStatus('PUBLISHED')).toBe('published');
     expect(getTabForStatus('SOLD')).toBe('sold');
     expect(getTabForStatus('ARCHIVED')).toBe('archived');
   });
 
-  it('asks the API for every status of a tab', () => {
-    expect(toStatusFilter('processing')).toBe('PROCESSING,FAILED');
-    expect(toStatusFilter('archived')).toBe('ARCHIVED');
-  });
-
-  it('adds up the statuses of a tab', () => {
+  it('reads the count of a tab', () => {
     const all = counts({ PROCESSING: 2, FAILED: 1, PUBLISHED: 4 });
-    expect(getTabTotal('processing', all)).toBe(3);
+    expect(getTabTotal('processing', all)).toBe(2);
+    expect(getTabTotal('failed', all)).toBe(1);
     expect(getTabTotal('published', all)).toBe(4);
     expect(getTabTotal('sold', all)).toBe(0);
     expect(getTabTotal('published', undefined)).toBe(0);
   });
 
-  it('badges only "Đang xử lý", alerting when a listing failed', () => {
-    expect(getTabBadge('processing', counts({ PROCESSING: 2 }))).toEqual({
-      count: 2,
-      isAlert: false,
-    });
-    expect(getTabBadge('processing', counts({ PROCESSING: 1, FAILED: 1 }))).toEqual({
-      count: 2,
-      isAlert: true,
-    });
+  it('badges "Đang xử lý", and "Bị lỗi" as an alert', () => {
+    const all = counts({ PROCESSING: 2, FAILED: 1 });
+    expect(getTabBadge('processing', all)).toEqual({ count: 2, isAlert: false });
+    expect(getTabBadge('failed', all)).toEqual({ count: 1, isAlert: true });
     expect(getTabBadge('processing', counts())).toBeNull();
     expect(getTabBadge('processing', undefined)).toBeNull();
     expect(getTabBadge('published', counts({ PUBLISHED: 4 }))).toBeNull();

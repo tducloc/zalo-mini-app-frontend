@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import type { APIRequestContext, Page } from '@playwright/test';
 
 import {
@@ -6,6 +8,7 @@ import {
   expect,
   expectReadyToPost,
   fillFields,
+  fixture,
   openSellPage,
   postButton,
   tab,
@@ -21,6 +24,9 @@ import {
 const title = (what: string) => `E2E sửa ${what} ${Date.now()}`;
 /** Checking, optimizing, uploading and processing a fixture on the local stack. */
 const MEDIA_TIMEOUT_MS = 60_000;
+const CREATED_STATUS = 201;
+/** Posted with media still processing. */
+const ACCEPTED_STATUS = 202;
 
 /** The API's Bearer token, taken from the app's own requests once it has signed in. */
 function watchToken(page: Page) {
@@ -64,6 +70,56 @@ async function openEdit(page: Page, listingTitle: string) {
   // zmp-ui's sheet has no role or name; a failed card has its own "Sửa tin" too.
   await page.locator('.zaui-sheet').getByRole('button', { name: 'Sửa tin' }).click();
   await expect(page.getByRole('form', { name: 'Sửa tin đăng' })).toBeVisible();
+}
+
+/**
+ * Posts a listing with only the blank photo through the API, each step right after the
+ * other. The media worker fails the photo within about a second of `complete`, and a
+ * listing cannot take a failed photo (409): through the form, the worker sometimes won.
+ */
+async function postBlankListing(request: APIRequestContext, token: string, listingTitle: string) {
+  const headers = { authorization: token };
+  const bytes = readFileSync(fixture('blank.jpg'));
+
+  const registered = await request.post(`${API_URL}/media/upload-urls`, {
+    headers,
+    data: {
+      files: [
+        {
+          clientFileId: 'blank',
+          type: 'IMAGE',
+          contentType: 'image/jpeg',
+          size: bytes.length,
+          originalBytes: bytes.length,
+          optimized: false,
+        },
+      ],
+    },
+  });
+  expect(registered.status(), await registered.text()).toBe(CREATED_STATUS);
+  const [upload] = (await registered.json()).data.uploads;
+
+  const stored = await request.put(upload.presignedUrl, {
+    headers: { 'content-type': 'image/jpeg' },
+    data: bytes,
+  });
+  expect(stored.ok()).toBe(true);
+  await request.post(`${API_URL}/media/${upload.mediaId}/complete`, { headers });
+
+  const created = await request.post(`${API_URL}/products`, {
+    headers: { ...headers, 'idempotency-key': `e2e-blank-${Date.now()}` },
+    data: {
+      title: listingTitle,
+      description: 'Máy dùng tốt, pin 90%, đủ hộp và cáp.',
+      price: 6_990_000,
+      categoryId: 'cat_electronics',
+      condition: 'LIKE_NEW',
+      locationId: 'loc_hanoi',
+      mediaIds: [upload.mediaId],
+    },
+  });
+  expect(created.status(), await created.text()).toBe(ACCEPTED_STATUS);
+  return (await created.json()).data.id as string;
 }
 
 const editForm = (page: Page) => page.getByRole('form', { name: 'Sửa tin đăng' });
@@ -154,29 +210,18 @@ test('repairs a failed listing by replacing the blank photo', async ({ page, req
   const listingTitle = title('lỗi');
   const token = watchToken(page);
 
-  await openSellPage(page);
-  // Until posted, the blank photo reads as still processing, so Post can go.
-  await page.route(/\/media\?ids=/, async (route) => {
-    const ids = new URL(route.request().url()).searchParams.get('ids')?.split(',') ?? [];
-    const data = ids.map((id) => ({
-      id,
-      type: 'IMAGE',
-      status: 'PROCESSING',
-      thumbnailUrl: null,
-      placeholder: null,
-      error: null,
-    }));
-    await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ data }) });
-  });
-  await fillFields(page, listingTitle);
-  await addPhotos(page, ['blank.jpg']);
-  const productId = await post(page);
-  await page.unroute(/\/media\?ids=/);
+  // Signed in: My listings asks for the seller's own listings.
+  await page.goto('/');
+  await tab(page, 'Quản lý tin').click();
+  await expect(page.getByRole('tablist', { name: 'Trạng thái tin' })).toBeVisible();
+  const productId = await postBlankListing(request, token(), listingTitle);
 
   await expect
     .poll(() => listingStatus(request, token(), productId), { timeout: MEDIA_TIMEOUT_MS })
     .toBe('FAILED');
 
+  // A failed listing has a tab of its own.
+  await page.getByRole('tab', { name: /^Bị lỗi/ }).click();
   await openEdit(page, listingTitle);
   // The failed photo is marked, with the reason in its viewer.
   await page.getByRole('button', { name: 'Ảnh 1, có lỗi. Chạm để xem' }).click();

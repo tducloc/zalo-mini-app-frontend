@@ -5,7 +5,7 @@ import { getTabBadge } from '@/features/my-listings/utils/my-listing';
 export const tabId = (tab: MyListingsTab) => `my-listings-tab-${tab}`;
 export const tabPanelId = 'my-listings-panel';
 
-// The four labels share the width by their length, so "Đang hiển thị" fits at 360px.
+// The five labels share the width by their length; below 360px the row scrolls.
 const tabClass =
   'relative flex min-h-11 flex-auto items-center justify-center gap-1 whitespace-nowrap border-0 bg-transparent px-1 text-caption font-semibold';
 const tabColorClass = {
@@ -31,7 +31,7 @@ export default function MyListingsTabs({
 }) {
   return (
     <div
-      className="flex border-b border-solid border-marketplace-line bg-white px-2"
+      className="flex overflow-x-auto border-b border-solid border-marketplace-line bg-white px-2 [scrollbar-width:none]"
       role="tablist"
       aria-label="Trạng thái tin"
     >

@@ -36,30 +36,25 @@ export function readRequestedTab(routerState: unknown): MyListingsTab {
 }
 
 export function getTabForStatus(status: ProductStatus): MyListingsTab {
-  return MY_LISTINGS_TABS.find((tab) => tabConfigs[tab].statuses.includes(status)) ?? DEFAULT_TAB;
+  return MY_LISTINGS_TABS.find((tab) => tabConfigs[tab].status === status) ?? DEFAULT_TAB;
 }
-
-/** `GET /me/products?status=` for a tab: "PROCESSING,FAILED". */
-export const toStatusFilter = (tab: MyListingsTab) => tabConfigs[tab].statuses.join(',');
 
 /** How many listings a tab holds, once the counts are known. */
 export function getTabTotal(tab: MyListingsTab, counts: ListingCounts | undefined) {
-  return counts ? tabConfigs[tab].statuses.reduce((sum, status) => sum + counts[status], 0) : 0;
+  return counts?.[tabConfigs[tab].status] ?? 0;
 }
 
-/**
- * Only "Đang xử lý" carries a badge: the listings waiting for their media, alerting when one
- * failed and needs the seller.
- */
+/** "Đang xử lý" and "Bị lỗi" show their count; "Bị lỗi" in red, as the seller must act. */
 export function getTabBadge(
   tab: MyListingsTab,
   counts: ListingCounts | undefined,
 ): TabBadge | null {
-  const count = tab === 'processing' ? getTabTotal(tab, counts) : 0;
-  if (!counts || count === 0) {
+  const { badge } = tabConfigs[tab];
+  const count = getTabTotal(tab, counts);
+  if (!badge || count === 0) {
     return null;
   }
-  return { count, isAlert: counts.FAILED > 0 };
+  return { count, isAlert: badge === 'alert' };
 }
 
 function describeFailure(failedMedia: FailedMedia[]): StatusLine {

@@ -6,7 +6,7 @@ import type {
   MyListingsPage,
   MyListingsTab,
 } from '@/features/my-listings/types/my-listing';
-import { toStatusFilter } from '@/features/my-listings/utils/my-listing';
+import { tabConfigs } from '@/features/my-listings/constants/tabs';
 import { http } from '@/lib/http';
 
 const MY_LISTINGS_PAGE_SIZE = 20;
@@ -19,7 +19,7 @@ export async function getMyListings(
   signal?: AbortSignal,
 ) {
   const response = await http.get<MyListingsPage>('/me/products', {
-    params: { status: toStatusFilter(tab), limit: MY_LISTINGS_PAGE_SIZE, cursor },
+    params: { status: tabConfigs[tab].status, limit: MY_LISTINGS_PAGE_SIZE, cursor },
     signal,
   });
   return response.data;

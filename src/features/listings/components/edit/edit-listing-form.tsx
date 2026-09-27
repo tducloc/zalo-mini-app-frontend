@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 
@@ -7,18 +8,31 @@ import MobilePageHeader from '@/components/layout/mobile-page-header';
 import { pageContentClass } from '@/components/layout/styles';
 import ListingFields from '@/features/listings/components/form/listing-fields';
 import MediaSection from '@/features/listings/components/media/media-section';
+import { readSaveError, updateListing } from '@/features/listings/api/update-listing';
 import { leaveEditMessages, saveMessages } from '@/features/listings/constants/messages';
 import { formNoteClass } from '@/features/listings/constants/styles';
 import { useListingForm } from '@/features/listings/hooks/use-listing-form';
-import { useSaveListing } from '@/features/listings/hooks/use-save-listing';
-import { createMediaPipeline } from '@/features/listings/services/media-pipeline';
+import type { ListingFieldValues } from '@/features/listings/schemas';
+import {
+  createMediaPipeline,
+  type MediaPipeline,
+} from '@/features/listings/services/media-pipeline';
+import type { DraftFields } from '@/features/listings/types/listing-draft';
+import { type SaveError, SaveErrorKind } from '@/features/listings/types/update-listing';
 import {
   draftFromProduct,
   editBaseline,
+  type EditBaseline,
   isMediaChanged,
+  listingChanges,
 } from '@/features/listings/utils/edit-listing';
+import { postBlocker } from '@/features/listings/utils/listing-draft';
+import { myListingKeys } from '@/features/my-listings/api/keys';
+import { productKeys } from '@/features/products/api/keys';
 import type { ProductDetail } from '@/features/products/types/product';
 import { useGoBack } from '@/hooks/use-go-back';
+import { useToast } from '@/hooks/use-toast';
+import { warnInDev } from '@/utils/dev-log';
 import { createListingDraftStore } from '@/stores/listing-draft';
 
 /**
@@ -127,4 +141,98 @@ export default function EditListingForm({
       />
     </>
   );
+}
+
+interface SaveListingOptions {
+  productId: string;
+  viewerId: string | null;
+  pipeline: MediaPipeline;
+  baseline: EditBaseline;
+  /** The server refused these fields; the form marks them. */
+  onFieldErrors: (fields: (keyof DraftFields)[]) => void;
+  /** The server refused files, now marked on their tiles; the form shows them. */
+  onMediaErrors: () => void;
+  /** Saved, nothing to save, or the listing cannot be edited any more: close the page. */
+  onDone: () => void;
+}
+
+/**
+ * Saves an edit with `PATCH /products/:id`: only the fields that changed, and the media
+ * set only when it changed. A failed save keeps the form as it is, to fix or send again.
+ */
+function useSaveListing({
+  productId,
+  viewerId,
+  pipeline,
+  baseline,
+  onFieldErrors,
+  onMediaErrors,
+  onDone,
+}: SaveListingOptions) {
+  const queryClient = useQueryClient();
+  const { showError, showInfo, showSuccess } = useToast();
+
+  const handleError = (error: SaveError) => {
+    switch (error.kind) {
+      case SaveErrorKind.Fields:
+        onFieldErrors(error.fields);
+        showError(saveMessages.fields);
+        return;
+      case SaveErrorKind.MediaConflict:
+        pipeline.markUnusableMedia(error.mediaIds);
+        showError(saveMessages.mediaConflict);
+        onMediaErrors();
+        return;
+      case SaveErrorKind.NotEditable:
+        showError(saveMessages.notEditable);
+        void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
+        onDone();
+        return;
+      case SaveErrorKind.Invalid:
+        showError(saveMessages.invalid);
+        return;
+      case SaveErrorKind.Other:
+        showError(saveMessages.failed);
+    }
+  };
+
+  /** Every list and page that shows the listing gets the saved copy. */
+  const refreshCaches = (saved: ProductDetail) => {
+    queryClient.setQueryData(productKeys.detail(productId, viewerId), saved);
+    void queryClient.invalidateQueries({ queryKey: productKeys.detailForAllViewers(productId) });
+    void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
+    void queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
+  };
+
+  return async function saveListing(values: ListingFieldValues) {
+    const { media, isPosting, setPosting } = pipeline.store.getState();
+    if (isPosting || postBlocker(media) !== null) {
+      return;
+    }
+
+    const changes = listingChanges(baseline, values, media);
+    if (Object.keys(changes).length === 0) {
+      showInfo(saveMessages.unchanged);
+      onDone();
+      return;
+    }
+
+    setPosting(true);
+    let saved: ProductDetail;
+    try {
+      saved = await updateListing(productId, changes);
+    } catch (error) {
+      warnInDev('edit', 'saving the listing failed', error);
+      handleError(readSaveError(error));
+      return;
+    } finally {
+      setPosting(false);
+    }
+
+    // The listing has the new media now: closing the page must not delete it.
+    pipeline.forgetAll();
+    refreshCaches(saved);
+    showSuccess(saved.status === 'PROCESSING' ? saveMessages.processing : saveMessages.saved);
+    onDone();
+  };
 }
