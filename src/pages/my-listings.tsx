@@ -15,7 +15,7 @@ export default function MyListingsPage() {
           className={`${cardClass} grid min-h-[275px] place-items-center px-6 py-9 text-center`}
         >
           <div className="max-w-[260px]">
-            <span className={stateIconClass}>
+            <span className={`${stateIconClass} mx-auto mb-3`}>
               <Icon icon="zi-file" size={27} />
             </span>
             <h2 className="m-0 text-lg font-semibold">Chưa có tin đăng</h2>
