@@ -1,10 +1,6 @@
 import { MY_LISTINGS_TABS, tabConfigs } from '@/features/my-listings/constants/tabs';
-import type {
-  ListingCounts,
-  MyListingsTab,
-  TabBadge,
-} from '@/features/my-listings/types/my-listing';
-import { getTabTotal } from '@/features/my-listings/utils/my-listing';
+import type { ListingCounts, MyListingsTab } from '@/features/my-listings/types/my-listing';
+import { getTabBadge } from '@/features/my-listings/utils/my-listing';
 
 export const tabId = (tab: MyListingsTab) => `my-listings-tab-${tab}`;
 export const tabPanelId = 'my-listings-panel';
@@ -70,17 +66,4 @@ export default function MyListingsTabs({
       })}
     </div>
   );
-}
-
-/** "Đang xử lý" and "Bị lỗi" show their count; "Bị lỗi" in red, as the seller must act. */
-export function getTabBadge(
-  tab: MyListingsTab,
-  counts: ListingCounts | undefined,
-): TabBadge | null {
-  const { badge } = tabConfigs[tab];
-  const count = getTabTotal(tab, counts);
-  if (!badge || count === 0) {
-    return null;
-  }
-  return { count, isAlert: badge === 'alert' };
 }
