@@ -124,7 +124,7 @@ export class FileUpload {
       if (signal.aborted || !(error instanceof UploadFailure)) {
         throw error;
       }
-      return { kind: 'failed', failure: error.kind, isRetryable: isRetryable(error.kind) };
+      return { kind: 'failed', isRetryable: isRetryable(error.kind) };
     }
   }
 

@@ -122,7 +122,7 @@ export interface UploadListener {
 
 export type UploadResult =
   | { kind: 'uploaded'; mediaId: string; status: ServerMediaStatus }
-  | { kind: 'failed'; failure: FailureKind; isRetryable: boolean };
+  | { kind: 'failed'; isRetryable: boolean };
 
 export enum FailureKind {
   /** No answer: offline, timed out, stalled, or the WebView was paused. */

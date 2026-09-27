@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, type Mock, vi } from 'vitest';
 
 import { MAX_UPLOAD_ATTEMPTS, UPLOAD_URL_LIFETIME_MS } from '@/features/media/constants/upload';
 import { FileUpload } from '@/features/media/services/file-upload';
@@ -51,7 +51,10 @@ const newUpload = (request: UploadRequestFile, blob: Blob, transport: UploadTran
 /** For `failing`: fail every call. */
 const ALWAYS = Infinity;
 
-function fakeTransport(overrides: Partial<UploadTransport> = {}) {
+/** A transport whose every method is a mock, so a test can read and steer its calls. */
+type FakeTransport = { [Method in keyof UploadTransport]: Mock<UploadTransport[Method]> };
+
+function fakeTransport(overrides: Partial<FakeTransport> = {}): FakeTransport {
   return {
     register: vi.fn(async (file: UploadRequestFile) =>
       file.type === MediaKind.Video ? videoTarget : photoTarget,
@@ -147,7 +150,7 @@ describe('FileUpload, photo', () => {
 
     const result = await run(newUpload(photoRequest, photoBlob, transport));
 
-    expect(result).toEqual({ kind: 'failed', failure: FailureKind.Server, isRetryable: true });
+    expect(result).toEqual({ kind: 'failed', isRetryable: true });
     expect(transport.put).toHaveBeenCalledTimes(MAX_UPLOAD_ATTEMPTS);
   });
 
@@ -158,7 +161,7 @@ describe('FileUpload, photo', () => {
 
     const result = await run(newUpload(photoRequest, photoBlob, transport));
 
-    expect(result).toEqual({ kind: 'failed', failure: FailureKind.Rejected, isRetryable: false });
+    expect(result).toEqual({ kind: 'failed', isRetryable: false });
     expect(transport.put).toHaveBeenCalledTimes(1);
   });
 
@@ -387,7 +390,7 @@ describe('FileUpload, waits between attempts', () => {
       await vi.advanceTimersByTimeAsync(1);
       expect(transport.put).toHaveBeenCalledTimes(3);
 
-      await expect(result).resolves.toMatchObject({ kind: 'failed', failure: FailureKind.Server });
+      await expect(result).resolves.toEqual({ kind: 'failed', isRetryable: true });
     },
   );
 
@@ -483,7 +486,7 @@ describe('FileUpload, video', () => {
 
     await run(newUpload(videoRequest, videoBlob, transport), listener);
 
-    expect(events.at(-1)).toBe('progress 1');
+    expect(events[events.length - 1]).toBe('progress 1');
   });
 
   it('refuses the upload when storage hides the ETag', async () => {
@@ -491,7 +494,7 @@ describe('FileUpload, video', () => {
 
     const result = await run(newUpload(videoRequest, videoBlob, transport));
 
-    expect(result).toEqual({ kind: 'failed', failure: FailureKind.Rejected, isRetryable: false });
+    expect(result).toEqual({ kind: 'failed', isRetryable: false });
     expect(transport.completeParts).not.toHaveBeenCalled();
   });
 

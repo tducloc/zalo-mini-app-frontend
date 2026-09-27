@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
-import ProductActionsSheet from '@/features/products/components/actions-sheet';
-import ProductDescription from '@/features/products/components/description';
-import MediaLightbox from '@/features/products/components/media-lightbox';
-import ProductMediaGallery from '@/features/products/components/media-gallery';
+import ProductActionsSheet from '@/features/products/components/detail/actions-sheet';
+import ProductDescription from '@/features/products/components/detail/description';
+import MediaLightbox from '@/features/products/components/gallery/media-lightbox';
+import ProductMediaGallery from '@/features/products/components/gallery/media-gallery';
 import { ProductDetail } from '@/features/products/types/product';
 
 vi.mock('zmp-sdk', () => ({ openShareSheet: vi.fn() }));
@@ -35,7 +35,7 @@ const product: ProductDetail = {
   price: 250_000,
   condition: 'NEW',
   status: 'PUBLISHED',
-  location: 'Quận 3, Hồ Chí Minh',
+  location: { id: null, name: 'Quận 3, Hồ Chí Minh' },
   category: { id: 'cat_home', name: 'Nhà cửa', slug: 'home' },
   media: [
     {

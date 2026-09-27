@@ -11,7 +11,7 @@ function fixture(folder: string, name: string) {
   return new Uint8Array(readFileSync(path));
 }
 
-const pick = (bytes: Uint8Array, type = '') => new File([bytes], 'picked', { type });
+const pick = (bytes: Uint8Array<ArrayBuffer>, type = '') => new File([bytes], 'picked', { type });
 
 /** A 64 KB APP1 segment: the most one metadata segment can hold. */
 const APP1 = new Uint8Array(2 + 0xffff);

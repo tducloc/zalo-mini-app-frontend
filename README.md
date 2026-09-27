@@ -5,7 +5,7 @@
 `src/features/<feature>/` holds one feature, in the folders it needs:
 
 - `api/`: HTTP calls (and their React Query hooks)
-- `components/`
+- `components/`: one sub-folder per section of a screen (`form/`, `media/`, `draft/`, `filters/`, `grid/`, `gallery/`, `detail/`); a feature with fewer than about four components keeps them flat
 - `constants/`: values other files use
 - `hooks/`
 - `services/`: work that runs on its own, outside components (processing and uploading files)
@@ -13,7 +13,7 @@
 - `utils/`: functions that answer from their inputs
 - `schemas.ts`: a form's zod schema
 
-A constant or type used by one file stays in that file. Shared app code is in `src/components`,
+A constant or type used by one file stays in that file. Shared app code is in `src/components` (`layout/`, `feedback/`, and `app.tsx` at its root),
 `src/hooks`, `src/lib`, `src/stores` and `src/utils`. Media is explained in
 `src/features/media/README.md`.
 

@@ -8,8 +8,18 @@ import { getApiErrorStatus } from '@/utils/api-error';
 
 const ALREADY_REPORTED_STATUS = 409;
 
+/** Sends the report; false when this viewer had already reported the listing. */
 export async function createReport(productId: string, input: CreateReportInput) {
-  await http.post(`/products/${encodeURIComponent(productId)}/reports`, input);
+  try {
+    await http.post(`/products/${encodeURIComponent(productId)}/reports`, input);
+    return true;
+  } catch (error) {
+    // A duplicate means the server already has one from this viewer: not a failure.
+    if (getApiErrorStatus(error) === ALREADY_REPORTED_STATUS) {
+      return false;
+    }
+    throw error;
+  }
 }
 
 function markAsReported(queryClient: QueryClient, productId: string, viewerId: string | null) {
@@ -25,11 +35,5 @@ export function useCreateReport(productId: string, viewerId: string | null) {
   return useMutation({
     mutationFn: (input: CreateReportInput) => createReport(productId, input),
     onSuccess: () => markAsReported(queryClient, productId, viewerId),
-    onError: (error) => {
-      // A duplicate report means the server already has one from this viewer.
-      if (getApiErrorStatus(error) === ALREADY_REPORTED_STATUS) {
-        markAsReported(queryClient, productId, viewerId);
-      }
-    },
   });
 }

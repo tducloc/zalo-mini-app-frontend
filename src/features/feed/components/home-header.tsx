@@ -2,10 +2,9 @@ import { FormEvent, useRef } from 'react';
 import { Icon } from 'zmp-ui';
 
 import { SEARCH_MAX_LENGTH } from '@/features/feed/constants/filters';
-import { filterBadgeClass } from '@/features/feed/constants/styles';
 
 // The fixed header height and safe-area inset are CSS variables set on the
-// Home page (`homePageClass`), so the content padding can follow them.
+// Home page (`homePageVarsClass`), so the content padding can follow them.
 const headerClass =
   'fixed inset-x-0 top-0 z-30 h-[var(--home-header-height)] bg-marketplace-blue px-4 pb-3 pt-[var(--home-safe-top)] text-white';
 // Leaves room on the right for Zalo's native capsule controls.
@@ -17,6 +16,8 @@ const searchFormClass =
   'flex h-11 min-w-0 flex-1 items-center gap-[9px] rounded-[10px] bg-white px-[13px] text-marketplace-muted focus-within:ring-2 focus-within:ring-white/70 focus-within:ring-offset-2 focus-within:ring-offset-marketplace-blue';
 const searchInputClass =
   'min-w-0 flex-1 border-0 bg-transparent py-[11px] font-[inherit] text-marketplace-ink outline-none focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden';
+const filterBadgeClass =
+  'absolute right-0.5 top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-white px-[5px] text-micro font-bold leading-[18px] text-marketplace-blue';
 const iconButtonClass =
   'relative grid size-[42px] flex-none place-items-center border-0 bg-transparent p-0 text-white';
 

@@ -2,7 +2,6 @@ import { PropsWithChildren, useEffect, useState } from 'react';
 
 import { restoreSession, settleAuthBootstrap } from '@/features/auth/api/session';
 import AuthRetryNotice from '@/features/auth/components/auth-retry-notice';
-import { AUTH_ERROR_MESSAGE } from '@/features/auth/constants/auth';
 import { useAuthStore } from '@/stores/auth';
 
 /**
@@ -12,7 +11,6 @@ import { useAuthStore } from '@/stores/auth';
  */
 export function AuthBootstrap({ children }: PropsWithChildren) {
   const error = useAuthStore((state) => state.error);
-  const setError = useAuthStore((state) => state.setError);
 
   const [isRetrying, setIsRetrying] = useState(false);
 
@@ -20,15 +18,12 @@ export function AuthBootstrap({ children }: PropsWithChildren) {
     void restoreSession().then(settleAuthBootstrap, settleAuthBootstrap);
   }, []);
 
-  const handleRetry = async () => {
+  const handleRetry = () => {
     setIsRetrying(true);
-    try {
-      await restoreSession(true);
-    } catch {
-      setError(AUTH_ERROR_MESSAGE);
-    } finally {
-      setIsRetrying(false);
-    }
+
+    // A failure has already put its error in the store, which keeps the notice up.
+    const stopRetrying = () => setIsRetrying(false);
+    void restoreSession(true).then(stopRetrying, stopRetrying);
   };
 
   return (

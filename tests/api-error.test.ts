@@ -1,36 +1,21 @@
-import axios from 'axios';
+import axios, { AxiosHeaders } from 'axios';
 
-import { getApiErrorDetails, getApiErrorStatus, resolveApiErrorMessage } from '@/utils/api-error';
+import { getApiErrorDetails, getApiErrorStatus } from '@/utils/api-error';
 
 function apiError(status: number) {
   return new axios.AxiosError('Request failed', 'ERR_BAD_RESPONSE', undefined, undefined, {
     status,
     statusText: String(status),
     headers: {},
-    config: { headers: {} },
+    config: { headers: new AxiosHeaders() },
     data: {},
   });
 }
 
-describe('API error messages', () => {
-  const options = {
-    fallbackMessage: 'Không thể thực hiện thao tác. Vui lòng thử lại.',
-    messages: {
-      401: 'Bạn cần xác thực lại.',
-      409: 'Bạn đã thực hiện thao tác này trước đó.',
-    },
-  };
-
-  it('maps configured HTTP statuses to a user-facing message', () => {
+describe('getApiErrorStatus', () => {
+  it('reads the HTTP status, and nothing from a network error', () => {
     expect(getApiErrorStatus(apiError(409))).toBe(409);
-    expect(resolveApiErrorMessage(apiError(409), options)).toBe(
-      'Bạn đã thực hiện thao tác này trước đó.',
-    );
-  });
-
-  it('uses the fallback for network and unconfigured HTTP errors', () => {
-    expect(resolveApiErrorMessage(new Error('offline'), options)).toBe(options.fallbackMessage);
-    expect(resolveApiErrorMessage(apiError(500), options)).toBe(options.fallbackMessage);
+    expect(getApiErrorStatus(new Error('offline'))).toBeUndefined();
   });
 });
 

@@ -2,17 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { Page, useNavigate } from 'zmp-ui';
 import { useShallow } from 'zustand/react/shallow';
 
+import { pageClass } from '@/components/layout/styles';
 import { useCategories } from '@/features/categories/api/get-categories';
 import CategoryStrip from '@/features/categories/components/category-strip';
-import FilterChips from '@/features/feed/components/filter-chips';
-import FilterSheet from '@/features/feed/components/filter-sheet';
+import FilterChips from '@/features/feed/components/filters/filter-chips';
+import FilterSheet from '@/features/feed/components/filters/filter-sheet';
 import HomeHeader from '@/features/feed/components/home-header';
-import ProductFeed from '@/features/feed/components/product-feed';
-import {
-  homeContentClass,
-  homePageVarsClass,
-  sectionHeadingClass,
-} from '@/features/feed/constants/styles';
+import ProductFeed from '@/features/feed/components/grid/product-feed';
 import type { FeedFilters, FilterKey } from '@/features/feed/types/filters';
 import {
   getFilterChips,
@@ -27,25 +23,30 @@ import { useHomeFeedStore } from '@/stores/home-feed';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-export default function HomePage({ initialFilterOpen = false }: { initialFilterOpen?: boolean }) {
+// Safe-area-aware fixed header (HomeHeader reads these); the content starts below it.
+const homePageVarsClass =
+  '[--home-safe-top:max(24px,var(--zaui-safe-area-inset-top,env(safe-area-inset-top,0px)))] [--home-header-height:calc(var(--home-safe-top)_+_108px)]';
+const homeContentClass = 'px-4 pb-4 pt-[calc(var(--home-header-height)_+_20px)]';
+const sectionHeadingClass = 'mb-3 text-lg font-bold leading-6';
+
+export default function HomePage() {
   const navigate = useNavigate();
 
   // search and filters (store survives navigation to detail)
-  const { searchInput, searchTerm, filters } = useHomeFeedStore(
-    useShallow(({ searchInput, searchTerm, filters }) => ({ searchInput, searchTerm, filters })),
-  );
-  const { setSearchInput, commitSearch, clearSearch, setFilters, resetFilters } = useHomeFeedStore(
-    useShallow(({ setSearchInput, commitSearch, clearSearch, setFilters, resetFilters }) => ({
-      setSearchInput,
-      commitSearch,
-      clearSearch,
-      setFilters,
-      resetFilters,
-    })),
-  );
+  // Shallow, so a commitSearch that changes nothing (as on mount) does not re-render.
+  const {
+    searchInput,
+    searchTerm,
+    filters,
+    setSearchInput,
+    commitSearch,
+    clearSearch,
+    setFilters,
+    resetFilters,
+  } = useHomeFeedStore(useShallow((state) => state));
 
   // local UI state
-  const [isFilterOpen, setIsFilterOpen] = useState(initialFilterOpen);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
 
   // queries
@@ -100,7 +101,7 @@ export default function HomePage({ initialFilterOpen = false }: { initialFilterO
     setFilters(toggleCategory(filters, categoryId));
 
   return (
-    <Page ref={pageRef} className={`marketplace-page ${homePageVarsClass}`} restoreScroll>
+    <Page ref={pageRef} className={`${pageClass} ${homePageVarsClass}`} restoreScroll>
       <HomeHeader
         activeFilterCount={chips.length}
         searchValue={searchInput}
@@ -113,11 +114,8 @@ export default function HomePage({ initialFilterOpen = false }: { initialFilterO
       <main className={homeContentClass}>
         <h2 className={`${sectionHeadingClass} mt-0`}>Danh mục</h2>
         <CategoryStrip
-          categories={categoriesQuery.data}
-          isError={categoriesQuery.isError}
-          isPending={categoriesQuery.isPending}
+          query={categoriesQuery}
           selectedId={filters.categoryId}
-          onRetry={() => categoriesQuery.refetch()}
           onSelect={handleSelectCategory}
         />
 
@@ -134,17 +132,9 @@ export default function HomePage({ initialFilterOpen = false }: { initialFilterO
       </main>
 
       <FilterSheet
-        categories={{
-          data: categoriesQuery.data,
-          isError: categoriesQuery.isError,
-          onRetry: () => categoriesQuery.refetch(),
-        }}
+        categories={categoriesQuery}
         filters={filters}
-        locations={{
-          data: locationsQuery.data,
-          isError: locationsQuery.isError,
-          onRetry: () => locationsQuery.refetch(),
-        }}
+        locations={locationsQuery}
         visible={isFilterOpen}
         onApply={handleApplyFilters}
         onClose={() => setIsFilterOpen(false)}

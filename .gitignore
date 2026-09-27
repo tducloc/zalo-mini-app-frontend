@@ -37,8 +37,6 @@ Thumbs.db
 
 # Production build
 www/
-ui-review/
-ui-review.zip
 
 # Playwright
 /test-results/
