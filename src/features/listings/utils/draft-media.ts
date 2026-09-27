@@ -1,6 +1,10 @@
 /** Questions about one draft file (types/draft-media.ts has its states). */
 
-import { DraftMediaStatus, type DraftMedia } from '@/features/listings/types/draft-media';
+import {
+  DraftMediaStatus,
+  type DraftMedia,
+  type ListingMedia,
+} from '@/features/listings/types/draft-media';
 import { MediaKind } from '@/features/media/types/media';
 import { type ServerMedia, ServerMediaStatus } from '@/features/media/types/upload';
 
@@ -19,6 +23,7 @@ export const newDraftMedia = (id: string, kind: MediaKind, file: File): DraftMed
   isRetryable: false,
   mediaId: null,
   server: null,
+  mediumUrl: null,
 });
 
 /**
@@ -34,7 +39,7 @@ export const isServerSettled = (server: ServerMedia | null) =>
  * joined the draft, not uploaded, or failed by the server. Waiting for the network is not
  * one: the app goes on by itself.
  */
-export const isFailed = (media: DraftMedia) =>
+export const isFailed = (media: ListingMedia) =>
   media.status === DraftMediaStatus.Rejected ||
   media.status === DraftMediaStatus.UploadFailed ||
   media.server?.status === ServerMediaStatus.Failed;

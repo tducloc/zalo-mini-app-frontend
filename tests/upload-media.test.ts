@@ -140,7 +140,7 @@ describe('media-upload', () => {
     addPhotos('a');
     markReady('a');
     await vi.waitFor(() => expect(api.registerUploads).toHaveBeenCalledTimes(1));
-    modules.upload.cancelUpload('a');
+    modules.upload.draftUploads.cancelUpload('a');
     single.resolve(null);
 
     await vi.waitFor(() => expect(api.deleteMedia).toHaveBeenCalledWith('m-a'));
@@ -156,8 +156,8 @@ describe('media-upload', () => {
     markReady('a');
     await vi.waitFor(() => expect(statusOf('a')).toBe(modules.DraftMediaStatus.UploadFailed));
 
-    modules.upload.retryUpload('a');
-    modules.upload.retryUpload('a');
+    modules.upload.draftUploads.retryUpload('a');
+    modules.upload.draftUploads.retryUpload('a');
 
     await vi.waitFor(() => expect(statusOf('a')).toBe(modules.DraftMediaStatus.Uploaded));
     expect(api.completeUpload).toHaveBeenCalledTimes(1);
@@ -227,7 +227,7 @@ describe('media-upload', () => {
     await vi.advanceTimersByTimeAsync(3_000);
     const asked = api.fetchMediaStatuses.mock.calls.length;
 
-    modules.upload.forgetUploads();
+    modules.upload.draftUploads.forgetUploads();
     modules.useListingDraftStore.getState().reset();
     await vi.advanceTimersByTimeAsync(30_000);
 
@@ -250,7 +250,7 @@ describe('media-upload', () => {
         .updateMedia(id, { status: DraftMediaStatus.Uploaded, mediaId: `m-${id}`, server });
     }
 
-    modules.upload.markUnusableMedia(['m-b', 'm-unknown']);
+    modules.upload.draftUploads.markUnusableMedia(['m-b', 'm-unknown']);
 
     expect(find('a')?.server).toEqual(server);
     expect(find('b')?.server).toEqual({

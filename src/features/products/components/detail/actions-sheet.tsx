@@ -1,12 +1,11 @@
 import { openShareSheet } from 'zmp-sdk';
 
 import AppSheet from '@/components/app-sheet';
+import { sheetActionClass, sheetActionIconClass } from '@/components/layout/styles';
+import OwnerActionList from '@/features/my-listings/components/actions/owner-action-list';
+import type { ListingAction } from '@/features/my-listings/types/my-listing';
 import type { ProductDetail } from '@/features/products/types/product';
 
-// The sheet's 20px line height, kept at 16px text.
-const actionClass =
-  'flex min-h-[52px] w-full items-center gap-3 border-b border-solid border-[#eef2f8] p-0 text-left text-base leading-5';
-const actionIconClass = 'grid size-7 place-items-center rounded-full text-lg leading-5';
 const reportActionClass = {
   available: { action: 'text-[#c63737]', icon: 'bg-marketplace-danger-tint' },
   reported: { action: 'cursor-default text-[#6f7f95]', icon: 'bg-[#edf7f1] text-[#25834b]' },
@@ -18,8 +17,10 @@ export default function ProductActionsSheet({
   isOwner,
   hasReported,
   isReportAvailable,
+  isOwnerActionPending,
   onClose,
   onReport,
+  onOwnerAction,
   onError,
 }: {
   product: ProductDetail;
@@ -27,8 +28,11 @@ export default function ProductActionsSheet({
   isOwner: boolean;
   hasReported: boolean;
   isReportAvailable: boolean;
+  /** A status change is on its way: the owner's actions wait for it. */
+  isOwnerActionPending: boolean;
   onClose: () => void;
   onReport: () => void;
+  onOwnerAction: (action: ListingAction) => void;
   onError: (message: string) => void;
 }) {
   const shareProduct = async () => {
@@ -54,6 +58,7 @@ export default function ProductActionsSheet({
     }
   };
 
+  const isShareable = !isOwner || product.status === 'PUBLISHED';
   const reportTone = reportActionClass[hasReported ? 'reported' : 'available'];
 
   const reportProduct = () => {
@@ -61,25 +66,40 @@ export default function ProductActionsSheet({
     onReport();
   };
 
+  const selectOwnerAction = (action: ListingAction) => {
+    onClose();
+    onOwnerAction(action);
+  };
+
   return (
     <AppSheet visible={visible} title="Tuỳ chọn" autoHeight onClose={onClose}>
       <div className="px-4 pb-5">
-        <button className={`${actionClass} text-marketplace-ink`} onClick={shareProduct}>
-          <span
-            aria-hidden="true"
-            className={`${actionIconClass} bg-marketplace-tint text-marketplace-blue`}
-          >
-            ↗
-          </span>
-          Chia sẻ tin đăng
-        </button>
+        {isOwner && (
+          <OwnerActionList
+            status={product.status}
+            isDisabled={isOwnerActionPending}
+            onSelect={selectOwnerAction}
+          />
+        )}
+        {/* Buyers cannot open an owner's listing that is not shown. */}
+        {isShareable && (
+          <button className={`${sheetActionClass} text-marketplace-ink`} onClick={shareProduct}>
+            <span
+              aria-hidden="true"
+              className={`${sheetActionIconClass} bg-marketplace-tint text-marketplace-blue`}
+            >
+              ↗
+            </span>
+            Chia sẻ tin đăng
+          </button>
+        )}
         {!isOwner && (
           <button
-            className={`${actionClass} ${reportTone.action}`}
+            className={`${sheetActionClass} ${reportTone.action}`}
             disabled={hasReported || !isReportAvailable}
             onClick={reportProduct}
           >
-            <span aria-hidden="true" className={`${actionIconClass} ${reportTone.icon}`}>
+            <span aria-hidden="true" className={`${sheetActionIconClass} ${reportTone.icon}`}>
               {hasReported ? '✓' : '!'}
             </span>
             {hasReported ? 'Bạn đã báo cáo tin này' : 'Báo cáo tin đăng'}

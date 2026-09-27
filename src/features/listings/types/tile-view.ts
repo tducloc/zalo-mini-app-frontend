@@ -20,6 +20,8 @@ export interface TileView {
   /** The full sentence in the viewer: why it failed, or what it waits for. */
   detail: string | null;
   canRetry: boolean;
-  /** The photo on the phone, or the server's thumbnail once it has one. */
+  /** The photo on the phone, or the server's thumbnail (a video's poster) once it has one. */
   imageUrl: string | null;
+  /** Media already on the listing, for the viewer: the medium photo, or the video. */
+  fullUrl: string | null;
 }

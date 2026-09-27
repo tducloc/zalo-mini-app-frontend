@@ -4,6 +4,9 @@ export type ProductCondition = (typeof productConditions)[number];
 
 export type MediaType = 'IMAGE' | 'VIDEO';
 
+/** A listing's status (api-spec, "State transitions"). */
+export type ProductStatus = 'PROCESSING' | 'FAILED' | 'PUBLISHED' | 'SOLD' | 'ARCHIVED';
+
 /** `id` is null for legacy rows whose free-text location is not mapped yet. */
 export interface ProductLocation {
   id: string | null;
@@ -16,7 +19,7 @@ export type ProductDetail = {
   description: string;
   price: number;
   condition: ProductCondition;
-  status: 'PROCESSING' | 'FAILED' | 'PUBLISHED' | 'SOLD' | 'ARCHIVED';
+  status: ProductStatus;
   location: ProductLocation;
   category: {
     id: string;
@@ -27,8 +30,13 @@ export type ProductDetail = {
     id: string;
     role: 'MAIN' | 'GALLERY';
     type: MediaType;
+    /** Buyers get READY media only; the owner sees every item (api-spec, GET /products/:id). */
+    status?: 'UPLOADING' | 'PROCESSING' | 'READY' | 'FAILED';
+    /** The FAILED reason (a `GET /media` code), else null. */
+    error?: string | null;
     thumbnailUrl: string | null;
     mediumUrl: string | null;
+    placeholder?: string | null;
     durationMs: number | null;
     sortOrder: number;
   }>;

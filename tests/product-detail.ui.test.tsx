@@ -109,8 +109,10 @@ describe('product detail UI', () => {
         isOwner={false}
         product={product}
         visible
+        isOwnerActionPending={false}
         onClose={onClose}
         onError={vi.fn()}
+        onOwnerAction={vi.fn()}
         onReport={onReport}
       />,
     );
@@ -133,8 +135,10 @@ describe('product detail UI', () => {
         isOwner={false}
         product={product}
         visible
+        isOwnerActionPending={false}
         onClose={onClose}
         onError={vi.fn()}
+        onOwnerAction={vi.fn()}
         onReport={onReport}
       />,
     );
@@ -161,12 +165,41 @@ it('disables reporting until the viewer-specific detail has loaded', () => {
       isOwner={false}
       hasReported={false}
       isReportAvailable={false}
+      isOwnerActionPending={false}
       onClose={vi.fn()}
       onReport={vi.fn()}
+      onOwnerAction={vi.fn()}
       onError={vi.fn()}
     />,
   );
 
   const reportButton = screen.getByRole('button', { name: 'Báo cáo tin đăng' });
   expect((reportButton as HTMLButtonElement).disabled).toBe(true);
+});
+
+it("gives the owner the listing's status actions instead of reporting", () => {
+  const onClose = vi.fn();
+  const onOwnerAction = vi.fn();
+
+  render(
+    <ProductActionsSheet
+      product={{ ...product, viewer: { isOwner: true, hasReported: false } }}
+      visible
+      isOwner
+      hasReported={false}
+      isReportAvailable
+      isOwnerActionPending={false}
+      onClose={onClose}
+      onReport={vi.fn()}
+      onOwnerAction={onOwnerAction}
+      onError={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByRole('button', { name: 'Sửa tin' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Ẩn tin' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Báo cáo tin đăng' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Đánh dấu đã bán' }));
+  expect(onClose).toHaveBeenCalledOnce();
+  expect(onOwnerAction).toHaveBeenCalledWith('MARK_SOLD');
 });
