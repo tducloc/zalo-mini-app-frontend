@@ -1,6 +1,5 @@
-import { queryOptions, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
-import { locationKeys } from '@/features/locations/api/keys';
 import type { LocationResponse } from '@/features/locations/types/location';
 import { apiClient } from '@/lib/api-client';
 
@@ -12,15 +11,11 @@ export async function getLocations(signal?: AbortSignal) {
   return response.data.data;
 }
 
-export function locationsQueryOptions() {
-  return queryOptions({
-    queryKey: locationKeys.all,
+export function useLocations({ enabled = true }: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: ['locations'],
     queryFn: ({ signal }) => getLocations(signal),
     staleTime: LOCATIONS_STALE_TIME_MS,
-    retry: 1,
+    enabled,
   });
-}
-
-export function useLocations({ enabled = true }: { enabled?: boolean } = {}) {
-  return useQuery({ ...locationsQueryOptions(), enabled });
 }

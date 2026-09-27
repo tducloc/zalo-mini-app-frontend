@@ -1,46 +1,26 @@
-import { resolveApiErrorMessage } from '@/utils/api-error';
-import type { ApiErrorOptions } from '@/utils/api-error';
-import { useCallback } from 'react';
 import { useSnackbar } from 'zmp-ui';
 
-export type { ApiErrorOptions } from '@/utils/api-error';
+type ToastType = 'error' | 'success' | 'info';
+
+const ERROR_DURATION_MS = 4_500;
+const NOTICE_DURATION_MS = 3_500;
 
 export function useToast() {
   const { openSnackbar } = useSnackbar();
 
-  const show = useCallback(
-    (text: string, type: 'error' | 'success' | 'info', duration: number) =>
-      openSnackbar({
-        text,
-        type,
-        icon: true,
-        duration,
-        position: 'bottom',
-        zIndex: 1100,
-      }),
-    [openSnackbar],
-  );
+  const show = (text: string, type: ToastType, duration: number) =>
+    openSnackbar({
+      text,
+      type,
+      icon: true,
+      duration,
+      position: 'bottom',
+      zIndex: 1100,
+    });
 
-  const showError = useCallback(
-    (message: string, duration = 4_500) => show(message, 'error', duration),
-    [show],
-  );
+  const showError = (message: string) => show(message, 'error', ERROR_DURATION_MS);
+  const showSuccess = (message: string) => show(message, 'success', NOTICE_DURATION_MS);
+  const showInfo = (message: string) => show(message, 'info', NOTICE_DURATION_MS);
 
-  const showSuccess = useCallback(
-    (message: string, duration = 3_500) => show(message, 'success', duration),
-    [show],
-  );
-
-  const showInfo = useCallback(
-    (message: string, duration = 3_500) => show(message, 'info', duration),
-    [show],
-  );
-
-  const showApiError = useCallback(
-    (error: unknown, options: ApiErrorOptions) =>
-      showError(resolveApiErrorMessage(error, options), options.duration),
-    [showError],
-  );
-
-  return { showApiError, showError, showInfo, showSuccess };
+  return { showError, showInfo, showSuccess };
 }

@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { EMPTY_FIELDS } from '@/features/listings/constants/listing-fields';
 import type { DraftMedia } from '@/features/listings/types/draft-media';
 import type { DraftFields } from '@/features/listings/types/listing-draft';
-import { newIdempotencyKey } from '@/features/listings/utils/listing-draft';
+import { hasDraft, newIdempotencyKey } from '@/features/listings/utils/listing-draft';
 
 // The sell page unmounts when the seller opens another page; the draft, and the services
 // working on its files, live outside it (plans/create-listing.md, "Draft that survives
@@ -57,3 +57,8 @@ export const useListingDraftStore = create<ListingDraftState>((set) => ({
   reset: () =>
     set({ fields: EMPTY_FIELDS, media: [], idempotencyKey: newIdempotencyKey(), isPosting: false }),
 }));
+
+/** Whether a draft waits; a boolean, so typing in the form does not re-render the caller. */
+export function useHasDraft() {
+  return useListingDraftStore((state) => hasDraft(state.fields, state.media));
+}

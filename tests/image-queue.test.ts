@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ImageQueue,
-  FallbackReason,
   type ImageOutcome,
   type QueueWorker,
 } from '@/features/media/services/image-queue';
@@ -70,19 +69,24 @@ function setup() {
     return worker;
   });
 
-  const outcomes = new Map<string, ImageOutcome>();
+  const outcomes = new Map<string, ImageOutcome | Error>();
+  const removers = new Map<string, AbortController>();
   const add = (id: string) => {
-    void queue.optimize(id, new Blob([id])).then((outcome) => {
-      outcomes.set(id, outcome);
-    });
+    const controller = new AbortController();
+    removers.set(id, controller);
+    void queue.optimize(new Blob([id]), controller.signal).then(
+      (outcome) => outcomes.set(id, outcome),
+      (error: Error) => outcomes.set(id, error),
+    );
   };
+  const remove = (id: string) => removers.get(id)?.abort();
   const current = () => workers[workers.length - 1];
   const sentIds = (worker: FakeWorker) => Promise.all(worker.jobs.map((job) => job.file.text()));
 
-  return { queue, workers, outcomes, add, current, sentIds };
+  return { workers, outcomes, add, remove, current, sentIds };
 }
 
-const crashed = { kind: 'original', reason: FallbackReason.WorkerCrashed };
+const original = { kind: 'original' };
 
 describe('image queue', () => {
   it('sends one photo at a time, in the order picked', async () => {
@@ -93,7 +97,7 @@ describe('image queue', () => {
 
     current().succeed();
     await flush();
-    expect(outcomes.get('a')?.kind).toBe('optimized');
+    expect(outcomes.get('a')).toMatchObject({ kind: 'optimized' });
     expect(await sentIds(current())).toEqual(['b']);
   });
 
@@ -104,7 +108,7 @@ describe('image queue', () => {
     current().fail();
     await flush();
 
-    expect(outcomes.get('a')).toEqual({ kind: 'original', reason: FallbackReason.Failed });
+    expect(outcomes.get('a')).toEqual(original);
     expect(await sentIds(current())).toEqual(['b']);
   });
 
@@ -115,7 +119,7 @@ describe('image queue', () => {
     workers[0].crash();
     await flush();
 
-    expect(outcomes.get('a')).toEqual(crashed);
+    expect(outcomes.get('a')).toEqual(original);
     expect(workers).toHaveLength(2);
     expect(await sentIds(current())).toEqual(['b']);
   });
@@ -132,25 +136,34 @@ describe('image queue', () => {
     await flush();
 
     for (const id of ['a', 'b', 'c', 'd']) {
-      expect(outcomes.get(id)).toEqual(crashed);
+      expect(outcomes.get(id)).toEqual(original);
     }
     expect(workers).toHaveLength(2);
   });
 
-  it('drops a removed photo, waiting or in the worker', async () => {
-    const { queue, add, current, sentIds, outcomes } = setup();
+  it('never decodes a photo removed while waiting', async () => {
+    const { add, remove, current, sentIds, outcomes } = setup();
     ['a', 'b', 'c'].forEach(add);
 
-    queue.cancel('b');
-    queue.cancel('a');
+    remove('b');
+    current().succeed();
     await flush();
-    expect(outcomes.get('a')).toEqual({ kind: 'cancelled' });
-    expect(outcomes.get('b')).toEqual({ kind: 'cancelled' });
+
+    expect(outcomes.get('b')).toMatchObject({ name: 'AbortError' });
+    expect(await sentIds(current())).toEqual(['c']);
+  });
+
+  it('holds the slot until the worker is done with a photo removed in it', async () => {
+    const { add, remove, current, sentIds } = setup();
+    ['a', 'b'].forEach(add);
+
+    remove('a');
+    await flush();
+    expect(await sentIds(current())).toEqual(['a']);
 
     current().succeed();
     await flush();
-    expect(outcomes.get('a')).toEqual({ kind: 'cancelled' });
-    expect(await sentIds(current())).toEqual(['c']);
+    expect(await sentIds(current())).toEqual(['b']);
   });
 
   it('stops the worker when the queue is empty, without counting it as a crash', async () => {
@@ -168,7 +181,7 @@ describe('image queue', () => {
     current().succeed();
     await flush();
 
-    expect(outcomes.get('c')?.kind).toBe('optimized');
+    expect(outcomes.get('c')).toMatchObject({ kind: 'optimized' });
     expect(workers).toHaveLength(3);
   });
 
@@ -177,7 +190,8 @@ describe('image queue', () => {
       throw new Error('blob: workers are blocked');
     });
 
-    await expect(queue.optimize('a', new Blob(['a']))).resolves.toEqual(crashed);
-    await expect(queue.optimize('b', new Blob(['b']))).resolves.toEqual(crashed);
+    const { signal } = new AbortController();
+    await expect(queue.optimize(new Blob(['a']), signal)).resolves.toEqual(original);
+    await expect(queue.optimize(new Blob(['b']), signal)).resolves.toEqual(original);
   });
 });

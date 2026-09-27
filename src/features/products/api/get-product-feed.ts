@@ -1,4 +1,4 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 
 import { productKeys } from '@/features/products/api/keys';
 import type { ProductFeedPage, ProductFeedParams } from '@/features/products/types/product';
@@ -24,8 +24,8 @@ export async function getProductFeed(
   return response.data;
 }
 
-export function productFeedQueryOptions(params: ProductFeedParams) {
-  return infiniteQueryOptions({
+export function useProductFeed(params: ProductFeedParams) {
+  return useInfiniteQuery({
     queryKey: productKeys.feed(params),
     queryFn: ({ pageParam, signal }) => getProductFeed(params, pageParam, signal),
     initialPageParam: FIRST_PAGE_CURSOR,
@@ -33,8 +33,4 @@ export function productFeedQueryOptions(params: ProductFeedParams) {
     staleTime: FEED_STALE_TIME_MS,
     gcTime: FEED_GC_TIME_MS,
   });
-}
-
-export function useProductFeed(params: ProductFeedParams) {
-  return useInfiniteQuery(productFeedQueryOptions(params));
 }

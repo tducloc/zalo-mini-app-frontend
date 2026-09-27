@@ -55,19 +55,22 @@ function ReportForm({
   };
 
   return (
-    <form className="product-report-sheet" noValidate onSubmit={handleSubmit}>
-      <p>Chọn lý do phù hợp. Mỗi tài khoản chỉ có thể báo cáo một lần cho mỗi tin.</p>
+    <form className="px-4 pb-5" noValidate onSubmit={handleSubmit}>
+      <p className="mb-3.5 mt-0 text-caption leading-[19px] text-marketplace-muted">
+        Chọn lý do phù hợp. Mỗi tài khoản chỉ có thể báo cáo một lần cho mỗi tin.
+      </p>
       <div
         aria-describedby={isReasonMissing ? 'report-reason-error' : undefined}
         aria-invalid={isReasonMissing}
         aria-label="Lý do báo cáo"
-        className="product-report-reasons"
+        className="grid gap-1"
         role="radiogroup"
       >
         {reasons.map((item) => (
-          <label key={item.value}>
+          <label key={item.value} className="flex min-h-10 items-center gap-2.5 text-sm">
             <input
               checked={reason === item.value}
+              className="accent-marketplace-blue"
               name="report-reason"
               type="radio"
               value={item.value}
@@ -83,6 +86,7 @@ function ReportForm({
         </p>
       )}
       <textarea
+        className="mb-4 mt-3 block min-h-20 w-full rounded-[10px] border border-solid border-marketplace-field-line px-3 py-2.5 text-sm text-marketplace-ink"
         maxLength={1000}
         placeholder="Bổ sung chi tiết (không bắt buộc)"
         value={description}

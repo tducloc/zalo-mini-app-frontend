@@ -1,0 +1,44 @@
+import { Header, Icon, useLocation, useNavigate } from 'zmp-ui';
+
+// Over media: no divider, and the back arrow on a dark disc.
+const transparentHeaderClass =
+  'after:hidden [&_.zaui-header-back]:rounded-full [&_.zaui-header-back]:bg-black/45';
+
+export default function MobilePageHeader({
+  title,
+  showBack = false,
+  fallbackPath = '/',
+  transparent = false,
+}: {
+  title: string;
+  showBack?: boolean;
+  fallbackPath?: string;
+  transparent?: boolean;
+}) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const goBack = () => {
+    if (location.key === 'default') {
+      navigate(fallbackPath);
+      return;
+    }
+    navigate(-1);
+  };
+
+  return (
+    <Header
+      title={title}
+      showBackIcon={showBack}
+      // zmp-ui renders an icon-only button; the label gives it a name.
+      backIcon={
+        <span aria-label="Quay lại" className="inline-flex" role="img">
+          <Icon icon="zi-chevron-left" />
+        </span>
+      }
+      onBackClick={goBack}
+      className={transparent ? transparentHeaderClass : undefined}
+      backgroundColor={transparent ? 'transparent' : undefined}
+      textColor={transparent ? '#ffffff' : undefined}
+    />
+  );
+}
