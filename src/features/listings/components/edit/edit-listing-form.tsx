@@ -201,7 +201,11 @@ function useSaveListing({
   /** Every list and page that shows the listing gets the saved copy. */
   const refreshCaches = (saved: ProductDetail) => {
     queryClient.setQueryData(productKeys.detail(productId, viewerId), saved);
-    void queryClient.invalidateQueries({ queryKey: productKeys.detailForAllViewers(productId) });
+    // The owner's copy was just written; the others refetch when next shown.
+    void queryClient.invalidateQueries({
+      queryKey: productKeys.detailForAllViewers(productId),
+      refetchType: 'none',
+    });
     void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
     void queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
   };

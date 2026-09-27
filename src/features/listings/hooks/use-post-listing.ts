@@ -10,6 +10,7 @@ import type { DraftFields } from '@/features/listings/types/listing-draft';
 import { PostErrorKind, type PostError } from '@/features/listings/types/post-error';
 import { mediaIdsForPost, postBlocker } from '@/features/listings/utils/listing-draft';
 import { myListingKeys } from '@/features/my-listings/api/keys';
+import { productKeys } from '@/features/products/api/keys';
 import type { MyListingsTab } from '@/features/my-listings/types/my-listing';
 import { useToast } from '@/hooks/use-toast';
 import { useListingDraftStore } from '@/stores/listing-draft';
@@ -78,6 +79,8 @@ export function usePostListing({
 
     forgetPostedDraft();
     void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
+    // Published at once (201): the home feed must show it too.
+    void queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
     showSuccess(isPublished ? postMessages.published : postMessages.processing);
     // On the tab that lists it. Back from My listings goes to where the seller came from,
     // not to an empty form.
