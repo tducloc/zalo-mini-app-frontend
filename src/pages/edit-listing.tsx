@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Page, useNavigate, useParams } from 'zmp-ui';
+import { Page, useParams } from 'zmp-ui';
 
 import FeedbackState from '@/components/feedback/feedback-state';
 import Skeleton from '@/components/feedback/skeleton';
@@ -9,9 +9,9 @@ import { useSession } from '@/features/auth/hooks/use-session';
 import EditListingForm from '@/features/listings/components/edit/edit-listing-form';
 import { isEditableStatus } from '@/features/listings/utils/edit-listing';
 import { useProductDetail } from '@/features/products/api/get-product-detail';
-import { getApiErrorStatus } from '@/utils/api-error';
+import { useGoBack } from '@/hooks/use-go-back';
+import { getApiErrorStatus, HttpStatus } from '@/utils/api-error';
 
-const NOT_FOUND_STATUS = 404;
 const TILE_PLACEHOLDERS = ['a', 'b', 'c'];
 const FIELD_PLACEHOLDERS = ['a', 'b', 'c', 'd'];
 
@@ -24,13 +24,13 @@ const editPageClass = 'bg-white pb-[var(--zaui-safe-area-inset-bottom)]';
  */
 export default function EditListingPage() {
   const { productId = '' } = useParams<{ productId: string }>();
-  const navigate = useNavigate();
   const { session, isBootstrapping } = useSession();
 
   const viewerId = session?.user.id ?? null;
   const productQuery = useProductDetail(productId, viewerId);
 
-  const goBack = () => navigate(-1);
+  // Opened from a link, back goes to the seller's listings.
+  const goBack = useGoBack('/my-listings');
 
   // The anonymous copy has no owner fields and only READY media: wait for the owner's.
   if (isBootstrapping || productQuery.isPending || productQuery.isPlaceholderData) {
@@ -42,7 +42,7 @@ export default function EditListingPage() {
   }
 
   if (!productQuery.data) {
-    const isGone = getApiErrorStatus(productQuery.error) === NOT_FOUND_STATUS;
+    const isGone = getApiErrorStatus(productQuery.error) === HttpStatus.NotFound;
     return (
       <StatePage>
         {isGone ? (

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Page, useLocation, useNavigate } from 'zmp-ui';
 
+import ConfirmDialog from '@/components/feedback/confirm-dialog';
 import AppSheet from '@/components/app-sheet';
 import MobilePageHeader from '@/components/layout/mobile-page-header';
 import { pageClass } from '@/components/layout/styles';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useMyListingCounts, useMyListings } from '@/features/my-listings/api/get-my-listings';
-import MarkSoldDialog from '@/features/my-listings/components/actions/mark-sold-dialog';
 import OwnerActionList from '@/features/my-listings/components/actions/owner-action-list';
 import MyListingList from '@/features/my-listings/components/list/my-listing-list';
 import MyListingsTabs, {
@@ -112,7 +112,7 @@ export default function MyListingsPage() {
         </div>
       </AppSheet>
       {/* After the sheet: it closes as the dialog opens, and the dialog keeps the scroll lock. */}
-      <MarkSoldDialog {...ownerActions.markSoldDialog} />
+      <ConfirmDialog {...ownerActions.markSoldDialog} />
     </Page>
   );
 }

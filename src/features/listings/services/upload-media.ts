@@ -25,6 +25,7 @@ import {
   type UploadRequestFile,
   type UploadListener,
 } from '@/features/media/types/upload';
+import { toMediaError } from '@/features/media/utils/media-error';
 import { type ListingDraftStore, useListingDraftStore } from '@/stores/listing-draft';
 import { warnInDev } from '@/utils/dev-log';
 
@@ -82,9 +83,6 @@ function requestFor(media: ListingMedia, upload: UploadSource): UploadRequestFil
   };
 }
 
-const isMediaError = (code: string): code is MediaError =>
-  Object.values<string>(MediaError).includes(code);
-
 /** A FAILED gets a reason the app knows, so it settles and is not asked about forever. */
 function serverMediaFrom(item: MediaStatusItem | undefined): ServerMedia {
   if (!item) {
@@ -95,8 +93,12 @@ function serverMediaFrom(item: MediaStatusItem | undefined): ServerMedia {
   if (status !== ServerMediaStatus.Failed) {
     return { status, thumbnailUrl, placeholder, error: null };
   }
-  const reason = error && isMediaError(error) ? error : MediaError.ProcessingFailed;
-  return { status, thumbnailUrl, placeholder, error: reason };
+  return {
+    status,
+    thumbnailUrl,
+    placeholder,
+    error: toMediaError(error) ?? MediaError.ProcessingFailed,
+  };
 }
 
 export interface UploadService {
@@ -323,7 +325,8 @@ export function createUploadService(store: ListingDraftStore): UploadService {
 
 /** The sell page's draft: uploads from the moment the app loads. */
 export const draftUploads = createUploadService(useListingDraftStore);
-export const { retryUpload, cancelUpload, markUnusableMedia, forgetUploads } = draftUploads;
+/** For the media lab, which works on the sell page's draft. */
+export const { retryUpload } = draftUploads;
 
 const stopDraftUploads = draftUploads.start();
 

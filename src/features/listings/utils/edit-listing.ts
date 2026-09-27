@@ -10,6 +10,7 @@ import type { UpdateListingInput } from '@/features/listings/types/update-listin
 import { mediaIdsForPost } from '@/features/listings/utils/listing-draft';
 import { MediaKind } from '@/features/media/types/media';
 import { MediaError, type ServerMedia, ServerMediaStatus } from '@/features/media/types/upload';
+import { toMediaError } from '@/features/media/utils/media-error';
 import type { ProductDetail, ProductStatus } from '@/features/products/types/product';
 import type { ListingDraftStart } from '@/stores/listing-draft';
 import { formatNumber } from '@/utils/format';
@@ -38,20 +39,16 @@ const serverStatuses: Record<NonNullable<ProductMedia['status']>, ServerMediaSta
   FAILED: ServerMediaStatus.Failed,
 };
 
-const isMediaError = (code: string): code is MediaError =>
-  Object.values<string>(MediaError).includes(code);
-
 /** A FAILED item keeps a reason the app knows, so its tile says what to do. */
 function serverMediaOf(item: ProductMedia): ServerMedia {
   // Older servers sent no status: only READY media then.
   const status = item.status ? serverStatuses[item.status] : ServerMediaStatus.Ready;
   const isFailedItem = status === ServerMediaStatus.Failed;
-  const error = item.error && isMediaError(item.error) ? item.error : MediaError.ProcessingFailed;
   return {
     status,
     thumbnailUrl: item.thumbnailUrl,
     placeholder: item.placeholder ?? null,
-    error: isFailedItem ? error : null,
+    error: isFailedItem ? (toMediaError(item.error) ?? MediaError.ProcessingFailed) : null,
   };
 }
 

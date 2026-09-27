@@ -2,6 +2,7 @@ import type { InfiniteData } from '@tanstack/react-query';
 
 import { mediaErrorMessage } from '@/features/listings/constants/messages';
 import { MediaError } from '@/features/media/types/upload';
+import { toMediaError } from '@/features/media/utils/media-error';
 import {
   statusChangeErrors,
   STATUS_CHANGE_FAILED,
@@ -61,13 +62,9 @@ export function getTabBadge(
   return { count, isAlert: counts.FAILED > 0 };
 }
 
-const isMediaError = (code: string): code is MediaError =>
-  Object.values<string>(MediaError).includes(code);
-
 function describeFailure(failedMedia: FailedMedia[]): StatusLine {
   const [first] = failedMedia;
-  const code = first?.error && isMediaError(first.error) ? first.error : null;
-  const hint = mediaErrorMessage(code);
+  const hint = mediaErrorMessage(toMediaError(first?.error));
 
   if (failedMedia.length > 1) {
     return { label: `${failedMedia.length} tệp bị lỗi`, tone: StatusTone.Danger, hint };

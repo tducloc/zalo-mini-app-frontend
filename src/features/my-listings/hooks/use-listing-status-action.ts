@@ -2,7 +2,7 @@ import { useSession } from '@/features/auth/hooks/use-session';
 import { statusChangeSuccess } from '@/features/my-listings/constants/messages';
 import type { StatusChange } from '@/features/my-listings/types/my-listing';
 import { getStatusChangeErrorMessage } from '@/features/my-listings/utils/my-listing';
-import { useChangeListingStatus } from '@/features/products/api/listing-status';
+import { useChangeListingStatus } from '@/features/my-listings/api/listing-status';
 import { useToast } from '@/hooks/use-toast';
 
 /** Marks sold, hides or shows again a listing of the signed-in owner, saying how it went. */

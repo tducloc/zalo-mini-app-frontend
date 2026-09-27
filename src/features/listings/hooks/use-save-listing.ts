@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { readSaveError, updateListing } from '@/features/listings/api/update-listing';
 import { saveMessages } from '@/features/listings/constants/messages';
 import type { ListingFieldValues } from '@/features/listings/schemas';
-import type { EditMediaPipeline } from '@/features/listings/services/media-pipeline';
+import type { MediaPipeline } from '@/features/listings/services/media-pipeline';
 import type { DraftFields } from '@/features/listings/types/listing-draft';
 import { type SaveError, SaveErrorKind } from '@/features/listings/types/update-listing';
 import { type EditBaseline, listingChanges } from '@/features/listings/utils/edit-listing';
@@ -17,7 +17,7 @@ import { warnInDev } from '@/utils/dev-log';
 interface SaveListingOptions {
   productId: string;
   viewerId: string | null;
-  pipeline: EditMediaPipeline;
+  pipeline: MediaPipeline;
   baseline: EditBaseline;
   /** The server refused these fields; the form marks them. */
   onFieldErrors: (fields: (keyof DraftFields)[]) => void;
@@ -101,7 +101,7 @@ export function useSaveListing({
     }
 
     // The listing has the new media now: closing the page must not delete it.
-    pipeline.release();
+    pipeline.forgetAll();
     refreshCaches(saved);
     showSuccess(saved.status === 'PROCESSING' ? saveMessages.processing : saveMessages.saved);
     onDone();

@@ -3,11 +3,7 @@
  * read from its status and error envelope (pure, so each case is unit-tested).
  */
 
-import {
-  HttpStatus,
-  refusedFieldsOf,
-  refusedMediaOf,
-} from '@/features/listings/api/create-listing';
+import { refusedFieldsOf, refusedMediaOf } from '@/features/listings/api/listing-errors';
 import {
   type SaveError,
   SaveErrorKind,
@@ -15,7 +11,7 @@ import {
 } from '@/features/listings/types/update-listing';
 import type { ProductDetail } from '@/features/products/types/product';
 import { http } from '@/lib/http';
-import { getApiErrorDetails, getApiErrorStatus } from '@/utils/api-error';
+import { getApiErrorDetails, getApiErrorStatus, HttpStatus } from '@/utils/api-error';
 
 /** Saves the changes; resolves with the listing as saved (PROCESSING while new media is). */
 export async function updateListing(productId: string, changes: UpdateListingInput) {

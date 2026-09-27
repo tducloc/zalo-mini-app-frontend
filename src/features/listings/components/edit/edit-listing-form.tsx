@@ -1,24 +1,25 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'zmp-ui';
 import { useStore } from 'zustand';
 
 import ActionButton from '@/components/action-button';
+import ConfirmDialog, { ConfirmTone } from '@/components/feedback/confirm-dialog';
 import MobilePageHeader from '@/components/layout/mobile-page-header';
 import { pageContentClass } from '@/components/layout/styles';
-import LeaveEditDialog from '@/features/listings/components/edit/leave-edit-dialog';
 import ListingFields from '@/features/listings/components/form/listing-fields';
 import MediaSection from '@/features/listings/components/media/media-section';
-import { saveMessages } from '@/features/listings/constants/messages';
+import { leaveEditMessages, saveMessages } from '@/features/listings/constants/messages';
 import { formNoteClass } from '@/features/listings/constants/styles';
 import { useListingForm } from '@/features/listings/hooks/use-listing-form';
 import { useSaveListing } from '@/features/listings/hooks/use-save-listing';
-import { createEditPipeline } from '@/features/listings/services/media-pipeline';
+import { createMediaPipeline } from '@/features/listings/services/media-pipeline';
 import {
   draftFromProduct,
   editBaseline,
   isMediaChanged,
 } from '@/features/listings/utils/edit-listing';
 import type { ProductDetail } from '@/features/products/types/product';
+import { useGoBack } from '@/hooks/use-go-back';
+import { createListingDraftStore } from '@/stores/listing-draft';
 
 /**
  * The edit page's header and form: the sell form's fields and media section, on a draft of
@@ -34,16 +35,24 @@ export default function EditListingForm({
   product: ProductDetail;
   viewerId: string | null;
 }) {
-  const navigate = useNavigate();
-  const location = useLocation();
+  // Opened from a link, there is nothing to go back to: the listing's page, then.
+  const leave = useGoBack(`/products/${encodeURIComponent(product.id)}`);
 
   // Started once from the listing; a later refetch of it does not reset the form.
   const [start] = useState(() => draftFromProduct(product));
   const [baseline] = useState(() => editBaseline(product));
-  const [pipeline] = useState(() => createEditPipeline(start));
+  const [pipeline] = useState(() => createMediaPipeline(createListingDraftStore(start)));
   const [isLeaveAsked, setIsLeaveAsked] = useState(false);
 
-  useEffect(() => pipeline.start(), [pipeline]);
+  // Closing the page deletes the new uploads, unless a save kept them (`forgetAll`);
+  // the listing's own media is only removed by a save.
+  useEffect(() => {
+    const stopListening = pipeline.start();
+    return () => {
+      pipeline.stopAll();
+      stopListening();
+    };
+  }, [pipeline]);
 
   const media = useStore(pipeline.store, (state) => state.media);
   const {
@@ -57,15 +66,6 @@ export default function EditListingForm({
     markRefusedFields,
     submitWith,
   } = useListingForm(pipeline.store, start.fields);
-
-  // Opened from a link, there is nothing to go back to: the listing's page, then.
-  const leave = () => {
-    if (location.key === 'default') {
-      navigate(`/products/${encodeURIComponent(product.id)}`, { replace: true });
-      return;
-    }
-    navigate(-1);
-  };
 
   const saveListing = useSaveListing({
     productId: product.id,
@@ -118,10 +118,12 @@ export default function EditListingForm({
           </div>
         </form>
       </main>
-      <LeaveEditDialog
+      <ConfirmDialog
         isVisible={isLeaveAsked}
+        messages={leaveEditMessages}
+        tone={ConfirmTone.Danger}
         onClose={() => setIsLeaveAsked(false)}
-        onLeave={leave}
+        onConfirm={leave}
       />
     </>
   );

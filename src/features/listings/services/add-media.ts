@@ -300,7 +300,8 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
 }
 
 /** The sell page's draft. */
-const draftIntake = createMediaIntake(useListingDraftStore, draftUploads);
+export const draftIntake = createMediaIntake(useListingDraftStore, draftUploads);
+/** For the media lab, which works on the sell page's draft. */
 export const { addFiles: addDraftFiles, removeMedia: removeDraftMedia } = draftIntake;
 
 /** Huỷ tin: stops every file's work and deletes the ones already on the server. */

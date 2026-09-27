@@ -23,11 +23,19 @@ async function loadModules() {
   const { newDraftMedia } = await import('@/features/listings/utils/draft-media');
   const { DraftMediaStatus } = await import('@/features/listings/types/draft-media');
   const { ServerMediaStatus } = await import('@/features/media/types/upload');
-  const { useListingDraftStore } = await import('@/stores/listing-draft');
-  return { pipelines, newDraftMedia, DraftMediaStatus, ServerMediaStatus, useListingDraftStore };
+  const { createListingDraftStore, useListingDraftStore } = await import('@/stores/listing-draft');
+  return {
+    pipelines,
+    newDraftMedia,
+    DraftMediaStatus,
+    ServerMediaStatus,
+    createListingDraftStore,
+    useListingDraftStore,
+  };
 }
 
-let modules: Awaited<ReturnType<typeof loadModules>>;
+type Modules = Awaited<ReturnType<typeof loadModules>>;
+let modules: Modules;
 
 /** A photo already on the listing, as utils/edit-listing.ts seeds it. */
 function existing(id: string, status = modules.ServerMediaStatus.Ready) {
@@ -50,8 +58,22 @@ const EMPTY = {
   locationId: '',
 };
 
+/** An edit page's pipeline, as EditListingForm makes it. */
+function newEditPipeline(start: Parameters<Modules['createListingDraftStore']>[0]) {
+  return modules.pipelines.createMediaPipeline(modules.createListingDraftStore(start));
+}
+
+/** What EditListingForm's effect does: start, and on close delete the new uploads. */
+function run(pipeline: ReturnType<typeof newEditPipeline>) {
+  const stopListening = pipeline.start();
+  return () => {
+    pipeline.stopAll();
+    stopListening();
+  };
+}
+
 function editPipeline(...ids: string[]) {
-  return modules.pipelines.createEditPipeline({
+  return newEditPipeline({
     fields: EMPTY,
     media: ids.map((id) => existing(id)),
   });
@@ -101,7 +123,7 @@ describe('edit media pipeline', () => {
     addReadyPhoto(pipeline, 'p1');
     expect(api.registerUploads).not.toHaveBeenCalled();
 
-    const stop = pipeline.start();
+    const stop = run(pipeline);
     await vi.waitFor(() =>
       expect(statusOf(pipeline, 'p1')).toBe(modules.DraftMediaStatus.Uploaded),
     );
@@ -112,7 +134,7 @@ describe('edit media pipeline', () => {
 
   it("closing the page deletes the new uploads but never the listing's media", async () => {
     const pipeline = editPipeline('m_a', 'm_b');
-    const stop = pipeline.start();
+    const stop = run(pipeline);
     addReadyPhoto(pipeline, 'p1');
     await vi.waitFor(() =>
       expect(statusOf(pipeline, 'p1')).toBe(modules.DraftMediaStatus.Uploaded),
@@ -127,13 +149,13 @@ describe('edit media pipeline', () => {
 
   it('deletes nothing once saved', async () => {
     const pipeline = editPipeline('m_a');
-    const stop = pipeline.start();
+    const stop = run(pipeline);
     addReadyPhoto(pipeline, 'p1');
     await vi.waitFor(() =>
       expect(statusOf(pipeline, 'p1')).toBe(modules.DraftMediaStatus.Uploaded),
     );
 
-    pipeline.release();
+    pipeline.forgetAll();
     stop();
 
     expect(api.deleteMedia).not.toHaveBeenCalled();
@@ -144,12 +166,12 @@ describe('edit media pipeline', () => {
     api.fetchMediaStatuses.mockResolvedValue([
       { id: 'm_a', status: 'PROCESSING', thumbnailUrl: null, placeholder: null, error: null },
     ]);
-    const pipeline = modules.pipelines.createEditPipeline({
+    const pipeline = newEditPipeline({
       fields: EMPTY,
       media: [existing('m_a', modules.ServerMediaStatus.Processing)],
     });
 
-    const stop = pipeline.start();
+    const stop = run(pipeline);
     await vi.advanceTimersByTimeAsync(3_000);
     expect(api.fetchMediaStatuses).toHaveBeenCalledWith(['m_a']);
 
@@ -161,8 +183,8 @@ describe('edit media pipeline', () => {
 
   it('can start again after a stop, as React does in development', async () => {
     const pipeline = editPipeline('m_a');
-    pipeline.start()();
-    const stop = pipeline.start();
+    run(pipeline)();
+    const stop = run(pipeline);
     addReadyPhoto(pipeline, 'p1');
 
     await vi.waitFor(() =>

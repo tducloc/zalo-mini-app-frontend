@@ -5,7 +5,7 @@ import { createListing, readPostError } from '@/features/listings/api/create-lis
 import { postMessages } from '@/features/listings/constants/messages';
 import type { ListingFieldValues } from '@/features/listings/schemas';
 import { forgetPostedDraft } from '@/features/listings/services/add-media';
-import { markUnusableMedia } from '@/features/listings/services/upload-media';
+import { draftPipeline } from '@/features/listings/services/media-pipeline';
 import type { DraftFields } from '@/features/listings/types/listing-draft';
 import { PostErrorKind, type PostError } from '@/features/listings/types/post-error';
 import { mediaIdsForPost, postBlocker } from '@/features/listings/utils/listing-draft';
@@ -46,7 +46,7 @@ export function usePostListing({
         navigate(`/products/${encodeURIComponent(error.productId)}`, { replace: true });
         return;
       case PostErrorKind.MediaConflict:
-        markUnusableMedia(error.mediaIds);
+        draftPipeline.markUnusableMedia(error.mediaIds);
         showError(postMessages.mediaConflict);
         onMediaErrors();
         return;

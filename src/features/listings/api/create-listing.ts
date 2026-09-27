@@ -5,10 +5,11 @@
 
 import { z } from 'zod';
 
-import { listingFieldsSchema, type ListingFieldValues } from '@/features/listings/schemas';
+import { refusedFieldsOf, refusedMediaOf } from '@/features/listings/api/listing-errors';
+import type { ListingFieldValues } from '@/features/listings/schemas';
 import { PostErrorKind, type PostError } from '@/features/listings/types/post-error';
 import { http } from '@/lib/http';
-import { getApiErrorDetails, getApiErrorStatus } from '@/utils/api-error';
+import { getApiErrorDetails, getApiErrorStatus, HttpStatus } from '@/utils/api-error';
 
 /**
  * Posts the listing; `idempotencyKey` is the draft's, the same on every retry, so a post
@@ -28,31 +29,10 @@ export async function createListing(
   return response.data.data?.status === 'PUBLISHED';
 }
 
-export enum HttpStatus {
-  BadRequest = 400,
-  Forbidden = 403,
-  NotFound = 404,
-  Conflict = 409,
-  UnprocessableEntity = 422,
-}
-
-const draftField = listingFieldsSchema.keyof();
-const fieldDetails = z.array(z.object({ field: z.string() }));
 const reusedDetails = z.object({ productId: z.string() });
-const conflictDetails = z.array(z.object({ mediaId: z.string() }));
 
 const INVALID: PostError = { kind: PostErrorKind.Invalid };
 const OTHER: PostError = { kind: PostErrorKind.Other };
-
-/** The listing's fields a 400 names; the rest (`mediaIds`, the key) the seller cannot fix. */
-export const refusedFieldsOf = (details: unknown) =>
-  (fieldDetails.safeParse(details).data ?? []).flatMap(
-    ({ field }) => draftField.safeParse(field).data ?? [],
-  );
-
-/** The media a 409 names (`{ mediaId, reason }` entries); none for a wrong listing status. */
-export const refusedMediaOf = (details: unknown) =>
-  (conflictDetails.safeParse(details).data ?? []).map(({ mediaId }) => mediaId);
 
 function fieldsError(details: unknown): PostError {
   const fields = refusedFieldsOf(details);

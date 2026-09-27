@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Page, useNavigate, useParams } from 'zmp-ui';
 
+import ConfirmDialog from '@/components/feedback/confirm-dialog';
 import FeedbackState from '@/components/feedback/feedback-state';
 import { pageClass } from '@/components/layout/styles';
 import { useSession } from '@/features/auth/hooks/use-session';
 import DraftBanner from '@/features/listings/components/draft/draft-banner';
-import MarkSoldDialog from '@/features/my-listings/components/actions/mark-sold-dialog';
 import { useOwnerListingActions } from '@/features/my-listings/hooks/use-owner-listing-actions';
 import { useProductDetail } from '@/features/products/api/get-product-detail';
 import ProductActionsSheet from '@/features/products/components/detail/actions-sheet';
@@ -19,14 +19,13 @@ import { useCreateReport } from '@/features/reports/api/create-report';
 import ProductReportSheet from '@/features/reports/components/report-sheet';
 import type { CreateReportInput } from '@/features/reports/types/report';
 import { useToast } from '@/hooks/use-toast';
-import { getApiErrorStatus } from '@/utils/api-error';
+import { getApiErrorStatus, HttpStatus } from '@/utils/api-error';
 
 const reportErrorMessages: Partial<Record<number, string>> = {
   401: 'Bạn cần xác thực lại trước khi báo cáo.',
   403: 'Bạn không thể báo cáo tin đăng của chính mình.',
   429: 'Bạn đã gửi quá nhiều báo cáo. Vui lòng thử lại sau.',
 };
-const NOT_FOUND_STATUS = 404;
 
 // No tab bar: room for the contact bar (and the draft banner in it, 52px and 12px).
 const detailPageClass =
@@ -79,7 +78,7 @@ export default function ProductDetailPage() {
   }
 
   if (!productQuery.data) {
-    const isGone = getApiErrorStatus(productQuery.error) === NOT_FOUND_STATUS;
+    const isGone = getApiErrorStatus(productQuery.error) === HttpStatus.NotFound;
 
     // Nothing to retry once the listing is gone: offer the way back instead.
     return (
@@ -144,7 +143,7 @@ export default function ProductDetailPage() {
         onReport={() => setReportOpen(true)}
       />
       {/* After the sheet: it closes as the dialog opens, and the dialog keeps the scroll lock. */}
-      <MarkSoldDialog {...ownerActions.markSoldDialog} />
+      <ConfirmDialog {...ownerActions.markSoldDialog} />
       <ProductReportSheet
         isPending={reportMutation.isPending}
         visible={reportOpen}

@@ -157,6 +157,8 @@ export const UNFINISHED_DRAFT = 'Bạn có tin đăng chưa hoàn tất';
 export const discardMessages = {
   title: 'Huỷ tin đang đăng?',
   description: 'Ảnh, video và nội dung đã nhập sẽ bị xoá.',
+  cancel: 'Tiếp tục đăng',
+  confirm: 'Huỷ tin',
   discarded: 'Đã huỷ tin.',
 };
 
@@ -179,6 +181,6 @@ export const saveMessages = {
 export const leaveEditMessages = {
   title: 'Bỏ các thay đổi?',
   description: 'Những gì bạn vừa sửa sẽ không được lưu.',
-  stay: 'Tiếp tục sửa',
-  leave: 'Bỏ thay đổi',
+  cancel: 'Tiếp tục sửa',
+  confirm: 'Bỏ thay đổi',
 };

@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'zmp-ui';
 
+import { ConfirmTone } from '@/components/feedback/confirm-dialog';
+import { markSoldMessages } from '@/features/my-listings/constants/messages';
 import { useListingStatusAction } from '@/features/my-listings/hooks/use-listing-status-action';
 import { ListingAction } from '@/features/my-listings/types/my-listing';
 
 /**
  * What an owner's action in a "•••" sheet does: edit opens the edit page, "Đánh dấu đã bán"
  * asks first (sold is final), the others change the status at once. Render
- * `<MarkSoldDialog {...markSoldDialog} />` after the sheet.
+ * `<ConfirmDialog {...markSoldDialog} />` after the sheet.
  */
 export function useOwnerListingActions() {
   const navigate = useNavigate();
@@ -40,9 +42,11 @@ export function useOwnerListingActions() {
   };
 
   const markSoldDialog = {
-    visible: Boolean(soldCandidate?.isOpen),
+    isVisible: Boolean(soldCandidate?.isOpen),
+    messages: markSoldMessages,
+    tone: ConfirmTone.Highlight,
     onClose: handleCloseDialog,
-    onConfirmed: handleConfirmSold,
+    onConfirm: handleConfirmSold,
   };
 
   return { selectAction, markSoldDialog, isPending };
