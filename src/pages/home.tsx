@@ -126,6 +126,7 @@ export default function HomePage() {
         <ProductFeed
           feed={feed}
           hasActiveCriteria={hasActiveCriteria}
+          isAutoplayPaused={isFilterOpen}
           onClearCriteria={handleClearCriteria}
           onOpenProduct={(productId) => navigate(`/products/${productId}`)}
         />

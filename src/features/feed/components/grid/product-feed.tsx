@@ -5,6 +5,7 @@ import InlineRetry from '@/components/feedback/inline-retry';
 import ListingCard from '@/features/feed/components/grid/listing-card';
 import ListingGridSkeleton from '@/features/feed/components/grid/listing-grid-skeleton';
 import { listingGridClass, surfaceClass } from '@/features/feed/constants/styles';
+import { useFeedAutoplay } from '@/features/feed/hooks/use-feed-autoplay';
 import type { useProductFeed } from '@/features/products/api/get-product-feed';
 
 type FeedQuery = ReturnType<typeof useProductFeed>;
@@ -22,14 +23,21 @@ const SCROLL_CONTAINER_SELECTOR = '.zaui-page';
 export default function ProductFeed({
   feed,
   hasActiveCriteria,
+  isAutoplayPaused,
   onClearCriteria,
   onOpenProduct,
 }: {
   feed: FeedQuery;
   hasActiveCriteria: boolean;
+  /** Something covers the feed (the filter sheet): no preview plays. */
+  isAutoplayPaused: boolean;
   onClearCriteria: () => void;
   onOpenProduct: (productId: string) => void;
 }) {
+  const products = feed.data?.pages.flatMap((page) => page.data) ?? [];
+  const previewIds = products.flatMap((product) => (product.previewUrl ? [product.id] : []));
+  const { activeId, cardRef } = useFeedAutoplay(previewIds, isAutoplayPaused);
+
   if (feed.isPending) {
     return <ListingGridSkeleton count={INITIAL_SKELETON_CARDS} />;
   }
@@ -44,8 +52,6 @@ export default function ProductFeed({
       />
     );
   }
-
-  const products = feed.data?.pages.flatMap((page) => page.data) ?? [];
 
   if (!products.length) {
     return hasActiveCriteria ? (
@@ -67,6 +73,8 @@ export default function ProductFeed({
         {products.map((product, index) => (
           <ListingCard
             isAboveFold={index < ABOVE_FOLD_CARDS}
+            isPreviewActive={product.id === activeId}
+            cardRef={product.previewUrl ? cardRef(product.id) : undefined}
             key={product.id}
             product={product}
             onOpen={onOpenProduct}

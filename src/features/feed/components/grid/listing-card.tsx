@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon } from 'zmp-ui';
 
 import Price from '@/components/price';
@@ -19,10 +19,16 @@ const videoBadgeClass =
 export default function ListingCard({
   product,
   isAboveFold,
+  isPreviewActive,
+  cardRef,
   onOpen,
 }: {
   product: ProductCard;
   isAboveFold: boolean;
+  /** This card's preview is the one playing in the feed. */
+  isPreviewActive: boolean;
+  /** Lets the feed measure the card to pick which preview plays. */
+  cardRef?: (element: HTMLElement | null) => void;
   onOpen: (productId: string) => void;
 }) {
   // Remember WHICH url failed, so a changed thumbnail (e.g. an edited listing)
@@ -32,6 +38,7 @@ export default function ListingCard({
 
   return (
     <button
+      ref={cardRef}
       aria-label={`Xem chi tiết ${product.title}`}
       className={listingCardClass}
       type="button"
@@ -57,6 +64,7 @@ export default function ListingCard({
             <Icon icon="zi-photo" size={28} />
           </span>
         )}
+        {isPreviewActive && product.previewUrl && <CardPreview src={product.previewUrl} />}
         {product.hasVideo && (
           <span className={videoBadgeClass}>
             <Icon icon="zi-play-solid" size={14} />
@@ -79,5 +87,48 @@ export default function ListingCard({
         </p>
       </div>
     </button>
+  );
+}
+
+/**
+ * The listing's short muted clip over its cover. It shows once it really plays, so a
+ * slow start or a refused autoplay leaves the cover as it was.
+ */
+function CardPreview({ src }: { src: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+
+    // Set here, not as a prop: the cleanup drops it, and a remount must set it again.
+    video.src = src;
+    // Autoplay denied (a data saver, a WebView rule): the cover stays, silently.
+    video.play().catch(() => setIsPlaying(false));
+
+    // Removing the element alone may keep its buffer; dropping the source frees it.
+    return () => {
+      video.removeAttribute('src');
+      video.load();
+    };
+  }, [src]);
+
+  return (
+    <video
+      ref={videoRef}
+      aria-hidden="true"
+      className={`pointer-events-none absolute inset-0 size-full object-cover transition-opacity duration-200 motion-reduce:transition-none ${
+        isPlaying ? 'opacity-100' : 'opacity-0'
+      }`}
+      muted
+      loop
+      playsInline
+      preload="auto"
+      onPlaying={() => setIsPlaying(true)}
+      onError={() => setIsPlaying(false)}
+    />
   );
 }
