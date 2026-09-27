@@ -1,4 +1,4 @@
-import { FormEvent, useRef } from 'react';
+import { FormEvent, type RefObject, useRef } from 'react';
 import { Icon } from 'zmp-ui';
 
 import { SEARCH_MAX_LENGTH } from '@/features/feed/constants/filters';
@@ -22,6 +22,8 @@ const iconButtonClass =
   'relative grid size-[42px] flex-none place-items-center border-0 bg-transparent p-0 text-white';
 
 interface HomeHeaderProps {
+  /** The feed measures what the header covers. */
+  headerRef?: RefObject<HTMLElement>;
   searchValue: string;
   activeFilterCount: number;
   onSearchChange: (value: string) => void;
@@ -31,6 +33,7 @@ interface HomeHeaderProps {
 }
 
 export default function HomeHeader({
+  headerRef,
   searchValue,
   activeFilterCount,
   onSearchChange,
@@ -57,7 +60,7 @@ export default function HomeHeader({
     : 'Mở bộ lọc';
 
   return (
-    <header className={headerClass}>
+    <header ref={headerRef} className={headerClass}>
       <h1 className={titleClass}>Chợ Zalo</h1>
       <div className="flex items-center gap-2">
         <form className={searchFormClass} role="search" onSubmit={handleSubmit}>
