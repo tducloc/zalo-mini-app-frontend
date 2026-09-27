@@ -3,7 +3,6 @@ import { Swiper } from 'zmp-ui';
 
 import MediaLightbox from '@/features/products/components/gallery/media-lightbox';
 import { ProductDetail } from '@/features/products/types/product';
-import { isNearSlide } from '@/features/products/utils/gallery';
 
 type ProductMedia = ProductDetail['media'];
 
@@ -109,4 +108,10 @@ export default function ProductMediaGallery({
       )}
     </>
   );
+}
+
+/** Whether a slide is the active one or a neighbour, counting across the loop seam. */
+export function isNearSlide(index: number, activeIndex: number, slideCount: number) {
+  const distance = Math.abs(index - activeIndex);
+  return Math.min(distance, slideCount - distance) <= 1;
 }

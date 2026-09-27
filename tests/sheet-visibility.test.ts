@@ -1,6 +1,8 @@
+// @vitest-environment jsdom
+// jsdom: the helpers live in their component files, which load zmp-ui.
 import { describe, expect, it } from 'vitest';
 
-import { resolveSheetVisibility, settleSheetClose } from '@/utils/sheet-visibility';
+import { resolveSheetVisibility, settleSheetClose } from '@/components/app-sheet';
 
 const closed = { isShown: false, isClosing: false };
 

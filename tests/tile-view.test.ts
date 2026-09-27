@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// jsdom: the helpers live in their component files, which load zmp-ui.
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -8,10 +10,10 @@ import {
   uploadFailedMessages,
   uploadWaitMessages,
 } from '@/features/listings/constants/messages';
-import { DraftMediaStatus, type DraftMedia } from '@/features/listings/types/draft-media';
+import { type DraftMedia, DraftMediaStatus } from '@/features/listings/types/draft-media';
 import { TileTone } from '@/features/listings/types/tile-view';
 import { isFailed, newDraftMedia } from '@/features/listings/utils/draft-media';
-import { tileView } from '@/features/listings/utils/tile-view';
+import { tileView } from '@/features/listings/components/media/media-section';
 import { MediaKind, RejectReason } from '@/features/media/types/media';
 import { MediaError, ServerMediaStatus, UploadWait } from '@/features/media/types/upload';
 

@@ -1,6 +1,8 @@
+// @vitest-environment jsdom
+// jsdom: the helpers live in their component files, which load zmp-ui.
 import { describe, expect, it } from 'vitest';
 
-import { isNearSlide } from '@/features/products/utils/gallery';
+import { isNearSlide } from '@/features/products/components/gallery/media-gallery';
 
 describe('isNearSlide', () => {
   it('treats the active slide and its neighbours as near', () => {

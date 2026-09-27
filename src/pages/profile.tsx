@@ -3,7 +3,6 @@ import { Button, Icon, Page, useNavigate } from 'zmp-ui';
 import MobilePageHeader from '@/components/layout/mobile-page-header';
 import { cardClass, pageClass, pageContentClass, stateIconClass } from '@/components/layout/styles';
 import { useSession } from '@/features/auth/hooks/use-session';
-import { getAuthStatusLabel } from '@/features/auth/utils/auth-status';
 
 // Dev-only entry to the media measurement page. Remove with src/pages/media-lab.tsx.
 const showMediaLab = import.meta.env.DEV || import.meta.env.VITE_MEDIA_LAB === 'true';
@@ -39,4 +38,23 @@ export default function ProfilePage() {
       </main>
     </Page>
   );
+}
+
+/** Profile subtitle for the three sign-in states. */
+export function getAuthStatusLabel({
+  isSignedIn,
+  isBootstrapping,
+}: {
+  isSignedIn: boolean;
+  isBootstrapping: boolean;
+}) {
+  if (isSignedIn) {
+    return 'Đã xác thực với Zalo';
+  }
+
+  if (isBootstrapping) {
+    return 'Đang xác thực với Zalo…';
+  }
+
+  return 'Chưa thể xác thực trong trình duyệt';
 }

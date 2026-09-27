@@ -1,16 +1,18 @@
+// @vitest-environment jsdom
+// jsdom: the helpers live in their component files, which load zmp-ui.
 import { Motorbike } from 'lucide-react';
 
-import { SEARCH_MAX_LENGTH, DEFAULT_FILTERS } from '@/features/feed/constants/filters';
+import { DEFAULT_FILTERS, SEARCH_MAX_LENGTH } from '@/features/feed/constants/filters';
 import type { FeedFilters } from '@/features/feed/types/filters';
+import { nextChoice } from '@/features/feed/utils/filters';
 import {
   getActiveFilterKeys,
   getFilterChips,
-  nextChoice,
   normalizeSearch,
   removeFilter,
   toFeedQueryParams,
   toggleCategory,
-} from '@/features/feed/utils/filters';
+} from '@/pages/home';
 
 const lookups = {
   categories: [{ id: 'cat_vehicles', label: 'Xe cộ', icon: Motorbike }],

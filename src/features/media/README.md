@@ -52,7 +52,7 @@ page; it goes once that page imports `utils/video`.
 | `types/draft-media.ts`       | A draft file and its states                                   |
 | `utils/draft-media.ts`       | `newDraftMedia`, `isFailed`                                   |
 | `utils/listing-draft.ts`     | What Post needs from the whole draft                          |
-| `utils/tile-view.ts`         | What a tile and the viewer show for a file                    |
+| `tileView` in `components/media/media-section.tsx` | What a tile and the viewer show for a file |
 | `services/add-media.ts`      | Detect, check, optimize each picked file; end a draft         |
 | `services/upload-media.ts`   | Upload queue and processing status                            |
 | `services/media-pipeline.ts` | A draft store with its services: the sell draft, or an edit's |

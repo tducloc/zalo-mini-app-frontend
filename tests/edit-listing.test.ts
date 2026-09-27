@@ -17,7 +17,7 @@ import {
   listingChanges,
 } from '@/features/listings/components/edit/edit-listing-form';
 import { postBlocker } from '@/features/listings/utils/listing-draft';
-import { tileView } from '@/features/listings/utils/tile-view';
+import { tileView } from '@/features/listings/components/media/media-section';
 import { MediaKind } from '@/features/media/types/media';
 import { MediaError, ServerMediaStatus } from '@/features/media/types/upload';
 import type { ProductDetail } from '@/features/products/types/product';

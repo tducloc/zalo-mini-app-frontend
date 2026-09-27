@@ -1,10 +1,14 @@
+// @vitest-environment jsdom
+// jsdom: the helpers live in their component files, which load zmp-ui.
+import {
+  parsePriceRange,
+  priceToInputDigits,
+} from '@/features/feed/components/filters/filter-sheet';
 import {
   applyPriceEdit,
   caretAfterDigits,
   formatPriceDigits,
-  parsePriceRange,
-  priceToInputDigits,
-} from '@/features/feed/utils/price';
+} from '@/features/feed/components/filters/price-input';
 import { MAX_PRICE_VND } from '@/features/products/constants/product';
 
 const group = (value: number) => new Intl.NumberFormat('vi-VN').format(value);

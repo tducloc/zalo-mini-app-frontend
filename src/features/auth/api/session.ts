@@ -1,8 +1,7 @@
 import { getAccessToken } from 'zmp-sdk';
 
-import { AUTH_ERROR_MESSAGE } from '@/features/auth/constants/auth';
+import { AUTH_ERROR_MESSAGE, ZALO_PLACEHOLDER_TOKEN } from '@/features/auth/constants/auth';
 import type { Session } from '@/features/auth/types/session';
-import { resolveExchangeToken } from '@/features/auth/utils/exchange-token';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/stores/auth';
 import { warnInDev } from '@/utils/dev-log';
@@ -96,4 +95,18 @@ export function restoreSession(manualRetry = false): Promise<Session> {
     });
 
   return recoveryPromise;
+}
+
+/**
+ * The Zalo token to exchange at `POST /auth/zalo`: the SDK token inside Zalo,
+ * the dev token outside it (dev builds only), or null when there is neither.
+ */
+export function resolveExchangeToken(sdkToken: string | undefined, devToken: string | undefined) {
+  const isOutsideZalo = !sdkToken || sdkToken === ZALO_PLACEHOLDER_TOKEN;
+
+  if (!isOutsideZalo) {
+    return sdkToken;
+  }
+
+  return devToken || null;
 }

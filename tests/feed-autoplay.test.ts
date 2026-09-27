@@ -1,6 +1,12 @@
+// @vitest-environment jsdom
+// jsdom: the helpers live in their component files, which load zmp-ui.
 import { describe, expect, it } from 'vitest';
 
-import { canAutoplay, pickActiveCard, visibleArea } from '@/features/feed/utils/autoplay';
+import {
+  canAutoplay,
+  pickActiveCard,
+  visibleArea,
+} from '@/features/feed/components/grid/product-feed';
 
 // A 390×800 viewport, scrolled so its centre is at y = 400.
 const viewport = { top: 0, bottom: 800, left: 0, right: 390 };

@@ -1,4 +1,6 @@
-import { getAuthStatusLabel } from '@/features/auth/utils/auth-status';
+// @vitest-environment jsdom
+// jsdom: the helpers live in their component files, which load zmp-ui.
+import { getAuthStatusLabel } from '@/pages/profile';
 
 describe('getAuthStatusLabel', () => {
   it('describes the three sign-in states', () => {

@@ -1,7 +1,13 @@
+// @vitest-environment jsdom
+// jsdom: the helpers live in their component files, which load zmp-ui.
 import { describe, expect, it } from 'vitest';
 
 import { MAX_SCALE, NO_OFFSET } from '@/features/products/constants/zoom';
-import { clampOffset, clampScale, zoomAt } from '@/features/products/utils/zoom';
+import {
+  clampOffset,
+  clampScale,
+  zoomAt,
+} from '@/features/products/components/gallery/media-lightbox';
 
 const box = { width: 400, height: 300 };
 

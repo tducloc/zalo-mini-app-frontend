@@ -17,17 +17,26 @@ import RequiredMark from '@/features/listings/components/form/required-mark';
 import MediaAddTile from '@/features/listings/components/media/media-add-tile';
 import MediaTile from '@/features/listings/components/media/media-tile';
 import MediaViewer from '@/features/listings/components/media/media-viewer';
-import { missingPhotoMessage, refusedFilesMessage } from '@/features/listings/constants/messages';
+import {
+  missingPhotoMessage,
+  refusedFilesMessage,
+  mediaErrorMessage,
+  rejectMessage,
+  tileLabels,
+  uploadFailedMessages,
+  uploadWaitMessages,
+} from '@/features/listings/constants/messages';
 import { formNoteClass, formSectionTitleClass } from '@/features/listings/constants/styles';
 import type { MediaPipeline } from '@/features/listings/services/media-pipeline';
-import type { ListingMedia } from '@/features/listings/types/draft-media';
+import { DraftMediaStatus, type ListingMedia } from '@/features/listings/types/draft-media';
 import { isFailed } from '@/features/listings/utils/draft-media';
-import { tileView } from '@/features/listings/utils/tile-view';
 import { PHOTO_ACCEPT, VIDEO_ACCEPT } from '@/features/media/constants/formats';
 import { MAX_IMAGES_PER_LISTING, MAX_VIDEO_SECONDS } from '@/features/media/constants/limits';
-import { MediaKind } from '@/features/media/types/media';
+import { MediaKind, RejectReason } from '@/features/media/types/media';
 import { takePickedFiles } from '@/features/media/utils/media';
 import { useToast } from '@/hooks/use-toast';
+import { TileTone, type TileView } from '@/features/listings/types/tile-view';
+import { ServerMediaStatus, UploadWait } from '@/features/media/types/upload';
 
 const TILE_GRID_CLASS = 'm-0 grid list-none grid-cols-4 gap-2.5 p-0';
 const FIELD_HEADING_CLASS = 'mb-2.5 mt-5 flex justify-between gap-2';
@@ -222,4 +231,72 @@ export default function MediaSection({
       )}
     </section>
   );
+}
+
+/** What a draft file's tile and viewer show; pure, so each state is tested. */
+export function tileView(media: ListingMedia): TileView {
+  const base = {
+    label: null,
+    progress: null,
+    detail: null,
+    canRetry: false,
+    // The photo on the phone, else the server's thumbnail once it has one.
+    imageUrl: media.previewUrl ?? media.server?.thumbnailUrl ?? null,
+    fullUrl: media.mediumUrl,
+  };
+
+  switch (media.status) {
+    case DraftMediaStatus.Checking:
+      return { ...base, tone: TileTone.Working, label: tileLabels.checking };
+    case DraftMediaStatus.Rejected:
+      return {
+        ...base,
+        tone: TileTone.Error,
+        detail: rejectMessage(media.reason ?? RejectReason.Unreadable),
+      };
+    case DraftMediaStatus.Optimizing:
+      return media.kind === MediaKind.Video
+        ? {
+            ...base,
+            tone: TileTone.Working,
+            label: tileLabels.convertingVideo,
+            progress: media.progress,
+          }
+        : { ...base, tone: TileTone.Working, label: tileLabels.optimizingPhoto };
+    case DraftMediaStatus.ReadyToUpload:
+      return { ...base, tone: TileTone.Working, label: tileLabels.queued };
+    case DraftMediaStatus.Uploading:
+      return {
+        ...base,
+        tone: TileTone.Working,
+        label: tileLabels.uploading,
+        progress: media.progress,
+      };
+    case DraftMediaStatus.Retrying: {
+      const waitingFor = media.waitingFor ?? UploadWait.Retry;
+      return {
+        ...base,
+        tone: TileTone.Waiting,
+        label: waitingFor === UploadWait.Network ? tileLabels.waitingNetwork : tileLabels.retrying,
+        progress: media.progress,
+        detail: uploadWaitMessages[waitingFor],
+      };
+    }
+    case DraftMediaStatus.UploadFailed:
+      return {
+        ...base,
+        tone: TileTone.Error,
+        detail: media.isRetryable ? uploadFailedMessages.retryable : uploadFailedMessages.permanent,
+        canRetry: media.isRetryable,
+      };
+    case DraftMediaStatus.Uploaded:
+      if (media.server?.status === ServerMediaStatus.Failed) {
+        return { ...base, tone: TileTone.Error, detail: mediaErrorMessage(media.server.error) };
+      }
+
+      if (media.server?.status === ServerMediaStatus.Ready) {
+        return { ...base, tone: TileTone.Done };
+      }
+      return { ...base, tone: TileTone.Working, label: tileLabels.processing };
+  }
 }
