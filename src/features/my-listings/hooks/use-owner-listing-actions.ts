@@ -4,10 +4,15 @@ import { useNavigate } from 'zmp-ui';
 import { ConfirmTone } from '@/components/feedback/confirm-dialog';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useChangeListingStatus } from '@/features/my-listings/api/listing-status';
-import { markSoldMessages, statusChangeSuccess } from '@/features/my-listings/constants/messages';
+import {
+  markSoldMessages,
+  STATUS_CHANGE_FAILED,
+  statusChangeErrors,
+  statusChangeSuccess,
+} from '@/features/my-listings/constants/messages';
 import { ListingAction, type StatusChange } from '@/features/my-listings/types/my-listing';
-import { getStatusChangeErrorMessage } from '@/features/my-listings/utils/my-listing';
 import { useToast } from '@/hooks/use-toast';
+import { getApiErrorStatus } from '@/utils/api-error';
 
 /**
  * What an owner's action in a "•••" sheet does: edit opens the edit page, "Đánh dấu đã bán"
@@ -64,4 +69,9 @@ export function useOwnerListingActions() {
   };
 
   return { selectAction, markSoldDialog, isPending: mutation.isPending };
+}
+
+export function getStatusChangeErrorMessage(error: unknown) {
+  const status = getApiErrorStatus(error);
+  return (status && statusChangeErrors[status]) || STATUS_CHANGE_FAILED;
 }

@@ -1,15 +1,15 @@
 import { type InfiniteData, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { myListingKeys } from '@/features/my-listings/api/keys';
-import { MY_LISTINGS_TABS } from '@/features/my-listings/constants/tabs';
+import { DEFAULT_TAB, MY_LISTINGS_TABS, tabConfigs } from '@/features/my-listings/constants/tabs';
 import {
   ListingAction,
   type MyListingsPage,
+  type MyListingsTab,
   type StatusChange,
 } from '@/features/my-listings/types/my-listing';
-import { getTabForStatus, withoutListing } from '@/features/my-listings/utils/my-listing';
 import { productKeys } from '@/features/products/api/keys';
-import type { ProductDetail } from '@/features/products/types/product';
+import type { ProductDetail, ProductStatus } from '@/features/products/types/product';
 import { http } from '@/lib/http';
 
 const statusChangePaths: Record<StatusChange, string> = {
@@ -72,4 +72,22 @@ export function useChangeListingStatus(viewerId: string | null) {
       void queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
     },
   });
+}
+
+export function getTabForStatus(status: ProductStatus): MyListingsTab {
+  return MY_LISTINGS_TABS.find((tab) => tabConfigs[tab].status === status) ?? DEFAULT_TAB;
+}
+
+/** The pages without one listing, for a tab it has just left. */
+export function withoutListing(
+  data: InfiniteData<MyListingsPage, string | undefined>,
+  listingId: string,
+): InfiniteData<MyListingsPage, string | undefined> {
+  return {
+    ...data,
+    pages: data.pages.map((page) => ({
+      ...page,
+      data: page.data.filter((listing) => listing.id !== listingId),
+    })),
+  };
 }

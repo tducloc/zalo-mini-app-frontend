@@ -13,14 +13,14 @@ import MyListingsTabs, {
   tabId,
   tabPanelId,
 } from '@/features/my-listings/components/tabs/my-listings-tabs';
-import { tabConfigs } from '@/features/my-listings/constants/tabs';
+import { DEFAULT_TAB, MY_LISTINGS_TABS, tabConfigs } from '@/features/my-listings/constants/tabs';
 import { useOwnerListingActions } from '@/features/my-listings/hooks/use-owner-listing-actions';
 import type {
   ListingAction,
   MyListing,
   MyListingsTab,
 } from '@/features/my-listings/types/my-listing';
-import { getTabTotal, readRequestedTab } from '@/features/my-listings/utils/my-listing';
+import { getTabTotal } from '@/features/my-listings/utils/my-listing';
 
 // Under the fixed header (44px and the safe area), the tabs stay in view while the list scrolls.
 const tabsBarClass = 'sticky top-[calc(44px_+_var(--zaui-safe-area-inset-top))] z-10';
@@ -115,4 +115,16 @@ export default function MyListingsPage() {
       <ConfirmDialog {...ownerActions.markSoldDialog} />
     </Page>
   );
+}
+
+const isMyListingsTab = (value: unknown): value is MyListingsTab =>
+  MY_LISTINGS_TABS.some((tab) => tab === value);
+
+/** The tab another page asked for in the router state (`{ tab }`), else the first one. */
+export function readRequestedTab(routerState: unknown): MyListingsTab {
+  const tab =
+    typeof routerState === 'object' && routerState !== null && 'tab' in routerState
+      ? routerState.tab
+      : undefined;
+  return isMyListingsTab(tab) ? tab : DEFAULT_TAB;
 }

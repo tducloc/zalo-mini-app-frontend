@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// jsdom: the helpers live in their component files, which load zmp-ui.
 import { AxiosError, AxiosHeaders } from 'axios';
 
 import { mediaErrorMessage } from '@/features/listings/constants/messages';
@@ -9,16 +11,12 @@ import {
   type MyListing,
   type MyListingsPage,
 } from '@/features/my-listings/types/my-listing';
-import {
-  getListingActions,
-  getStatusChangeErrorMessage,
-  getStatusLine,
-  getTabBadge,
-  getTabForStatus,
-  getTabTotal,
-  readRequestedTab,
-  withoutListing,
-} from '@/features/my-listings/utils/my-listing';
+import { getTabForStatus, withoutListing } from '@/features/my-listings/api/listing-status';
+import { getStatusLine } from '@/features/my-listings/components/list/my-listing-card';
+import { getTabBadge } from '@/features/my-listings/components/tabs/my-listings-tabs';
+import { getStatusChangeErrorMessage } from '@/features/my-listings/hooks/use-owner-listing-actions';
+import { getListingActions, getTabTotal } from '@/features/my-listings/utils/my-listing';
+import { readRequestedTab } from '@/pages/my-listings';
 
 const now = Date.parse('2026-09-27T10:00:00.000Z');
 const hoursAgo = (hours: number) => new Date(now - hours * 3_600_000).toISOString();

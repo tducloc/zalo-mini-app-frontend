@@ -7,13 +7,18 @@ import MobilePageHeader from '@/components/layout/mobile-page-header';
 import { pageContentClass } from '@/components/layout/styles';
 import { useSession } from '@/features/auth/hooks/use-session';
 import EditListingForm from '@/features/listings/components/edit/edit-listing-form';
-import { isEditableStatus } from '@/features/listings/utils/edit-listing';
 import { useProductDetail } from '@/features/products/api/get-product-detail';
+import type { ProductStatus } from '@/features/products/types/product';
 import { useGoBack } from '@/hooks/use-go-back';
 import { getApiErrorStatus, HttpStatus } from '@/utils/api-error';
 
 const TILE_PLACEHOLDERS = ['a', 'b', 'c'];
 const FIELD_PLACEHOLDERS = ['a', 'b', 'c', 'd'];
+
+/** Sold and archived listings cannot be edited (409 from the server). */
+const EDITABLE_STATUSES: ProductStatus[] = ['PROCESSING', 'FAILED', 'PUBLISHED'];
+
+export const isEditableStatus = (status: ProductStatus) => EDITABLE_STATUSES.includes(status);
 
 // No tab bar under /products/, nor the sell draft's banner: only the safe area.
 const editPageClass = 'bg-white pb-[var(--zaui-safe-area-inset-bottom)]';

@@ -37,7 +37,7 @@ async function loadModules() {
 type Modules = Awaited<ReturnType<typeof loadModules>>;
 let modules: Modules;
 
-/** A photo already on the listing, as utils/edit-listing.ts seeds it. */
+/** A photo already on the listing, as draftFromProduct (edit-listing-form.tsx) seeds it. */
 function existing(id: string, status = modules.ServerMediaStatus.Ready) {
   return {
     ...modules.newDraftMedia(id, MediaKind.Image, file),
