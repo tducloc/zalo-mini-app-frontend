@@ -14,6 +14,14 @@ import { formatShortRelativeTime } from '@/utils/format';
 const THUMBNAIL_SIZE = 400;
 /** Times a preview plays before the card shows its cover again. */
 const PREVIEW_PLAYS = 2;
+/** The preview's fade, as its duration-200 class. */
+const FADE_MS = 200;
+/**
+ * A play that has not started by then counts as failed and ends the turn. A 3 s clip starts
+ * well within it on 3G (autoplay is off on 2G), and it is shorter than a full turn (two plays
+ * of the clip), so a broken preview holds its row less long than a working one.
+ */
+const STALL_MS = 5000;
 
 const videoBadgeClass =
   'absolute bottom-2 left-2 inline-flex items-center gap-[3px] rounded-[10px] bg-marketplace-ink/70 py-0.5 pl-1.5 pr-2 text-micro font-semibold leading-4 text-white';
@@ -109,7 +117,8 @@ export default function ListingCard({
 /**
  * The listing's short muted clip over its cover, played a couple of times and then back to
  * the cover, so nothing moves on and on. It shows once it really plays, so a slow start
- * or a refused autoplay leaves the cover as it was.
+ * or a refused autoplay leaves the cover as it was. It reports the end of its turn itself,
+ * also when the clip fails or never starts, so a broken preview never holds its row.
  */
 function CardPreview({
   src,
@@ -121,8 +130,10 @@ function CardPreview({
   onFinished: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const playsRef = useRef(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  // The card passes a new callback each render; the turn must not restart for it.
+  const onFinishedRef = useRef(onFinished);
+  onFinishedRef.current = onFinished;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -130,34 +141,71 @@ function CardPreview({
       return;
     }
 
+    let plays = 0;
+    let isOver = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => {
+      if (isOver) {
+        return;
+      }
+      isOver = true;
+      clearTimeout(timer);
+      setIsPlaying(false);
+      onFinishedRef.current();
+    };
+    const play = () => {
+      clearTimeout(timer);
+      timer = setTimeout(finish, STALL_MS);
+      // Old WebViews return nothing from play().
+      video.play()?.catch((error: unknown) => {
+        const name = error instanceof DOMException ? error.name : '';
+        // NotAllowedError is the WebView saying no; AbortError is the cleanup's load().
+        if (name === 'NotAllowedError') {
+          clearTimeout(timer);
+          onRefused();
+        } else if (name !== 'AbortError') {
+          finish();
+        }
+      });
+    };
+    const handlePlaying = () => {
+      clearTimeout(timer);
+      setIsPlaying(true);
+    };
+    const handleEnded = () => {
+      plays += 1;
+      if (plays < PREVIEW_PLAYS) {
+        play();
+        return;
+      }
+      // Reported once the fade back to the cover is over, so the next card's turn does not
+      // cut it; the timer covers a WebView that sends no transitionend.
+      setIsPlaying(false);
+      video.addEventListener('transitionend', finish);
+      timer = setTimeout(finish, FADE_MS + 100);
+    };
+
+    video.addEventListener('playing', handlePlaying);
+    video.addEventListener('ended', handleEnded);
+    video.addEventListener('error', finish);
     // Some WebViews judge autoplay by the muted attribute, which React does not write.
     video.defaultMuted = true;
     // Set here, not as a prop: the cleanup drops it, and a remount must set it again.
     video.src = src;
-    playsRef.current = 0;
-    // Old WebViews return nothing from play().
-    video.play()?.catch((error: unknown) => {
-      // AbortError is the cleanup's load(); NotAllowedError is the WebView saying no.
-      if (error instanceof DOMException && error.name === 'NotAllowedError') {
-        onRefused();
-      }
-    });
+    play();
 
-    // Removing the element alone may keep its buffer; dropping the source frees it.
     return () => {
+      isOver = true;
+      clearTimeout(timer);
+      video.removeEventListener('playing', handlePlaying);
+      video.removeEventListener('ended', handleEnded);
+      video.removeEventListener('error', finish);
+      video.removeEventListener('transitionend', finish);
+      // Removing the element alone may keep its buffer; dropping the source frees it.
       video.removeAttribute('src');
       video.load();
     };
   }, [src, onRefused]);
-
-  const handleEnded = () => {
-    playsRef.current += 1;
-    if (playsRef.current < PREVIEW_PLAYS) {
-      void videoRef.current?.play()?.catch(() => setIsPlaying(false));
-      return;
-    }
-    setIsPlaying(false);
-  };
 
   return (
     <video
@@ -170,15 +218,6 @@ function CardPreview({
       playsInline
       // play() loads it; nothing is fetched for a preview the WebView will not play.
       preload="none"
-      onPlaying={() => setIsPlaying(true)}
-      onEnded={handleEnded}
-      // Reported once the fade back to the cover is over, so the next card's turn does not cut it.
-      onTransitionEnd={() => {
-        if (!isPlaying && playsRef.current >= PREVIEW_PLAYS) {
-          onFinished();
-        }
-      }}
-      onError={() => setIsPlaying(false)}
     />
   );
 }
