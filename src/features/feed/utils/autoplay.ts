@@ -1,7 +1,7 @@
 /**
- * Which feed card plays its preview (plans/home-feed.md, Phase 4): one at a time, the one
- * nearest the middle of the screen, and never when the viewer asked for less motion or
- * less data.
+ * Which feed card plays its preview (plans/home-feed.md, Phase 4): one at a time, a card of
+ * the row nearest the middle of the screen, and never when the viewer asked for less motion
+ * or less data.
  */
 
 export interface Box {
@@ -13,6 +13,9 @@ export interface Box {
 
 /** A card must show this share of its height to be picked. */
 const MIN_VISIBLE_SHARE = 0.6;
+
+/** Cards whose vertical centres are this close sit in one row (rounding moves a top by a pixel). */
+const ROW_TOLERANCE_PX = 8;
 
 /** Networks too slow to spend on previews. */
 const SLOW_NETWORKS = new Set(['slow-2g', '2g']);
@@ -32,10 +35,12 @@ export function visibleArea(scroller: Box, headerBottom: number, bottomPadding: 
 }
 
 /**
- * Whose turn it is to play: the card nearest the centre of the visible area among those
- * mostly in it and not yet `finished`, else null. Of two cards as near, the first (the
- * left one of a row) wins, and the other plays once it has finished. A card leaves
- * `finished` once no part of it is visible, so scrolling back plays it again.
+ * Whose turn it is to play. First the middle row: the row, among those with a card mostly
+ * in the visible area, whose centre is nearest the centre of that area. Then, of that
+ * row's cards mostly in it and not yet `finished`, the one nearest the centre across; of
+ * two as near, the first (the left one) wins. Once the whole middle row has finished, none
+ * plays, even when the next row is fully visible. A card leaves `finished` once no part of
+ * it is visible, so scrolling back plays it again.
  */
 export function pickActiveCard(
   cards: { id: string; rect: Box }[],
@@ -46,7 +51,7 @@ export function pickActiveCard(
   const middleX = centre(area.left, area.right);
 
   const stillFinished = new Set<string>();
-  let best: { id: string; distance: number } | null = null;
+  const mostlyVisible: { id: string; rect: Box; centreY: number }[] = [];
   for (const { id, rect } of cards) {
     const height = rect.bottom - rect.top;
     const visible = Math.min(rect.bottom, area.bottom) - Math.max(rect.top, area.top);
@@ -56,16 +61,27 @@ export function pickActiveCard(
     }
     if (finished.has(id)) {
       stillFinished.add(id);
-      continue;
     }
-    if (visible < height * MIN_VISIBLE_SHARE) {
-      continue;
+    if (visible >= height * MIN_VISIBLE_SHARE) {
+      mostlyVisible.push({ id, rect, centreY: centre(rect.top, rect.bottom) });
     }
+  }
 
-    const distance = Math.hypot(
-      centre(rect.top, rect.bottom) - middleY,
-      centre(rect.left, rect.right) - middleX,
-    );
+  // Finished cards count here: a middle row that has played keeps its place, silent.
+  let rowY: number | null = null;
+  for (const { centreY } of mostlyVisible) {
+    if (rowY === null || Math.abs(centreY - middleY) < Math.abs(rowY - middleY)) {
+      rowY = centreY;
+    }
+  }
+
+  let best: { id: string; distance: number } | null = null;
+  for (const { id, rect, centreY } of mostlyVisible) {
+    if (rowY === null || Math.abs(centreY - rowY) > ROW_TOLERANCE_PX || finished.has(id)) {
+      continue;
+    }
+    // Across only: a pixel of rounding between two tops must not put the right card first.
+    const distance = Math.abs(centre(rect.left, rect.right) - middleX);
     if (!best || distance < best.distance) {
       best = { id, distance };
     }

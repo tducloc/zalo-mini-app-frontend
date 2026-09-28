@@ -47,9 +47,10 @@ interface FeedAutoplayOptions {
 }
 
 /**
- * The one feed card whose preview plays: the card with a preview nearest the middle of
- * what is visible, once it has rested there. Cards take turns: one whose preview has
- * finished (`onFinished`) gives way to the next nearest until it leaves the screen. None
+ * The one feed card whose preview plays: a card with a preview in the row nearest the
+ * middle of what is visible, once it has rested there. The row's cards take turns: one
+ * whose preview has finished (`onFinished`) gives way to the next in its row, and once the
+ * whole row has finished none plays until another row comes to the middle. None
  * while paused, while the app is in the background, or once the WebView refused to play.
  * The cards in `previewIds` register their element with `cardRef(id)`; a new page of
  * cards is looked at without a scroll.

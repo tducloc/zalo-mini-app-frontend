@@ -97,6 +97,65 @@ describe('pickActiveCard turns', () => {
   });
 });
 
+describe('pickActiveCard rows', () => {
+  // The real square grid: 250 px cards, rows 268 px apart, columns at x = 13 and 197.
+  const gridRow = (name: string, top: number, columns: ('left' | 'right')[] = ['left', 'right']) =>
+    columns.map((column) => card(`${name}-${column}`, top, column === 'left' ? 13 : 197));
+  const scrolled = (top: number) => [...gridRow('row1', top), ...gridRow('row2', top + 268)];
+
+  // Row 1's centre is 125 px above the middle, row 2's 143 px below it, fully visible.
+  const rowOneNearest = scrolled(150);
+  // 40 px further down: row 2's centre is now 103 px from the middle, row 1's 165 px.
+  const rowTwoNearest = scrolled(110);
+
+  it('plays the middle row left, then right, then none though the next row is in full view', () => {
+    const first = pickActiveCard(rowOneNearest, viewport, new Set());
+    expect(first.activeId).toBe('row1-left');
+
+    const second = pickActiveCard(
+      rowOneNearest,
+      viewport,
+      new Set([...first.finished, 'row1-left']),
+    );
+    expect(second.activeId).toBe('row1-right');
+
+    const third = pickActiveCard(
+      rowOneNearest,
+      viewport,
+      new Set([...second.finished, 'row1-right']),
+    );
+    expect(third.activeId).toBeNull();
+    expect(third.finished).toEqual(new Set(['row1-left', 'row1-right']));
+  });
+
+  it('switches to the next row once it is nearest, even while a card plays', () => {
+    expect(pick(rowTwoNearest, viewport)).toBe('row2-left');
+    // row1-left has finished and row1-right is playing: row 2's left card takes over.
+    expect(pickActiveCard(rowTwoNearest, viewport, new Set(['row1-left'])).activeId).toBe(
+      'row2-left',
+    );
+  });
+
+  it('treats a row with one video card as a row', () => {
+    const rows = (top: number) => [
+      ...gridRow('row1', top, ['right']),
+      ...gridRow('row2', top + 268, ['left']),
+    ];
+
+    expect(pick(rows(150), viewport)).toBe('row1-right');
+    expect(pickActiveCard(rows(150), viewport, new Set(['row1-right'])).activeId).toBeNull();
+    expect(pickActiveCard(rows(110), viewport, new Set(['row1-right'])).activeId).toBe('row2-left');
+  });
+
+  it('keeps two cards whose tops differ by a pixel in one row, left first', () => {
+    const row = [card('left', 281, 13), card('right', 280, 197)];
+
+    expect(pick(row, viewport)).toBe('left');
+    expect(pickActiveCard(row, viewport, new Set(['left'])).activeId).toBe('right');
+    expect(pickActiveCard(row, viewport, new Set(['left', 'right'])).activeId).toBeNull();
+  });
+});
+
 describe('visibleArea', () => {
   // A 390×844 page under a 155 px header, with 82 px kept for the tab bar.
   const page = { top: 0, bottom: 844, left: 0, right: 390 };
