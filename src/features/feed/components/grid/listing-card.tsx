@@ -25,6 +25,7 @@ export default function ListingCard({
   cardRef,
   onOpen,
   onPreviewRefused,
+  onPreviewFinished,
 }: {
   product: ProductCard;
   isAboveFold: boolean;
@@ -35,6 +36,8 @@ export default function ListingCard({
   onOpen: (productId: string) => void;
   /** The WebView refused to play the preview. */
   onPreviewRefused: () => void;
+  /** The preview played its turn and the cover shows again. */
+  onPreviewFinished: (productId: string) => void;
 }) {
   // Remember WHICH url failed, so a changed thumbnail (e.g. an edited listing)
   // is tried again instead of keeping the placeholder forever.
@@ -75,6 +78,7 @@ export default function ListingCard({
             key={product.previewUrl}
             src={product.previewUrl}
             onRefused={onPreviewRefused}
+            onFinished={() => onPreviewFinished(product.id)}
           />
         )}
         {product.hasVideo && (
@@ -107,7 +111,15 @@ export default function ListingCard({
  * the cover, so nothing moves on and on. It shows once it really plays, so a slow start
  * or a refused autoplay leaves the cover as it was.
  */
-function CardPreview({ src, onRefused }: { src: string; onRefused: () => void }) {
+function CardPreview({
+  src,
+  onRefused,
+  onFinished,
+}: {
+  src: string;
+  onRefused: () => void;
+  onFinished: () => void;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playsRef = useRef(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -160,6 +172,12 @@ function CardPreview({ src, onRefused }: { src: string; onRefused: () => void })
       preload="none"
       onPlaying={() => setIsPlaying(true)}
       onEnded={handleEnded}
+      // Reported once the fade back to the cover is over, so the next card's turn does not cut it.
+      onTransitionEnd={() => {
+        if (!isPlaying && playsRef.current >= PREVIEW_PLAYS) {
+          onFinished();
+        }
+      }}
       onError={() => setIsPlaying(false)}
     />
   );

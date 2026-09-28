@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import { type Box, canAutoplay, pickActiveCard, visibleArea } from '@/features/feed/utils/autoplay';
 
@@ -48,9 +48,11 @@ interface FeedAutoplayOptions {
 
 /**
  * The one feed card whose preview plays: the card with a preview nearest the middle of
- * what is visible, once it has rested there. None while paused, while the app is in the
- * background, or once the WebView refused to play. The cards in `previewIds` register
- * their element with `cardRef(id)`; a new page of cards is looked at without a scroll.
+ * what is visible, once it has rested there. Cards take turns: one whose preview has
+ * finished (`onFinished`) gives way to the next nearest until it leaves the screen. None
+ * while paused, while the app is in the background, or once the WebView refused to play.
+ * The cards in `previewIds` register their element with `cardRef(id)`; a new page of
+ * cards is looked at without a scroll.
  */
 export function useFeedAutoplay({
   previewIds,
@@ -67,9 +69,11 @@ export function useFeedAutoplay({
 
   // The card chosen last, kept when a new page arrives so the playing one goes on.
   const candidate = useRef<string | null>(null);
+  // Cards that played their preview and are still on screen: not picked again until they leave.
+  const finished = useRef<ReadonlySet<string>>(new Set());
 
-  // Bumped when a play is refused, so the choice is made again (and finds none).
-  const [refusals, setRefusals] = useState(0);
+  // Bumped when a play is refused or finished, so the choice is made again.
+  const [choiceCount, chooseAgain] = useReducer((count: number) => count + 1, 0);
 
   const cardRef = useCallback((id: string) => {
     let ref = cardRefs.current.get(id);
@@ -88,7 +92,12 @@ export function useFeedAutoplay({
 
   const handleRefused = useCallback(() => {
     wasRefused = true;
-    setRefusals((count) => count + 1);
+    chooseAgain();
+  }, []);
+
+  const handleFinished = useCallback((id: string) => {
+    finished.current = new Set(finished.current).add(id);
+    chooseAgain();
   }, []);
 
   useEffect(() => {
@@ -105,17 +114,20 @@ export function useFeedAutoplay({
 
     const choose = () => {
       frame = 0;
+      let next: string | null = null;
       // Asked each time: the connection or the motion setting may change on the page.
-      const next =
-        document.hidden || !isAutoplayAllowed()
-          ? null
-          : pickActiveCard(
-              [...cards.current].map(([id, element]) => ({
-                id,
-                rect: element.getBoundingClientRect(),
-              })),
-              areaOf(scroller, headerRef.current),
-            );
+      if (!document.hidden && isAutoplayAllowed()) {
+        const turn = pickActiveCard(
+          [...cards.current].map(([id, element]) => ({
+            id,
+            rect: element.getBoundingClientRect(),
+          })),
+          areaOf(scroller, headerRef.current),
+          finished.current,
+        );
+        next = turn.activeId;
+        finished.current = turn.finished;
+      }
       if (next === candidate.current) {
         return;
       }
@@ -154,7 +166,7 @@ export function useFeedAutoplay({
       document.removeEventListener('visibilitychange', scheduleChoose);
     };
     // previewKey: new cards on screen are looked at even before the next scroll.
-  }, [scrollerRef, headerRef, isPaused, previewKey, refusals]);
+  }, [scrollerRef, headerRef, isPaused, previewKey, choiceCount]);
 
-  return { activeId, cardRef, onRefused: handleRefused };
+  return { activeId, cardRef, onRefused: handleRefused, onFinished: handleFinished };
 }

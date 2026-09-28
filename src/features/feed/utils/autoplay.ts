@@ -32,19 +32,33 @@ export function visibleArea(scroller: Box, headerBottom: number, bottomPadding: 
 }
 
 /**
- * The card nearest the centre of the visible area among those mostly in it, else null.
- * Of two cards as near, the first (the left one of a row) wins.
+ * Whose turn it is to play: the card nearest the centre of the visible area among those
+ * mostly in it and not yet `finished`, else null. Of two cards as near, the first (the
+ * left one of a row) wins, and the other plays once it has finished. A card leaves
+ * `finished` once no part of it is visible, so scrolling back plays it again.
  */
-export function pickActiveCard(cards: { id: string; rect: Box }[], area: Box) {
+export function pickActiveCard(
+  cards: { id: string; rect: Box }[],
+  area: Box,
+  finished: ReadonlySet<string>,
+) {
   const middleY = centre(area.top, area.bottom);
   const middleX = centre(area.left, area.right);
 
+  const stillFinished = new Set<string>();
   let best: { id: string; distance: number } | null = null;
   for (const { id, rect } of cards) {
     const height = rect.bottom - rect.top;
     const visible = Math.min(rect.bottom, area.bottom) - Math.max(rect.top, area.top);
     // A zero-size box is a card that is not laid out (hidden), not a visible one.
-    if (height <= 0 || visible < height * MIN_VISIBLE_SHARE) {
+    if (height <= 0 || visible <= 0) {
+      continue;
+    }
+    if (finished.has(id)) {
+      stillFinished.add(id);
+      continue;
+    }
+    if (visible < height * MIN_VISIBLE_SHARE) {
       continue;
     }
 
@@ -56,7 +70,7 @@ export function pickActiveCard(cards: { id: string; rect: Box }[], area: Box) {
       best = { id, distance };
     }
   }
-  return best?.id ?? null;
+  return { activeId: best?.id ?? null, finished: stillFinished };
 }
 
 export function canAutoplay({
