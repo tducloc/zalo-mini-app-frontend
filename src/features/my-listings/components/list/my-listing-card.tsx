@@ -2,23 +2,13 @@ import { useState } from 'react';
 import { Icon } from 'zmp-ui';
 
 import Price from '@/components/price';
-import { mediaErrorMessage } from '@/features/listings/constants/messages';
-import { toMediaError } from '@/features/media/utils/media-error';
 import { actionLabels } from '@/features/my-listings/constants/messages';
 import {
   myListingCardClass,
   myListingThumbnailClass,
 } from '@/features/my-listings/constants/styles';
-import {
-  type FailedMedia,
-  ListingAction,
-  type MyListing,
-  type StatusLine,
-  StatusTone,
-} from '@/features/my-listings/types/my-listing';
-import { getListingActions } from '@/features/my-listings/utils/my-listing';
-import type { ProductStatus } from '@/features/products/types/product';
-import { formatShortRelativeTime } from '@/utils/format';
+import { ListingAction, StatusTone, type MyListing } from '@/features/my-listings/types/my-listing';
+import { getListingActions, getStatusLine } from '@/features/my-listings/utils/my-listing';
 
 // Square 400×400 thumbnails shown at 88px; the attributes reserve space before the image loads.
 const THUMBNAIL_SIZE = 400;
@@ -120,35 +110,4 @@ export default function MyListingCard({
       )}
     </article>
   );
-}
-
-function describeFailure(failedMedia: FailedMedia[]): StatusLine {
-  const [first] = failedMedia;
-  const hint = mediaErrorMessage(toMediaError(first?.error));
-
-  if (failedMedia.length > 1) {
-    return { label: `${failedMedia.length} tệp bị lỗi`, tone: StatusTone.Danger, hint };
-  }
-
-  if (first) {
-    const label = first.type === 'VIDEO' ? 'Video bị lỗi' : 'Ảnh bị lỗi';
-    return { label, tone: StatusTone.Danger, hint };
-  }
-
-  return { label: 'Xử lý ảnh, video không thành công', tone: StatusTone.Danger, hint };
-}
-
-/** Where a listing stands, in the words of its card. */
-export function getStatusLine(listing: MyListing, now = Date.now()): StatusLine {
-  const since = (isoDate: string | null) =>
-    formatShortRelativeTime(isoDate ?? listing.updatedAt, now);
-
-  const lines: Record<ProductStatus, () => StatusLine> = {
-    PROCESSING: () => ({ label: 'Đang xử lý ảnh, video', tone: StatusTone.Progress }),
-    FAILED: () => describeFailure(listing.failedMedia),
-    PUBLISHED: () => ({ label: `Đã đăng · ${since(listing.publishedAt)}`, tone: StatusTone.Muted }),
-    SOLD: () => ({ label: `Đã bán · ${since(listing.soldAt)}`, tone: StatusTone.Muted }),
-    ARCHIVED: () => ({ label: `Đã ẩn · ${since(listing.archivedAt)}`, tone: StatusTone.Muted }),
-  };
-  return lines[listing.status]();
 }

@@ -1,5 +1,3 @@
-// @vitest-environment jsdom
-// jsdom: the helpers live in their component files, which load zmp-ui.
 import { AxiosError, AxiosHeaders } from 'axios';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -13,15 +11,15 @@ import {
   changedFields,
   draftFromProduct,
   editBaseline,
+  isEditableStatus,
   isMediaChanged,
   listingChanges,
-} from '@/features/listings/components/edit/edit-listing-form';
+} from '@/features/listings/utils/edit-listing';
 import { postBlocker } from '@/features/listings/utils/listing-draft';
 import { tileView } from '@/features/listings/utils/tile-view';
 import { MediaKind } from '@/features/media/types/media';
 import { MediaError, ServerMediaStatus } from '@/features/media/types/upload';
 import type { ProductDetail } from '@/features/products/types/product';
-import { isEditableStatus } from '@/pages/edit-listing';
 
 // Only the error reading is tested; the request goes through the app's HTTP client.
 vi.mock('@/lib/http', () => ({ http: {} }));
