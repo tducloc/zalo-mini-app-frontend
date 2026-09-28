@@ -33,13 +33,22 @@ const videoRequest: UploadRequestFile = {
   contentType: 'video/mp4',
 };
 
-const photoTarget: UploadTarget = { mediaId: 'm1', expiresAt: LATER, presignedUrl: 'put://photo' };
-const videoTarget: UploadTarget = {
-  mediaId: 'm2',
+const photoTarget = {
+  type: MediaKind.Image,
+  mediaId: 'm1',
+  objectKey: 'uploads/u/m1',
   expiresAt: LATER,
+  presignedUrl: 'put://photo',
+} satisfies UploadTarget;
+const videoTarget = {
+  type: MediaKind.Video,
+  mediaId: 'm2',
+  objectKey: 'uploads/u/m2',
+  expiresAt: LATER,
+  uploadId: 'upload-2',
   partSize: PART_SIZE,
   parts: [1, 2, 3].map((partNumber) => ({ partNumber, presignedUrl: `put://part${partNumber}` })),
-};
+} satisfies UploadTarget;
 
 const failure = (kind: FailureKind) => new UploadFailure(kind, 'test');
 
@@ -59,16 +68,17 @@ function fakeTransport(overrides: Partial<FakeTransport> = {}): FakeTransport {
     register: vi.fn(async (file: UploadRequestFile) =>
       file.type === MediaKind.Video ? videoTarget : photoTarget,
     ),
-    refresh: vi.fn(async (mediaId: string, partNumbers?: number[]) => ({
-      mediaId,
-      expiresAt: LATER,
-      presignedUrl: 'put://photo-fresh',
-      partSize: PART_SIZE,
-      parts: (partNumbers ?? []).map((partNumber) => ({
-        partNumber,
-        presignedUrl: `put://part${partNumber}-fresh`,
-      })),
-    })),
+    refresh: vi.fn(async (mediaId: string, partNumbers?: number[]): Promise<UploadTarget> =>
+      mediaId === videoTarget.mediaId
+        ? {
+            ...videoTarget,
+            parts: (partNumbers ?? []).map((partNumber) => ({
+              partNumber,
+              presignedUrl: `put://part${partNumber}-fresh`,
+            })),
+          }
+        : { ...photoTarget, mediaId, presignedUrl: 'put://photo-fresh' },
+    ),
     put: vi.fn(async (url: string) => `"etag-${url}"`),
     completeParts: vi.fn(async () => ServerMediaStatus.Uploading),
     complete: vi.fn(async () => ServerMediaStatus.Processing),
@@ -570,6 +580,64 @@ describe('FileUpload, video', () => {
     expect(transport.register).toHaveBeenCalledTimes(2);
     // Every part again: the new upload has none of the old ones.
     expect(transport.put).toHaveBeenCalledTimes(6);
+  });
+
+  it('starts over as a new media when parts/complete finds the upload gone', async () => {
+    const transport = fakeTransport({
+      completeParts: failing(1, FailureKind.Gone, async () => ServerMediaStatus.Uploading),
+    });
+
+    const result = await run(newUpload(videoRequest, videoBlob, transport));
+
+    expect(result.kind).toBe('uploaded');
+    expect(transport.register).toHaveBeenCalledTimes(2);
+    expect(transport.put).toHaveBeenCalledTimes(6);
+    expect(transport.completeParts).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps nothing of a lost media: its URLs, their staleness, or its parts', async () => {
+    const lost = { ...videoTarget, mediaId: 'm2' };
+    const next = {
+      ...videoTarget,
+      mediaId: 'm3',
+      parts: [1, 2, 3].map((partNumber) => ({
+        partNumber,
+        presignedUrl: `put://m3-part${partNumber}`,
+      })),
+    };
+    const transport = fakeTransport({
+      register: vi.fn().mockResolvedValueOnce(lost).mockResolvedValueOnce(next),
+      put: vi.fn(async (url: string) => {
+        if (url === 'put://part2') {
+          throw failure(FailureKind.Expired);
+        }
+        if (url === 'put://part2-fresh') {
+          throw failure(FailureKind.Gone);
+        }
+        return `"etag-${url}"`;
+      }),
+    });
+    const upload = newUpload(videoRequest, videoBlob, transport);
+
+    const result = await run(upload);
+
+    expect(result).toEqual({
+      kind: 'uploaded',
+      mediaId: 'm3',
+      status: ServerMediaStatus.Processing,
+    });
+    expect(upload.mediaId).toBe('m3');
+    expect(transport.refresh.mock.calls.map(([mediaId]) => mediaId)).toEqual(['m2']);
+    const afterLoss = transport.put.mock.calls
+      .map(([url]) => url)
+      .slice(transport.put.mock.calls.findIndex(([url]) => url === 'put://part2-fresh') + 1);
+    expect(afterLoss.sort()).toEqual(['put://m3-part1', 'put://m3-part2', 'put://m3-part3']);
+    expect(transport.completeParts).toHaveBeenCalledTimes(1);
+    expect(transport.completeParts).toHaveBeenCalledWith(
+      'm3',
+      [1, 2, 3].map((partNumber) => ({ partNumber, etag: `"etag-put://m3-part${partNumber}"` })),
+      expect.anything(),
+    );
   });
 
   it('starts over as a new media when complete finds the joined video wrong', async () => {

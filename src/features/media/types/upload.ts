@@ -34,20 +34,18 @@ export interface CompletedPart {
   etag: string;
 }
 
-/** Where to upload one file: one URL for a photo, one per part for a video. */
-export interface UploadTarget {
-  mediaId: string;
-  expiresAt: string;
-  presignedUrl?: string;
-  partSize?: number;
-  parts?: PresignedPart[];
-}
+/**
+ * Where to upload one file: one URL for a photo, one per part for a video. From
+ * `POST /media/:id/upload-url`, a video's `parts` are only those asked for.
+ */
+export type UploadTarget = { mediaId: string; objectKey: string; expiresAt: string } & (
+  | { type: MediaKind.Image; presignedUrl: string }
+  | { type: MediaKind.Video; uploadId: string; partSize: number; parts: PresignedPart[] }
+);
 
-export interface RegisteredUpload extends UploadTarget {
-  clientFileId: string;
-}
+/** One item of `POST /media/upload-urls`. */
+export type RegisteredUpload = UploadTarget & { clientFileId: string };
 
-/** Why the server failed a media (api-spec, `GET /media`), plus one code of the client's. */
 export enum MediaError {
   UnsupportedFormat = 'UNSUPPORTED_FORMAT',
   FileTooLarge = 'FILE_TOO_LARGE',
@@ -55,24 +53,13 @@ export enum MediaError {
   VideoNotPlayable = 'VIDEO_NOT_PLAYABLE',
   BlankImage = 'BLANK_IMAGE',
   ProcessingFailed = 'PROCESSING_FAILED',
-  /** Client-side: the server no longer lists the media, e.g. the hourly cleanup removed it. */
   Missing = 'MEDIA_MISSING',
 }
 
-/** A media as the app keeps it; see MediaStatusItem for what the server sends. */
 export interface ServerMedia {
   status: ServerMediaStatus;
   thumbnailUrl: string | null;
-  placeholder: string | null;
-  /** Set only when FAILED. */
   error: MediaError | null;
-}
-
-/** One item of `GET /media`. */
-export interface MediaStatusItem extends Omit<ServerMedia, 'error'> {
-  id: string;
-  /** A string: a newer server may send a code this app does not know. */
-  error: string | null;
 }
 
 // ---- One file's upload ----
@@ -131,7 +118,6 @@ export enum FailureKind {
   Server = 'SERVER',
   /** Storage refused the URL: it expired (S3 answers 403). A fresh URL fixes it. */
   Expired = 'EXPIRED',
-  /** The media is gone on the server (404), e.g. the hourly cleanup removed it. */
   Gone = 'GONE',
   /** The server does not allow this step now (409); what it means depends on the step. */
   Conflict = 'CONFLICT',

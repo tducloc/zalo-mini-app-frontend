@@ -73,7 +73,6 @@ describe('isFailed', () => {
         server: {
           status: ServerMediaStatus.Failed,
           thumbnailUrl: null,
-          placeholder: null,
           error: null,
         },
       }),

@@ -33,8 +33,8 @@ function badRequestError(details: unknown): SaveError {
 
 /** A 409 names the media it refuses; without any, the listing's status forbids the edit. */
 function conflictError(details: unknown): SaveError {
-  const mediaIds = refusedMediaOf(details);
-  return mediaIds.length > 0 ? { kind: SaveErrorKind.MediaConflict, mediaIds } : NOT_EDITABLE;
+  const media = refusedMediaOf(details);
+  return media.length > 0 ? { kind: SaveErrorKind.MediaConflict, media } : NOT_EDITABLE;
 }
 
 export function readSaveError(error: unknown): SaveError {

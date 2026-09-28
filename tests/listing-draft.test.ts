@@ -17,7 +17,6 @@ const file = new File(['x'], 'x');
 const server = {
   status: ServerMediaStatus.Processing,
   thumbnailUrl: null,
-  placeholder: null,
   error: null,
 };
 

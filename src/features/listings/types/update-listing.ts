@@ -1,5 +1,6 @@
 import type { ListingFieldValues } from '@/features/listings/schemas';
 import type { DraftFields } from '@/features/listings/types/listing-draft';
+import type { RefusedMedia } from '@/features/listings/types/post-error';
 
 /** `PATCH /products/:id`: only what changed; `mediaIds` is the whole media set in order. */
 export interface UpdateListingInput extends Partial<ListingFieldValues> {
@@ -23,6 +24,6 @@ export enum SaveErrorKind {
 export type SaveError =
   | { kind: SaveErrorKind.Fields; fields: (keyof DraftFields)[] }
   | { kind: SaveErrorKind.Invalid }
-  | { kind: SaveErrorKind.MediaConflict; mediaIds: string[] }
+  | { kind: SaveErrorKind.MediaConflict; media: RefusedMedia[] }
   | { kind: SaveErrorKind.NotEditable }
   | { kind: SaveErrorKind.Other };

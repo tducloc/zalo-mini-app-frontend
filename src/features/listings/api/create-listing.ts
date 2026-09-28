@@ -40,7 +40,7 @@ function fieldsError(details: unknown): PostError {
 }
 
 function conflictError(details: unknown): PostError {
-  return { kind: PostErrorKind.MediaConflict, mediaIds: refusedMediaOf(details) };
+  return { kind: PostErrorKind.MediaConflict, media: refusedMediaOf(details) };
 }
 
 function reusedError(details: unknown): PostError {
