@@ -1,6 +1,7 @@
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 
 import { type Box, canAutoplay, pickActiveCard, visibleArea } from '@/features/feed/utils/autoplay';
+import { getConnection } from '@/utils/network';
 
 /** A card must rest near the centre this long, so a fast fling plays nothing. */
 const DWELL_MS = 300;
@@ -11,13 +12,8 @@ const isFlagOn = import.meta.env.VITE_FEED_AUTOPLAY === 'true';
 /** A WebView that refused one preview refuses them all; no more tries this session. */
 let wasRefused = false;
 
-interface NetworkInformation {
-  saveData?: boolean;
-  effectiveType?: string;
-}
-
 function isAutoplayAllowed() {
-  const connection = (navigator as Navigator & { connection?: NetworkInformation }).connection;
+  const connection = getConnection();
   return canAutoplay({
     isEnabled: isFlagOn,
     wasRefused,
