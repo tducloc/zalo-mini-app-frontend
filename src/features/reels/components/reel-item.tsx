@@ -7,6 +7,7 @@ import { reelHeightClass, spinnerClass } from '@/features/reels/constants/styles
 import type { ReelItem as Reel } from '@/features/reels/types/reel';
 import { reelPlayer, shouldPlay } from '@/features/reels/utils/reel-player';
 import type { ReelSlot } from '@/features/reels/utils/reel-slot';
+import { useSwipe } from '@/hooks/use-swipe';
 import { useReelsStore } from '@/stores/reels';
 
 /** A start slower than this shows a spinner; a preloaded reel starts well within it. */
@@ -105,6 +106,9 @@ export default function ReelItem({
     });
   }, [src, isPlayWanted, isMuted, setMuted]);
 
+  // Swiping left opens the listing, as "Xem chi tiết" does; swiping up still scrolls.
+  const swipeHandlers = useSwipe((direction) => direction === 'left' && onOpen(reel.id));
+
   const handleTap = () => {
     if (!shouldPlay(status)) {
       // Within the tap: a WebView that refused to autoplay lets a user gesture play.
@@ -124,9 +128,10 @@ export default function ReelItem({
 
   return (
     <section
-      className={`relative w-full snap-start snap-always overflow-hidden bg-black ${reelHeightClass}`}
+      className={`relative w-full touch-pan-y snap-start snap-always overflow-hidden bg-black ${reelHeightClass}`}
       data-reel-index={index}
       aria-label={reel.title}
+      {...swipeHandlers}
     >
       {placeholder && (
         <img

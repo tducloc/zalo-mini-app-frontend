@@ -9,6 +9,7 @@ import DraftBanner from '@/features/listings/components/draft/draft-banner';
 import { useOwnerListingActions } from '@/features/my-listings/hooks/use-owner-listing-actions';
 import { useProductDetail } from '@/features/products/api/get-product-detail';
 import ProductActionsSheet from '@/features/products/components/detail/actions-sheet';
+import BackSwipeEdge from '@/features/products/components/detail/back-swipe-edge';
 import ProductContactAction from '@/features/products/components/detail/contact-action';
 import ProductDetailHeader from '@/features/products/components/detail/detail-header';
 import DetailSkeleton from '@/features/products/components/detail/detail-skeleton';
@@ -72,6 +73,7 @@ export default function ProductDetailPage() {
     return (
       <Page className={pageClass}>
         <ProductDetailHeader />
+        <BackSwipeEdge />
         <DetailSkeleton />
       </Page>
     );
@@ -84,6 +86,7 @@ export default function ProductDetailPage() {
     return (
       <Page className={pageClass}>
         <ProductDetailHeader isOverMedia={false} />
+        <BackSwipeEdge />
         <main className="px-4 pb-4 pt-[calc(72px_+_var(--zaui-safe-area-inset-top))]">
           {isGone ? (
             <FeedbackState
@@ -113,6 +116,7 @@ export default function ProductDetailPage() {
   return (
     <Page className={detailPageClass}>
       <ProductDetailHeader />
+      <BackSwipeEdge />
       <main className="bg-white">
         <ProductMediaGallery media={product.media} productTitle={product.title} />
         <section className="px-4">

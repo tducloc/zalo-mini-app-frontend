@@ -52,3 +52,52 @@ test('plays one reel at a time, muted, and comes back to it from the detail', as
   await expectPlaying(video(page, 1));
   await expectPaused(video(page, 0));
 });
+
+/** A one-finger swipe of about 150 ms through the browser's real touch input, in CSS pixels. */
+async function swipe(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
+  const cdp = await page.context().newCDPSession(page);
+  const steps = 8;
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] });
+  for (let step = 1; step <= steps; step += 1) {
+    const point = {
+      x: from.x + ((to.x - from.x) * step) / steps,
+      y: from.y + ((to.y - from.y) * step) / steps,
+    };
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point] });
+    // A finger takes about a frame per step; the gallery's gesture reads the pace.
+    await page.waitForTimeout(16);
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await cdp.detach();
+}
+
+test('swipes left from a reel to its detail, and right from the edge back to it', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await tab(page, 'Reels').click();
+  await expectPlaying(video(page, 0));
+  const title = await reel(page, 0).getAttribute('aria-label');
+  expect(title).toBeTruthy();
+
+  const { width, height } = page.viewportSize() ?? { width: 412, height: 839 };
+  const middle = height / 2;
+  await swipe(page, { x: width * 0.8, y: middle }, { x: width * 0.2, y: middle });
+  const heading = page.getByRole('heading', { level: 1, name: title ?? '' });
+  await expect(heading).toBeVisible();
+
+  // Across the gallery, away from the edge: the gallery turns (the seeded reels have photos
+  // too), and the page stays.
+  // Once the slide-in is over: until then the Reels page is still over the gallery.
+  await expect(reel(page, 0)).toHaveCount(0);
+  const counter = page.getByLabel(/^Nội dung \d+ trên \d+$/);
+  await expect(counter).toHaveText(/^1 \//);
+  await swipe(page, { x: width * 0.3, y: 150 }, { x: width * 0.9, y: 150 });
+  await expect(counter).not.toHaveText(/^1 \//);
+  await expect(heading).toBeVisible();
+
+  await swipe(page, { x: 4, y: middle }, { x: width * 0.7, y: middle });
+  await expect(tab(page, 'Reels')).toHaveAttribute('aria-current', 'page');
+  await expect(reel(page, 0)).toBeInViewport({ ratio: 0.9 });
+  await expectPlaying(video(page, 0));
+});
