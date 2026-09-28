@@ -41,7 +41,9 @@ export default function ReelsPage() {
 
   useLayoutEffect(() => {
     const pager = pagerRef.current;
-    if (!pager) return;
+    if (!pager) {
+      return;
+    }
     // Cancel a pending smooth return before this page leaves or is reused by AnimationRoutes.
     pager.scrollLeft = 0;
     setPagerInteractive(false);
@@ -59,7 +61,9 @@ export default function ReelsPage() {
 
   const updatePager = () => {
     const pager = pagerRef.current;
-    if (!pager || !isCurrentRoute) return;
+    if (!pager || !isCurrentRoute) {
+      return;
+    }
     setPagerInteractive(pager.scrollLeft > 0);
     setFeedVisible(pager.scrollLeft < 12);
     setDetailShowing(pager.scrollLeft >= pager.clientWidth / 2);

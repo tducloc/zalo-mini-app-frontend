@@ -58,12 +58,16 @@ export class VideoPool {
   /** Start in the visible reel host, still inside the tab tap. */
   startFirstWithSound(host: HTMLElement) {
     const src = this.armedFirstUrl;
-    if (!src) return;
+    if (!src) {
+      return;
+    }
     const video = this.claim(0, host);
     video.className = 'absolute inset-0 size-full object-cover';
     video.muted = false;
     video.defaultMuted = false;
-    if (video.getAttribute('src') !== src) video.src = src;
+    if (video.getAttribute('src') !== src) {
+      video.src = src;
+    }
     return video.play();
   }
 
@@ -93,7 +97,9 @@ export class VideoPool {
     this.owners.delete(video);
     // StrictMode immediately claims it again; wait one microtask before dropping its source.
     queueMicrotask(() => {
-      if (this.owners.has(video)) return;
+      if (this.owners.has(video)) {
+        return;
+      }
       video.pause();
       if (index === 0) this.armedFirstUrl = null;
       video.removeAttribute('src');

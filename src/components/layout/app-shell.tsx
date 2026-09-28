@@ -89,15 +89,11 @@ export default function AppShell({ children }: PropsWithChildren) {
           useReelsStore.getState().setMuted(true);
           return;
         }
-        try {
-          videoPool.startFirstWithSound(host)?.catch((error: unknown) => {
-            if (error instanceof DOMException && error.name === 'NotAllowedError') {
-              useReelsStore.getState().setMuted(true);
-            }
-          });
-        } catch {
-          useReelsStore.getState().setMuted(true);
-        }
+        videoPool.startFirstWithSound(host)?.catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === 'NotAllowedError') {
+            useReelsStore.getState().setMuted(true);
+          }
+        });
         return;
       }
     }
