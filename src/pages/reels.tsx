@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Page, useNavigate } from 'zmp-ui';
+import { Page, useLocation } from 'zmp-ui';
 import { useShallow } from 'zustand/react/shallow';
 
 import FeedbackState from '@/components/feedback/feedback-state';
@@ -9,10 +9,10 @@ import { useReels } from '@/features/reels/api/get-reels';
 import ReelItem from '@/features/reels/components/reel-item';
 import { reelHeightClass, spinnerClass } from '@/features/reels/constants/styles';
 import { useActiveReel } from '@/features/reels/hooks/use-active-reel';
-import { videoPool } from '@/features/reels/services/video-pool';
 import { slotOf } from '@/features/reels/utils/reel-slot';
 import { useReelsStore } from '@/stores/reels';
 import { getConnection, isSavingData } from '@/utils/network';
+import ProductDetailPage from '@/pages/product-detail';
 
 /** The next page loads once this many reels or fewer are left below the one on screen. */
 const REELS_LEFT_TO_LOAD_MORE = 3;
@@ -22,19 +22,54 @@ const scrollerClass = 'snap-y snap-mandatory bg-black pb-[74px] text-white';
 const centredClass = `flex flex-col items-center justify-center ${reelHeightClass}`;
 
 export default function ReelsPage() {
-  const navigate = useNavigate();
+  const isCurrentRoute = useLocation().pathname === '/reels';
   const reelsQuery = useReels();
-  const { activeId, setActiveId } = useReelsStore(
-    useShallow((state) => ({ activeId: state.activeId, setActiveId: state.setActiveId })),
+  const { activeId, setActiveId, setTabbarHost, setPagerInteractive } = useReelsStore(
+    useShallow((state) => ({
+      activeId: state.activeId,
+      setActiveId: state.setActiveId,
+      setTabbarHost: state.setTabbarHost,
+      setPagerInteractive: state.setPagerInteractive,
+    })),
   );
+  const pagerRef = useRef<HTMLDivElement>(null);
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const [isFeedVisible, setFeedVisible] = useState(true);
+  const [isDetailShowing, setDetailShowing] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const isAppVisible = useIsDocumentVisible();
-  const parkingRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const pager = pagerRef.current;
+    if (!pager) return;
+    // Cancel a pending smooth return before this page leaves or is reused by AnimationRoutes.
+    pager.scrollLeft = 0;
+    setPagerInteractive(false);
+    return () => {
+      pager.scrollLeft = 0;
+      setPagerInteractive(false);
+    };
+  }, [isCurrentRoute, setPagerInteractive]);
 
   useEffect(() => {
-    videoPool.setParking(parkingRef.current);
-    return () => videoPool.setParking(null);
-  }, []);
+    if (!isDetailShowing) {
+      detailPanelRef.current?.querySelectorAll('video').forEach((video) => video.pause());
+    }
+  }, [isDetailShowing]);
+
+  const updatePager = () => {
+    const pager = pagerRef.current;
+    if (!pager || !isCurrentRoute) return;
+    setPagerInteractive(pager.scrollLeft > 0);
+    setFeedVisible(pager.scrollLeft < 12);
+    setDetailShowing(pager.scrollLeft >= pager.clientWidth / 2);
+  };
+
+  const showDetail = () => {
+    setPagerInteractive(true);
+    pagerRef.current?.scrollTo({ left: pagerRef.current.clientWidth, behavior: 'smooth' });
+  };
+  const showReels = () => pagerRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
 
   const reels = reelsQuery.data?.pages.flatMap((page) => page.data) ?? [];
   const { hasNextPage, isFetching, isFetchNextPageError, fetchNextPage } = reelsQuery;
@@ -111,8 +146,8 @@ export default function ReelsPage() {
             reel={reel}
             index={index}
             slot={slotOf(index, activeIndex, canPreload)}
-            isAppVisible={isAppVisible}
-            onOpen={(productId) => navigate(`/products/${productId}`)}
+            isAppVisible={isAppVisible && isFeedVisible}
+            onOpen={showDetail}
           />
         ))}
         {/* After the last reel, and watched like one so that no video plays behind it. */}
@@ -130,11 +165,44 @@ export default function ReelsPage() {
   }
 
   return (
-    // No reset to the top: it would land after the restore when StrictMode runs effects twice.
-    <Page ref={scrollerRef} className={scrollerClass} hideScrollbar resetScroll={false}>
-      {content}
-      <div ref={parkingRef} hidden />
-    </Page>
+    <div
+      ref={pagerRef}
+      className="fixed inset-0 flex snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain bg-black [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      data-reels-pager
+      onScroll={updatePager}
+      onTouchStart={(event) => {
+        setPagerInteractive(true);
+        event.stopPropagation();
+      }}
+      onTouchMove={(event) => event.stopPropagation()}
+      onTouchEnd={() => {
+        if (pagerRef.current?.scrollLeft === 0) setPagerInteractive(false);
+      }}
+    >
+      <div className="relative h-full w-full shrink-0 snap-start">
+        {/* No reset to the top: it would land after the restore when StrictMode runs effects twice. */}
+        <Page ref={scrollerRef} className={scrollerClass} hideScrollbar resetScroll={false}>
+          {content}
+        </Page>
+        <div
+          ref={setTabbarHost}
+          className="pointer-events-none absolute inset-0 z-[900] transform-gpu"
+        />
+      </div>
+      <div
+        ref={detailPanelRef}
+        className="relative h-full w-full shrink-0 transform-gpu snap-start overflow-hidden bg-white"
+      >
+        {activeReelId && (
+          <ProductDetailPage
+            key={activeReelId}
+            mode="embedded"
+            productId={activeReelId}
+            onBack={showReels}
+          />
+        )}
+      </div>
+    </div>
   );
 }
 

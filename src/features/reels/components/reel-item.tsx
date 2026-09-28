@@ -8,7 +8,6 @@ import { videoPool } from '@/features/reels/services/video-pool';
 import type { ReelItem as Reel } from '@/features/reels/types/reel';
 import { reelPlayer, shouldPlay } from '@/features/reels/utils/reel-player';
 import type { ReelSlot } from '@/features/reels/utils/reel-slot';
-import { useSwipe } from '@/hooks/use-swipe';
 import { useReelsStore } from '@/stores/reels';
 
 /** A start slower than this shows a spinner; a preloaded reel starts well within it. */
@@ -42,11 +41,14 @@ export default function ReelItem({
   index: number;
   slot: ReelSlot;
   isAppVisible: boolean;
-  onOpen: (productId: string) => void;
+  onOpen: () => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [status, dispatch] = useReducer(reelPlayer, 'paused');
+  const [status, dispatch] = useReducer(
+    reelPlayer,
+    videoPool.isFirstSoundStart(index, reel.video.url) ? 'loading' : 'paused',
+  );
   const isMuted = useReelsStore((state) => state.isMuted);
   const setMuted = useReelsStore((state) => state.setMuted);
 
@@ -77,7 +79,7 @@ export default function ReelItem({
     video.className = `absolute inset-0 size-full ${fitClass}`;
     video.poster = posterUrl ?? '';
     video.setAttribute('aria-label', label);
-    video.src = src;
+    if (video.getAttribute('src') !== src) video.src = src;
     const handlePlaying = () => dispatch({ type: 'played' });
     const handleWaiting = () => dispatch({ type: 'stalled' });
     // Dropping the source may fire an error with none to report; only a real one fails.
@@ -121,9 +123,6 @@ export default function ReelItem({
     });
   }, [src, isPlayWanted, isMuted, setMuted]);
 
-  // Swiping left opens the listing, as "Xem chi tiết" does; swiping up still scrolls.
-  const swipeHandlers = useSwipe((direction) => direction === 'left' && onOpen(reel.id));
-
   const handleTap = () => {
     if (!shouldPlay(status)) {
       // Within the tap: a WebView that refused to autoplay lets a user gesture play.
@@ -137,16 +136,23 @@ export default function ReelItem({
     // Within the tap too: WebKit pauses an autoplaying video unmuted outside a user gesture.
     if (video) {
       video.muted = !isMuted;
+      if (isMuted && isActive) {
+        video.play()?.catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === 'NotAllowedError') {
+            video.muted = true;
+            setMuted(true);
+          }
+        });
+      }
     }
     setMuted(!isMuted);
   };
 
   return (
     <section
-      className={`relative w-full touch-pan-y snap-start snap-always overflow-hidden bg-black ${reelHeightClass}`}
+      className={`relative w-full snap-start snap-always overflow-hidden bg-black ${reelHeightClass}`}
       data-reel-index={index}
       aria-label={reel.title}
-      {...swipeHandlers}
     >
       {placeholder && (
         <img
@@ -167,7 +173,7 @@ export default function ReelItem({
           decoding="async"
         />
       )}
-      <div ref={hostRef} className="absolute inset-0" />
+      <div ref={hostRef} data-reel-video-host className="absolute inset-0" />
 
       <button
         className="absolute inset-0 grid size-full place-items-center border-0 bg-transparent p-0 text-white"
@@ -195,7 +201,7 @@ export default function ReelItem({
         isPlaying={status === 'playing'}
         isMuted={isMuted}
         onToggleSound={handleToggleSound}
-        onOpen={() => onOpen(reel.id)}
+        onOpen={onOpen}
       />
     </section>
   );

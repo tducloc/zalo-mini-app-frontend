@@ -1,4 +1,6 @@
-import { PropsWithChildren } from 'react';
+import { type PropsWithChildren, useCallback, useEffect } from 'react';
+import { createPortal, flushSync } from 'react-dom';
+import { type InfiniteData, useQueryClient } from '@tanstack/react-query';
 import { Icon, useLocation, useNavigate } from 'zmp-ui';
 
 import DraftBanner from '@/features/listings/components/draft/draft-banner';
@@ -6,6 +8,10 @@ import DraftIndicator, {
   DRAFT_STATUS_ID,
 } from '@/features/listings/components/draft/draft-indicator';
 import { useHasDraft } from '@/stores/listing-draft';
+import { useReelsStore } from '@/stores/reels';
+import { reelKeys, reelsQueryOptions } from '@/features/reels/api/get-reels';
+import { videoPool } from '@/features/reels/services/video-pool';
+import type { ReelsPage } from '@/features/reels/types/reel';
 
 type NavigationItem = {
   label: string;
@@ -16,7 +22,7 @@ type NavigationItem = {
 
 // Above the tab bar (74px), below its raised "+".
 const draftBannerClass =
-  'fixed inset-x-3 bottom-[84px] z-[899] shadow-[0_4px_12px_rgb(23_57_108/18%)]';
+  'pointer-events-auto fixed inset-x-3 bottom-[84px] z-[899] shadow-[0_4px_12px_rgb(23_57_108/18%)]';
 const tabClass =
   'relative z-[1] flex min-w-0 flex-col items-center gap-0.5 border-0 p-0 text-[10px] font-medium leading-[14px]';
 
@@ -42,25 +48,68 @@ function getTabColorClass(item: NavigationItem, isActive: boolean, isDark: boole
 
 export default function AppShell({ children }: PropsWithChildren) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const location = useLocation();
   const currentPath = location.pathname;
+  const tabbarHost = useReelsStore((state) => state.tabbarHost);
+  const isPagerInteractive = useReelsStore((state) => state.isPagerInteractive);
   const shouldShowTabbar = !currentPath.startsWith('/products/');
   // Over the videos on Reels.
   const isDark = currentPath === '/reels';
   // On the sell page the draft is in front of the seller.
   const shouldShowDraft = currentPath !== '/sell';
   const isDraftBannerShown = useHasDraft() && shouldShowDraft;
+  const setVideoParking = useCallback((element: HTMLDivElement | null) => {
+    videoPool.setParking(element);
+  }, []);
 
-  return (
+  useEffect(() => {
+    void queryClient.prefetchInfiniteQuery(reelsQueryOptions);
+  }, [queryClient]);
+
+  const navigateFromTab = (path: string) => {
+    if (
+      path === '/reels' &&
+      currentPath !== '/reels' &&
+      useReelsStore.getState().activeId === null
+    ) {
+      const first = queryClient.getQueryData<InfiniteData<ReelsPage>>(reelKeys.all())?.pages[0]
+        ?.data[0];
+      if (first) {
+        videoPool.armFirstSound(first.video.url);
+        flushSync(() => {
+          useReelsStore.getState().setMuted(false);
+          navigate(path);
+        });
+        const host = document.querySelector<HTMLElement>(
+          '[data-reels-pager] [data-reel-index="0"] [data-reel-video-host]',
+        );
+        if (!host) {
+          videoPool.cancelFirstSound();
+          useReelsStore.getState().setMuted(true);
+          return;
+        }
+        try {
+          videoPool.startFirstWithSound(host)?.catch((error: unknown) => {
+            if (error instanceof DOMException && error.name === 'NotAllowedError') {
+              useReelsStore.getState().setMuted(true);
+            }
+          });
+        } catch {
+          useReelsStore.getState().setMuted(true);
+        }
+        return;
+      }
+    }
+    navigate(path);
+  };
+
+  const chrome = (
     <>
-      {/* The pages leave room at their end for the draft banner ([.has-draft-banner_&]). */}
-      <div className={isDraftBannerShown ? 'has-draft-banner contents' : 'contents'}>
-        {children}
-      </div>
       {shouldShowTabbar && shouldShowDraft && <DraftBanner className={draftBannerClass} />}
       {shouldShowTabbar && (
         <nav
-          className="fixed inset-x-0 bottom-0 isolate z-[900] grid h-[74px] grid-cols-5 px-[3px] pb-2 pt-3"
+          className="pointer-events-auto fixed inset-x-0 bottom-0 isolate z-[900] grid h-[74px] grid-cols-5 px-[3px] pb-2 pt-3"
           aria-label="Điều hướng chính"
         >
           {/* The bar's shape, raised 14px around the "+". */}
@@ -90,7 +139,7 @@ export default function AppShell({ children }: PropsWithChildren) {
                 className={`${tabClass} ${getTabColorClass(item, isActive, isDark)}`}
                 aria-current={isActive ? 'page' : undefined}
                 aria-describedby={item.primary && shouldShowDraft ? DRAFT_STATUS_ID : undefined}
-                onClick={() => navigate(item.path)}
+                onClick={() => navigateFromTab(item.path)}
               >
                 <span
                   className={`grid size-7 place-items-center ${item.primary ? 'relative' : ''}`}
@@ -115,6 +164,24 @@ export default function AppShell({ children }: PropsWithChildren) {
           })}
         </nav>
       )}
+    </>
+  );
+
+  return (
+    <>
+      <div
+        ref={setVideoParking}
+        data-reel-video-parking
+        aria-hidden="true"
+        className="pointer-events-none fixed -left-px -top-px size-px overflow-hidden opacity-0"
+      />
+      {/* The pages leave room at their end for the draft banner ([.has-draft-banner_&]). */}
+      <div className={isDraftBannerShown ? 'has-draft-banner contents' : 'contents'}>
+        {children}
+      </div>
+      {currentPath === '/reels' && tabbarHost && isPagerInteractive
+        ? createPortal(chrome, tabbarHost)
+        : chrome}
     </>
   );
 }

@@ -47,15 +47,29 @@ describe('VideoPool', () => {
     expect(new Set(videos).size).toBe(3);
   });
 
-  it('drops the source and parks the element on release', () => {
+  it('drops the source and parks the element on release', async () => {
     const { pool, parking, hosts } = setUp();
     const video = pool.claim(1, hosts[1]);
     video.src = 'https://media.example/1.mp4';
 
     pool.release(1, video);
+    await Promise.resolve();
 
     expect(video.hasAttribute('src')).toBe(false);
     expect(video.parentElement).toBe(parking);
+  });
+
+  it('keeps the source when the same element is reclaimed during route mount', async () => {
+    const { pool, hosts } = setUp();
+    const video = pool.claim(0, hosts[0]);
+    video.src = 'https://media.example/1.mp4';
+
+    pool.release(0, video);
+    pool.claim(0, hosts[1]);
+    await Promise.resolve();
+
+    expect(video.getAttribute('src')).toBe('https://media.example/1.mp4');
+    expect(video.parentElement).toBe(hosts[1]);
   });
 
   it('leaves the element alone when another reel claimed it first', () => {
