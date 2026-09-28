@@ -21,7 +21,7 @@ pick ─► MediaDetector ─► photo: image-queue ─► image-worker ─► r
 ```
 
 1. **Detect** (`utils/media-detector.ts`): photo, video, or refused, from the first bytes.
-2. **Check and optimize** (`listings/services/add-media.ts`): a photo is shrunk to 1280 px in
+2. **Check and optimize** (`listings/services/add-media.ts`): a photo is shrunk to 1600 px in
    a worker (`services/image-*`); a video is checked (`utils/video.ts`) and, when worth it,
    converted to 720p (`services/convert-video.ts`).
 3. **Upload** (`listings/services/upload-media.ts`): two files at a time, each through

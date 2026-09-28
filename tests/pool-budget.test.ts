@@ -9,9 +9,9 @@ import {
 const MB = 1024 * 1024;
 
 describe('estimateJobBytes', () => {
-  it('counts the full decoded bitmap plus the 1280 px canvas', () => {
-    // 4032 × 3024 × 4 = 48.8 MB, plus 1280 × 960 × 4 = 4.9 MB.
-    expect(estimateJobBytes({ width: 4032, height: 3024 })).toBe(4032 * 3024 * 4 + 1280 * 960 * 4);
+  it('counts the full decoded bitmap plus the 1600 px canvas', () => {
+    // 4032 × 3024 × 4 = 48.8 MB, plus 1600 × 1200 × 4 = 7.7 MB.
+    expect(estimateJobBytes({ width: 4032, height: 3024 })).toBe(4032 * 3024 * 4 + 1600 * 1200 * 4);
   });
 
   it('keeps small images at their own size', () => {
@@ -20,9 +20,9 @@ describe('estimateJobBytes', () => {
 
   it('shrinks the bitmap when decoding straight to a width', () => {
     const full = estimateJobBytes({ width: 4032, height: 3024 });
-    const reduced = estimateJobBytes({ width: 4032, height: 3024 }, 1280);
-    expect(reduced).toBe(1280 * 960 * 4 * 2);
-    expect(reduced).toBeLessThan(full / 5);
+    const reduced = estimateJobBytes({ width: 4032, height: 3024 }, 1600);
+    expect(reduced).toBe(1600 * 1200 * 4 * 2);
+    expect(reduced).toBeLessThan(full / 3);
   });
 
   it('assumes a 24 MP photo when the header could not be read', () => {
