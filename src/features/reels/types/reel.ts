@@ -16,7 +16,8 @@ export interface ReelItem {
   video: {
     id: string;
     url: string;
-    posterUrl: string;
+    /** Null, like the fields below, for media stored before the worker wrote it. */
+    posterUrl: string | null;
     /** Base64 ThumbHash of the poster; null for media stored before the worker wrote it. */
     placeholder: string | null;
     /** As played (rotation applied); null like `placeholder`, and then treated as portrait. */

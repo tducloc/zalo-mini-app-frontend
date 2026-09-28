@@ -139,7 +139,7 @@ export default function ReelItem({
       <video
         ref={videoRef}
         className={`absolute inset-0 size-full ${fitClass}`}
-        poster={reel.video.posterUrl}
+        poster={reel.video.posterUrl ?? undefined}
         preload={slot === 'idle' ? 'none' : 'auto'}
         loop
         muted
