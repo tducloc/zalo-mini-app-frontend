@@ -47,7 +47,6 @@ function serverMediaOf(item: ProductMedia): ServerMedia {
   return {
     status,
     thumbnailUrl: item.thumbnailUrl,
-    placeholder: item.placeholder ?? null,
     error: isFailedItem ? (toMediaError(item.error) ?? MediaError.ProcessingFailed) : null,
   };
 }

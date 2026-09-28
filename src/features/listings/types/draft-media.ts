@@ -2,8 +2,8 @@
  * A file in the listing draft and the state it is in (diagram 00, client part):
  *
  * - services/add-media.ts: Checking → Rejected, or Optimizing → ReadyToUpload;
- * - services/upload-media.ts: ReadyToUpload → Uploading ⇄ Retrying → UploadFailed or Uploaded,
- *   then the server's status until it is READY or FAILED.
+ * - services/upload-media.ts: ReadyToUpload → Uploading ⇄ Retrying → UploadFailed or Uploaded;
+ *   an Uploaded file's server state turns FAILED when a Post is refused for it.
  *
  * The draft store keeps the list; the services update a file by its id, so an update for
  * a file the seller removed meanwhile finds nothing and is dropped.
@@ -23,7 +23,7 @@ export enum DraftMediaStatus {
   Uploading = 'UPLOADING',
   Retrying = 'RETRYING',
   UploadFailed = 'UPLOAD_FAILED',
-  /** In storage and confirmed; the server's status takes over. */
+  /** In storage, and `complete` answered: done for the seller. */
   Uploaded = 'UPLOADED',
 }
 

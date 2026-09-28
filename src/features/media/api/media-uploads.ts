@@ -9,7 +9,6 @@ import axios from 'axios';
 
 import {
   type CompletedPart,
-  type MediaStatusItem,
   type RegisteredUpload,
   type ServerMediaStatus,
   type UploadRequestFile,
@@ -79,13 +78,6 @@ export function completeUpload(mediaId: string, signal?: AbortSignal) {
       { signal },
     ),
   ).then((data) => data.status);
-}
-
-/** Statuses of the caller's media; an ID the server no longer has is left out. */
-export function fetchMediaStatuses(mediaIds: string[]) {
-  return requestData(() =>
-    http.get<{ data: MediaStatusItem[] }>('/media', { params: { ids: mediaIds.join(',') } }),
-  );
 }
 
 export function deleteMedia(mediaId: string) {

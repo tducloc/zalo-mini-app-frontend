@@ -67,13 +67,8 @@ export function tileView(media: ListingMedia): TileView {
         canRetry: media.isRetryable,
       };
     case DraftMediaStatus.Uploaded:
-      if (media.server?.status === ServerMediaStatus.Failed) {
-        return { ...base, tone: TileTone.Error, detail: mediaErrorMessage(media.server.error) };
-      }
-
-      if (media.server?.status === ServerMediaStatus.Ready) {
-        return { ...base, tone: TileTone.Done };
-      }
-      return { ...base, tone: TileTone.Working, label: tileLabels.processing };
+      return media.server?.status === ServerMediaStatus.Failed
+        ? { ...base, tone: TileTone.Error, detail: mediaErrorMessage(media.server.error) }
+        : { ...base, tone: TileTone.Done };
   }
 }

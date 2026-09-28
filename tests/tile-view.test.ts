@@ -26,7 +26,6 @@ const prepared = {
 const server = (status: ServerMediaStatus, error: MediaError | null = null) => ({
   status,
   thumbnailUrl: 'https://t/a.jpg',
-  placeholder: null,
   error,
 });
 
@@ -110,6 +109,22 @@ describe('tileView', () => {
       detail: mediaErrorMessage(MediaError.BlankImage),
       canRetry: false,
     });
+  });
+
+  it('shows an uploaded file as done while the server still processes it', () => {
+    for (const status of [ServerMediaStatus.Processing, ServerMediaStatus.Ready]) {
+      const uploaded: DraftMedia = {
+        ...prepared,
+        status: DraftMediaStatus.Uploaded,
+        mediaId: 'm',
+        server: server(status),
+      };
+      expect(tileView(uploaded)).toMatchObject({
+        tone: TileTone.Done,
+        label: null,
+        progress: null,
+      });
+    }
   });
 
   it('shows the picture: the optimized photo first, else the server thumbnail', () => {

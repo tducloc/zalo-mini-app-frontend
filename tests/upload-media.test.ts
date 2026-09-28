@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { TileTone } from '@/features/listings/types/tile-view';
+import { tileView } from '@/features/listings/utils/tile-view';
 import { MediaKind } from '@/features/media/types/media';
 import type { UploadRequestFile } from '@/features/media/types/upload';
 
@@ -9,7 +11,6 @@ const api = vi.hoisted(() => ({
   refreshUploadUrl: vi.fn(),
   completeParts: vi.fn(),
   completeUpload: vi.fn(),
-  fetchMediaStatuses: vi.fn(),
   deleteMedia: vi.fn(),
 }));
 const storage = vi.hoisted(() => ({ putBlob: vi.fn() }));
@@ -93,7 +94,6 @@ beforeEach(async () => {
     presignedUrl: `put://${mediaId}-fresh`,
   }));
   api.completeUpload.mockResolvedValue('PROCESSING');
-  api.fetchMediaStatuses.mockResolvedValue([]);
   api.deleteMedia.mockResolvedValue(undefined);
   storage.putBlob.mockResolvedValue('"etag"');
   modules = await loadModules();
@@ -163,75 +163,43 @@ describe('media-upload', () => {
     expect(api.completeUpload).toHaveBeenCalledTimes(1);
   });
 
-  it('asks the server until processing ends, and marks what it no longer lists', async () => {
+  it('shows a file as done once complete answers, and asks nothing more', async () => {
     vi.useFakeTimers();
-    api.fetchMediaStatuses
-      .mockResolvedValueOnce([
-        { id: 'm-a', status: 'PROCESSING', thumbnailUrl: null, placeholder: null, error: null },
-      ])
-      .mockResolvedValueOnce([
-        {
-          id: 'm-a',
-          status: 'READY',
-          thumbnailUrl: 'https://t/a.jpg',
-          placeholder: 'x',
-          error: null,
-        },
-      ]);
-
-    addPhotos('a', 'b');
+    addPhotos('a');
     markReady('a');
-    markReady('b');
-    // Two rounds, 3 s apart.
-    await vi.advanceTimersByTimeAsync(6_000);
-
+    await vi.advanceTimersByTimeAsync(0);
     const item = find('a');
-    expect(item?.server?.thumbnailUrl).toBe('https://t/a.jpg');
-    const missing = find('b');
-    expect(missing?.server?.error).toBe(modules.MediaError.Missing);
+    expect(item?.status).toBe(modules.DraftMediaStatus.Uploaded);
+    expect(tileView(item!).tone).toBe(TileTone.Done);
 
-    const calls = api.fetchMediaStatuses.mock.calls.length;
+    const calls = [...Object.values(api), storage.putBlob].map((mock) => mock.mock.calls.length);
     await vi.advanceTimersByTimeAsync(60_000);
-    expect(api.fetchMediaStatuses).toHaveBeenCalledTimes(calls);
+    expect([...Object.values(api), storage.putBlob].map((mock) => mock.mock.calls.length)).toEqual(
+      calls,
+    );
   });
 
-  it('asks once for the reason when complete answers FAILED without one', async () => {
-    vi.useFakeTimers();
+  it('shows a file complete answered FAILED for as failed, with no reason yet', async () => {
     api.completeUpload.mockResolvedValue('FAILED');
-    api.fetchMediaStatuses.mockResolvedValue([
-      {
-        id: 'm-a',
-        status: 'FAILED',
-        thumbnailUrl: null,
-        placeholder: null,
-        error: 'VIDEO_TOO_LONG',
-      },
-    ]);
-
     addPhotos('a');
     markReady('a');
-    await vi.advanceTimersByTimeAsync(3_000);
 
-    const item = find('a');
-    expect(item?.server?.error).toBe(modules.MediaError.VideoTooLong);
-    expect(api.fetchMediaStatuses).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(statusOf('a')).toBe(modules.DraftMediaStatus.Uploaded));
+    expect(find('a')?.server).toMatchObject({
+      status: modules.ServerMediaStatus.Failed,
+      error: null,
+    });
+    expect(tileView(find('a')!).tone).toBe(TileTone.Error);
   });
 
-  it("forgets a posted draft's uploads without deleting them or asking about them again", async () => {
-    vi.useFakeTimers();
-    api.fetchMediaStatuses.mockResolvedValue([
-      { id: 'm-a', status: 'PROCESSING', thumbnailUrl: null, placeholder: null, error: null },
-    ]);
+  it("forgets a posted draft's uploads without deleting them", async () => {
     addPhotos('a');
     markReady('a');
-    await vi.advanceTimersByTimeAsync(3_000);
-    const asked = api.fetchMediaStatuses.mock.calls.length;
+    await vi.waitFor(() => expect(statusOf('a')).toBe(modules.DraftMediaStatus.Uploaded));
 
     modules.upload.draftUploads.forgetUploads();
     modules.useListingDraftStore.getState().reset();
-    await vi.advanceTimersByTimeAsync(30_000);
 
-    expect(api.fetchMediaStatuses).toHaveBeenCalledTimes(asked);
     expect(api.deleteMedia).not.toHaveBeenCalled();
   });
 
@@ -241,7 +209,6 @@ describe('media-upload', () => {
     const server = {
       status: ServerMediaStatus.Ready,
       thumbnailUrl: 't',
-      placeholder: null,
       error: null,
     };
     for (const id of ['a', 'b']) {

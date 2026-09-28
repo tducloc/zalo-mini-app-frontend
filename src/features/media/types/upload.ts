@@ -47,7 +47,7 @@ export interface RegisteredUpload extends UploadTarget {
   clientFileId: string;
 }
 
-/** Why the server failed a media (api-spec, `GET /media`), plus one code of the client's. */
+/** Why the server failed a media (api-spec, `POST /products` 409), plus one code of the client's. */
 export enum MediaError {
   UnsupportedFormat = 'UNSUPPORTED_FORMAT',
   FileTooLarge = 'FILE_TOO_LARGE',
@@ -59,20 +59,15 @@ export enum MediaError {
   Missing = 'MEDIA_MISSING',
 }
 
-/** A media as the app keeps it; see MediaStatusItem for what the server sends. */
+/**
+ * An uploaded media as the app knows it: from `complete`, from the listing when editing,
+ * or from a refused Post.
+ */
 export interface ServerMedia {
   status: ServerMediaStatus;
   thumbnailUrl: string | null;
-  placeholder: string | null;
-  /** Set only when FAILED. */
+  /** Why it FAILED, when known; null otherwise. */
   error: MediaError | null;
-}
-
-/** One item of `GET /media`. */
-export interface MediaStatusItem extends Omit<ServerMedia, 'error'> {
-  id: string;
-  /** A string: a newer server may send a code this app does not know. */
-  error: string | null;
 }
 
 // ---- One file's upload ----

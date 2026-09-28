@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { TileTone } from '@/features/listings/types/tile-view';
+import { tileView } from '@/features/listings/utils/tile-view';
 import { MediaKind } from '@/features/media/types/media';
 import type { UploadRequestFile } from '@/features/media/types/upload';
 
@@ -9,7 +11,6 @@ const api = vi.hoisted(() => ({
   refreshUploadUrl: vi.fn(),
   completeParts: vi.fn(),
   completeUpload: vi.fn(),
-  fetchMediaStatuses: vi.fn(),
   deleteMedia: vi.fn(),
   putBlob: vi.fn(),
 }));
@@ -44,7 +45,7 @@ function existing(id: string, status = modules.ServerMediaStatus.Ready) {
     file: null,
     status: modules.DraftMediaStatus.Uploaded,
     mediaId: id,
-    server: { status, thumbnailUrl: `https://t/${id}.jpg`, placeholder: null, error: null },
+    server: { status, thumbnailUrl: `https://t/${id}.jpg`, error: null },
     mediumUrl: `https://m/${id}.jpg`,
   };
 }
@@ -106,7 +107,6 @@ beforeEach(async () => {
     })),
   );
   api.completeUpload.mockResolvedValue('PROCESSING');
-  api.fetchMediaStatuses.mockResolvedValue([]);
   api.deleteMedia.mockResolvedValue(undefined);
   api.putBlob.mockResolvedValue('"etag"');
   modules = await loadModules();
@@ -161,24 +161,22 @@ describe('edit media pipeline', () => {
     expect(api.deleteMedia).not.toHaveBeenCalled();
   });
 
-  it('asks about listing media still processing, and stops asking when the page closes', async () => {
+  it('shows listing media still processing as done, asking the server nothing', async () => {
     vi.useFakeTimers();
-    api.fetchMediaStatuses.mockResolvedValue([
-      { id: 'm_a', status: 'PROCESSING', thumbnailUrl: null, placeholder: null, error: null },
-    ]);
     const pipeline = newEditPipeline({
       fields: EMPTY,
       media: [existing('m_a', modules.ServerMediaStatus.Processing)],
     });
 
     const stop = run(pipeline);
-    await vi.advanceTimersByTimeAsync(3_000);
-    expect(api.fetchMediaStatuses).toHaveBeenCalledWith(['m_a']);
-
-    stop();
-    const asked = api.fetchMediaStatuses.mock.calls.length;
     await vi.advanceTimersByTimeAsync(30_000);
-    expect(api.fetchMediaStatuses).toHaveBeenCalledTimes(asked);
+
+    const [tile] = pipeline.store.getState().media;
+    expect(tileView(tile).tone).toBe(TileTone.Done);
+    for (const request of Object.values(api)) {
+      expect(request).not.toHaveBeenCalled();
+    }
+    stop();
   });
 
   it('can start again after a stop, as React does in development', async () => {

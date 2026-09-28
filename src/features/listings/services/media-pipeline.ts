@@ -20,8 +20,8 @@ import { type ListingDraftStore, useListingDraftStore } from '@/stores/listing-d
 export interface MediaPipeline extends MediaIntake {
   store: ListingDraftStore;
   /**
-   * Starts uploading picked files and asking about media still processing. Returns what
-   * stops listening; `stopAll` or `forgetAll` decide what happens to the files.
+   * Starts uploading picked files. Returns what stops listening; `stopAll` or `forgetAll`
+   * decide what happens to the files.
    */
   start: () => () => void;
   retryUpload: (id: string) => void;
