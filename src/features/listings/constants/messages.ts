@@ -93,8 +93,6 @@ function listNames(names: string[]) {
 /** Under the photos after a tap on Post without one. */
 export const missingPhotoMessage = 'Vui lòng thêm ít nhất 1 ảnh: ảnh đầu tiên là ảnh bìa của tin.';
 
-// ---- Uploading ----
-
 /** The short line on a tile; the viewer gives the full sentence. */
 export const tileLabels = {
   checking: 'Đang kiểm tra',

@@ -1,7 +1,6 @@
 import type { DraftFields } from '@/features/listings/types/listing-draft';
 import type { MediaError } from '@/features/media/types/upload';
 
-/** A media a 409 names, and why the server cannot use it. */
 export interface RefusedMedia {
   mediaId: string;
   error: MediaError;

@@ -23,7 +23,6 @@ export enum DraftMediaStatus {
   Uploading = 'UPLOADING',
   Retrying = 'RETRYING',
   UploadFailed = 'UPLOAD_FAILED',
-  /** In storage, and `complete` answered: done for the seller. */
   Uploaded = 'UPLOADED',
 }
 

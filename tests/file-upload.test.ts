@@ -608,7 +608,6 @@ describe('FileUpload, video', () => {
     const transport = fakeTransport({
       register: vi.fn().mockResolvedValueOnce(lost).mockResolvedValueOnce(next),
       put: vi.fn(async (url: string) => {
-        // Part 2's URL expired; the fresh one finds the upload gone.
         if (url === 'put://part2') {
           throw failure(FailureKind.Expired);
         }

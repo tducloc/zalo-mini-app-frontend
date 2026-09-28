@@ -1,12 +1,3 @@
-/**
- * Uploads a draft's files once they are ready (diagrams 04, 04b, 05). A file is done once
- * `complete` answers: what the server's processing finds out comes back when the seller
- * posts (a 409 names the files it cannot use). Module-level and driven by a draft store,
- * like add-media.ts, so uploads go on while the seller is on another page (diagram 08).
- * `createUploadService` works on any draft store; the sell page's draft has one from the
- * start (bottom of the file), an edit page makes its own while it is open.
- */
-
 import PQueue from 'p-queue';
 
 import {
@@ -47,7 +38,6 @@ const uploadQueue = new PQueue({ concurrency: FILES_IN_FLIGHT });
 const warn = (message: string, error: unknown) => warnInDev('upload', message, error);
 
 function deleteQuietly(mediaId: string) {
-  // Best effort: media on no listing is removed a day later by the cleanup anyway (diagram 07).
   deleteMedia(mediaId).catch((error: unknown) => warn('could not delete media', error));
 }
 
@@ -66,9 +56,10 @@ function requestFor(media: ListingMedia, upload: UploadSource): UploadRequestFil
   };
 }
 
+export type StopUploads = () => void;
+
 export interface UploadService {
-  /** Uploads the store's files as they become ready. Returns what stops listening. */
-  start: () => () => void;
+  start: () => StopUploads;
   retryUpload: (id: string) => void;
   cancelUpload: (id: string) => void;
   markUnusableMedia: (refused: RefusedMedia[]) => void;

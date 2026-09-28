@@ -46,7 +46,6 @@ export type UploadTarget = { mediaId: string; objectKey: string; expiresAt: stri
 /** One item of `POST /media/upload-urls`. */
 export type RegisteredUpload = UploadTarget & { clientFileId: string };
 
-/** Why the server failed a media (api-spec, `POST /products` 409), plus one code of the client's. */
 export enum MediaError {
   UnsupportedFormat = 'UNSUPPORTED_FORMAT',
   FileTooLarge = 'FILE_TOO_LARGE',
@@ -54,21 +53,12 @@ export enum MediaError {
   VideoNotPlayable = 'VIDEO_NOT_PLAYABLE',
   BlankImage = 'BLANK_IMAGE',
   ProcessingFailed = 'PROCESSING_FAILED',
-  /**
-   * Client-side: a Post was refused for the media as gone (e.g. the cleanup removed it a
-   * day after upload), on a listing already, or never completed.
-   */
   Missing = 'MEDIA_MISSING',
 }
 
-/**
- * An uploaded media as the app knows it: from `complete`, from the listing when editing,
- * or from a refused Post.
- */
 export interface ServerMedia {
   status: ServerMediaStatus;
   thumbnailUrl: string | null;
-  /** Why it FAILED, when known; null otherwise. */
   error: MediaError | null;
 }
 
@@ -128,7 +118,6 @@ export enum FailureKind {
   Server = 'SERVER',
   /** Storage refused the URL: it expired (S3 answers 403). A fresh URL fixes it. */
   Expired = 'EXPIRED',
-  /** The media is gone on the server (404), e.g. the cleanup removed it a day after upload. */
   Gone = 'GONE',
   /** The server does not allow this step now (409); what it means depends on the step. */
   Conflict = 'CONFLICT',

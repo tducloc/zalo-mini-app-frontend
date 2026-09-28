@@ -35,16 +35,11 @@ function partBytes(size: number, partSize: number, partNumber: number) {
   return Math.min(partSize, size - (partNumber - 1) * partSize);
 }
 
-/**
- * The server's view of one registered media, replaced whole when the server loses it, so a
- * new registration starts with nothing of the old one.
- */
 type ServerUpload = {
   mediaId: string;
   /** On the client's clock; see UPLOAD_URL_LIFETIME_MS. */
   urlsValidUntil: number;
   hasStaleUrls: boolean;
-  /** The whole file is in storage (the PUT, or parts/complete, succeeded). */
   isStored: boolean;
 } & (PhotoUpload | VideoUpload);
 
@@ -194,7 +189,6 @@ export class FileUpload {
 
   /** Clears whatever the failure showed to be wrong, before the next attempt. */
   private recover(kind: FailureKind) {
-    // The server no longer has the media: register again and send everything.
     if (kind === FailureKind.Gone) {
       this.server = null;
     }

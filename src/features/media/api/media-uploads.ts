@@ -2,8 +2,7 @@
  * The HTTP calls of uploads: the media endpoints (api-spec.md, "Media") and the presigned
  * PUT to storage. Every call an upload retries turns a failure into an UploadFailure, so
  * the retry rules see one kind of error whatever went wrong; `deleteMedia` is best effort
- * and throws the plain axios error. Upload targets are parsed here: one the server got
- * wrong fails for good, as no other attempt would fix it.
+ * and throws the plain axios error.
  */
 
 import axios from 'axios';
