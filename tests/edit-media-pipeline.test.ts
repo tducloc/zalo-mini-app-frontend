@@ -100,8 +100,10 @@ beforeEach(async () => {
   Object.values(api).forEach((mock) => mock.mockReset());
   api.registerUploads.mockImplementation(async (files: UploadRequestFile[]) =>
     files.map((request) => ({
+      type: MediaKind.Image,
       clientFileId: request.clientFileId,
       mediaId: `m-${request.clientFileId}`,
+      objectKey: `uploads/u/m-${request.clientFileId}`,
       expiresAt: LATER,
       presignedUrl: `put://${request.clientFileId}`,
     })),

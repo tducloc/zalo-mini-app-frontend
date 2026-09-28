@@ -34,18 +34,17 @@ export interface CompletedPart {
   etag: string;
 }
 
-/** Where to upload one file: one URL for a photo, one per part for a video. */
-export interface UploadTarget {
-  mediaId: string;
-  expiresAt: string;
-  presignedUrl?: string;
-  partSize?: number;
-  parts?: PresignedPart[];
-}
+/**
+ * Where to upload one file: one URL for a photo, one per part for a video. From
+ * `POST /media/:id/upload-url`, a video's `parts` are only those asked for.
+ */
+export type UploadTarget = { mediaId: string; objectKey: string; expiresAt: string } & (
+  | { type: MediaKind.Image; presignedUrl: string }
+  | { type: MediaKind.Video; uploadId: string; partSize: number; parts: PresignedPart[] }
+);
 
-export interface RegisteredUpload extends UploadTarget {
-  clientFileId: string;
-}
+/** One item of `POST /media/upload-urls`. */
+export type RegisteredUpload = UploadTarget & { clientFileId: string };
 
 /** Why the server failed a media (api-spec, `POST /products` 409), plus one code of the client's. */
 export enum MediaError {

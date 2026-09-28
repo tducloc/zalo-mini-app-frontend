@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TileTone } from '@/features/listings/types/tile-view';
 import { tileView } from '@/features/listings/utils/tile-view';
 import { MediaKind } from '@/features/media/types/media';
-import type { UploadRequestFile } from '@/features/media/types/upload';
+import type { RegisteredUpload, UploadRequestFile } from '@/features/media/types/upload';
 
 // The network, replaced: the real modules run against these.
 const api = vi.hoisted(() => ({
@@ -63,9 +63,11 @@ function markReady(id: string) {
   });
 }
 
-const targetFor = (request: UploadRequestFile) => ({
+const targetFor = (request: UploadRequestFile): RegisteredUpload => ({
+  type: MediaKind.Image,
   clientFileId: request.clientFileId,
   mediaId: `m-${request.clientFileId}`,
+  objectKey: `uploads/u/m-${request.clientFileId}`,
   expiresAt: LATER,
   presignedUrl: `put://${request.clientFileId}`,
 });
@@ -89,7 +91,9 @@ beforeEach(async () => {
     files.map(targetFor),
   );
   api.refreshUploadUrl.mockImplementation(async (mediaId: string) => ({
+    type: MediaKind.Image,
     mediaId,
+    objectKey: `uploads/u/${mediaId}`,
     expiresAt: LATER,
     presignedUrl: `put://${mediaId}-fresh`,
   }));
