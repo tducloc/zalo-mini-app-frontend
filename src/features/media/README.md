@@ -28,7 +28,7 @@ pick ─► MediaDetector ─► photo: image-queue ─► image-worker ─► r
    `services/file-upload.ts` (presigned PUT or parts, retries, network waits).
 4. **Processing**: the server makes thumbnails and checks the file on its own. The tile shows
    done once `complete` answers; a file the server failed comes back when the seller posts
-   (or saves an edit): the 409 names it, and its tile asks for another file.
+   (or saves an edit): the 409 names it with its reason, and its tile asks for another file.
 
 ## `features/media/`
 

@@ -50,7 +50,7 @@ export function useSaveListing({
         showError(saveMessages.fields);
         return;
       case SaveErrorKind.MediaConflict:
-        pipeline.markUnusableMedia(error.mediaIds);
+        pipeline.markUnusableMedia(error.media);
         showError(saveMessages.mediaConflict);
         onMediaErrors();
         return;

@@ -14,11 +14,11 @@ import {
   type UploadSource,
   type ListingMedia,
 } from '@/features/listings/types/draft-media';
+import type { RefusedMedia } from '@/features/listings/types/post-error';
 import { deleteMedia } from '@/features/media/api/media-uploads';
 import { browserTransport } from '@/features/media/services/browser-transport';
 import { FileUpload } from '@/features/media/services/file-upload';
 import {
-  MediaError,
   ServerMediaStatus,
   type UploadRequestFile,
   type UploadListener,
@@ -71,7 +71,7 @@ export interface UploadService {
   start: () => () => void;
   retryUpload: (id: string) => void;
   cancelUpload: (id: string) => void;
-  markUnusableMedia: (mediaIds: string[]) => void;
+  markUnusableMedia: (refused: RefusedMedia[]) => void;
   forgetUploads: () => void;
 }
 
@@ -196,14 +196,16 @@ export function createUploadService(store: ListingDraftStore): UploadService {
   }
 
   /** `POST /products` refused these media (409): their tiles ask for another file. */
-  function markUnusableMedia(mediaIds: string[]) {
+  function markUnusableMedia(refused: RefusedMedia[]) {
+    const errors = new Map(refused.map(({ mediaId, error }) => [mediaId, error]));
     for (const media of draftMedia()) {
-      if (media.mediaId && mediaIds.includes(media.mediaId)) {
+      const error = media.mediaId ? errors.get(media.mediaId) : undefined;
+      if (error) {
         update(media.id, {
           server: {
             thumbnailUrl: media.server?.thumbnailUrl ?? null,
             status: ServerMediaStatus.Failed,
-            error: MediaError.Missing,
+            error,
           },
         });
       }

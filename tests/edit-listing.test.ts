@@ -261,12 +261,15 @@ describe('readSaveError', () => {
 
   it('names the files the server cannot use (409)', () => {
     const error = apiError(409, [
-      { mediaId: 'm1', reason: 'FAILED' },
+      { mediaId: 'm1', reason: 'FAILED', errorCode: 'BLANK_IMAGE' },
       { mediaId: 'm2', reason: 'UPLOADING' },
     ]);
     expect(readSaveError(error)).toEqual({
       kind: SaveErrorKind.MediaConflict,
-      mediaIds: ['m1', 'm2'],
+      media: [
+        { mediaId: 'm1', error: MediaError.BlankImage },
+        { mediaId: 'm2', error: MediaError.Missing },
+      ],
     });
   });
 

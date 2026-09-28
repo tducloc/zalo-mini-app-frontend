@@ -1,4 +1,11 @@
 import type { DraftFields } from '@/features/listings/types/listing-draft';
+import type { MediaError } from '@/features/media/types/upload';
+
+/** A media a 409 names, and why the server cannot use it. */
+export interface RefusedMedia {
+  mediaId: string;
+  error: MediaError;
+}
 
 /** How `POST /products` failed, as api/create-listing.ts reads it. */
 export enum PostErrorKind {
@@ -17,6 +24,6 @@ export enum PostErrorKind {
 export type PostError =
   | { kind: PostErrorKind.Fields; fields: (keyof DraftFields)[] }
   | { kind: PostErrorKind.Invalid }
-  | { kind: PostErrorKind.MediaConflict; mediaIds: string[] }
+  | { kind: PostErrorKind.MediaConflict; media: RefusedMedia[] }
   | { kind: PostErrorKind.AlreadyPosted; productId: string }
   | { kind: PostErrorKind.Other };

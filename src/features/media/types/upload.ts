@@ -55,7 +55,10 @@ export enum MediaError {
   VideoNotPlayable = 'VIDEO_NOT_PLAYABLE',
   BlankImage = 'BLANK_IMAGE',
   ProcessingFailed = 'PROCESSING_FAILED',
-  /** Client-side: the server no longer lists the media, e.g. the hourly cleanup removed it. */
+  /**
+   * Client-side: a Post was refused for the media as gone (e.g. the cleanup removed it a
+   * day after upload), on a listing already, or never completed.
+   */
   Missing = 'MEDIA_MISSING',
 }
 
@@ -126,7 +129,7 @@ export enum FailureKind {
   Server = 'SERVER',
   /** Storage refused the URL: it expired (S3 answers 403). A fresh URL fixes it. */
   Expired = 'EXPIRED',
-  /** The media is gone on the server (404), e.g. the hourly cleanup removed it. */
+  /** The media is gone on the server (404), e.g. the cleanup removed it a day after upload. */
   Gone = 'GONE',
   /** The server does not allow this step now (409); what it means depends on the step. */
   Conflict = 'CONFLICT',

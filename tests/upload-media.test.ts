@@ -203,7 +203,7 @@ describe('media-upload', () => {
     expect(api.deleteMedia).not.toHaveBeenCalled();
   });
 
-  it('marks the files a post was refused for (409), and only those', () => {
+  it('marks the files a post was refused for (409) with their reasons, and only those', () => {
     const { ServerMediaStatus, MediaError, DraftMediaStatus } = modules;
     addPhotos('a', 'b');
     const server = {
@@ -211,16 +211,26 @@ describe('media-upload', () => {
       thumbnailUrl: 't',
       error: null,
     };
-    for (const id of ['a', 'b']) {
+    addPhotos('c');
+    for (const id of ['a', 'b', 'c']) {
       modules.useListingDraftStore
         .getState()
         .updateMedia(id, { status: DraftMediaStatus.Uploaded, mediaId: `m-${id}`, server });
     }
 
-    modules.upload.draftUploads.markUnusableMedia(['m-b', 'm-unknown']);
+    modules.upload.draftUploads.markUnusableMedia([
+      { mediaId: 'm-b', error: MediaError.VideoNotPlayable },
+      { mediaId: 'm-c', error: MediaError.Missing },
+      { mediaId: 'm-unknown', error: MediaError.Missing },
+    ]);
 
     expect(find('a')?.server).toEqual(server);
     expect(find('b')?.server).toEqual({
+      ...server,
+      status: ServerMediaStatus.Failed,
+      error: MediaError.VideoNotPlayable,
+    });
+    expect(find('c')?.server).toEqual({
       ...server,
       status: ServerMediaStatus.Failed,
       error: MediaError.Missing,
