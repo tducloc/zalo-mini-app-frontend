@@ -71,7 +71,7 @@ async function swipe(page: Page, from: { x: number; y: number }, to: { x: number
   await cdp.detach();
 }
 
-test('swipes left from a reel to its detail, and right from the edge back to it', async ({
+test('swipes left from a reel to its detail, and right below the gallery back to it', async ({
   page,
 }) => {
   await page.goto('/');
@@ -96,7 +96,9 @@ test('swipes left from a reel to its detail, and right from the edge back to it'
   await expect(counter).not.toHaveText(/^1 \//);
   await expect(heading).toBeVisible();
 
-  await swipe(page, { x: 4, y: middle }, { x: width * 0.7, y: middle });
+  // Below the gallery (square, full width), away from the edge.
+  const belowGallery = width + 60;
+  await swipe(page, { x: width * 0.25, y: belowGallery }, { x: width * 0.85, y: belowGallery });
   await expect(tab(page, 'Reels')).toHaveAttribute('aria-current', 'page');
   await expect(reel(page, 0)).toBeInViewport({ ratio: 0.9 });
   await expectPlaying(video(page, 0));

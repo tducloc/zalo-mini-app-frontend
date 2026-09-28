@@ -9,7 +9,6 @@ import DraftBanner from '@/features/listings/components/draft/draft-banner';
 import { useOwnerListingActions } from '@/features/my-listings/hooks/use-owner-listing-actions';
 import { useProductDetail } from '@/features/products/api/get-product-detail';
 import ProductActionsSheet from '@/features/products/components/detail/actions-sheet';
-import BackSwipeEdge from '@/features/products/components/detail/back-swipe-edge';
 import ProductContactAction from '@/features/products/components/detail/contact-action';
 import ProductDetailHeader from '@/features/products/components/detail/detail-header';
 import DetailSkeleton from '@/features/products/components/detail/detail-skeleton';
@@ -19,6 +18,8 @@ import ProductSellerContact from '@/features/products/components/detail/seller-c
 import { useCreateReport } from '@/features/reports/api/create-report';
 import ProductReportSheet from '@/features/reports/components/report-sheet';
 import type { CreateReportInput } from '@/features/reports/types/report';
+import { useGoBack } from '@/hooks/use-go-back';
+import { useSwipe } from '@/hooks/use-swipe';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorStatus, HttpStatus } from '@/utils/api-error';
 
@@ -48,6 +49,9 @@ export default function ProductDetailPage() {
   const productQuery = useProductDetail(productId, viewerId);
   const reportMutation = useCreateReport(productId, viewerId);
   const ownerActions = useOwnerListingActions();
+  // Swiping right goes back, anywhere but the gallery, which swipes through the photos.
+  const goBack = useGoBack('/');
+  const backSwipe = useSwipe((direction) => direction === 'right' && goBack());
 
   const handleSubmitReport = (input: CreateReportInput) =>
     reportMutation.mutate(input, {
@@ -73,7 +77,6 @@ export default function ProductDetailPage() {
     return (
       <Page className={pageClass}>
         <ProductDetailHeader />
-        <BackSwipeEdge />
         <DetailSkeleton />
       </Page>
     );
@@ -86,8 +89,10 @@ export default function ProductDetailPage() {
     return (
       <Page className={pageClass}>
         <ProductDetailHeader isOverMedia={false} />
-        <BackSwipeEdge />
-        <main className="px-4 pb-4 pt-[calc(72px_+_var(--zaui-safe-area-inset-top))]">
+        <main
+          className="touch-pan-y px-4 pb-4 pt-[calc(72px_+_var(--zaui-safe-area-inset-top))]"
+          {...backSwipe}
+        >
           {isGone ? (
             <FeedbackState
               type="empty"
@@ -116,10 +121,9 @@ export default function ProductDetailPage() {
   return (
     <Page className={detailPageClass}>
       <ProductDetailHeader />
-      <BackSwipeEdge />
       <main className="bg-white">
         <ProductMediaGallery media={product.media} productTitle={product.title} />
-        <section className="px-4">
+        <section className="touch-pan-y px-4" {...backSwipe}>
           <ProductInformation
             product={product}
             onOpenActions={hasActions ? () => setActionsOpen(true) : undefined}
