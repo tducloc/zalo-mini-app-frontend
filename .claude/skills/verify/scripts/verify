@@ -1,0 +1,261 @@
+#!/usr/bin/env bash
+# Launch, check, drive and tear down the marketplace for verification. See ../SKILL.md.
+set -euo pipefail
+
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_DIR="$(cd "$SKILL_DIR/../../.." && pwd)"
+BACKEND_DIR="${BACKEND_DIR:-$(dirname "$REPO_DIR")/backend}"
+S3_LOCAL=http://localhost:4566
+
+die() {
+  echo "verify: $*" >&2
+  exit 1
+}
+
+usage() {
+  cat <<'EOF'
+verify launch [--vite-port 3123] [--api-port 3013 | --api-url URL] [--with-worker]
+verify doctor
+verify drive <name> [playwright args]     e.g. verify drive home-feed
+verify cleanup
+launch prints the VERIFY_DIR to export; the other commands read it.
+EOF
+  exit 1
+}
+
+listener_pid() { lsof -nP -iTCP:"$1" -sTCP:LISTEN -t 2>/dev/null | head -1 || true; }
+pid_cwd() { lsof -a -p "$1" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p'; }
+# Only the named variable is printed, never the rest of the environment.
+pid_env() { ps eww -p "$1" -o command= 2>/dev/null | grep -oE "(^| )$2=[^ ]*" | sed "s/^ *$2=//" || true; }
+worker_pids() { ps -Ao pid=,command= | awk '$2 ~ /(^|\/)node$/ && /dist\/src\/worker\/main\.js/ { print $1 }'; }
+http_code() { curl -s -m 5 -o /dev/null -w '%{http_code}' "$@" || true; }
+port_of() { sed -E 's#^[a-z]+://[^:/]+:([0-9]+).*#\1#' <<<"$1"; }
+env_value_hash() { grep -E "^$2=" "$1" 2>/dev/null | head -1 | cut -d= -f2- | tr -d "\"' " | shasum | cut -c1-12; }
+
+need_run() {
+  [[ -n "${VERIFY_DIR:-}" ]] || die "export VERIFY_DIR (printed by 'verify launch')"
+  [[ -f "$VERIFY_DIR/run/env" ]] || die "$VERIFY_DIR has no live run (launch it, or it was cleaned up)"
+  # shellcheck source=/dev/null
+  source "$VERIFY_DIR/run/env"
+}
+
+start() {
+  local name=$1 dir=$2
+  shift 2
+  (cd "$dir" && exec env "$@") >"$VERIFY_DIR/logs/$name.log" 2>&1 &
+  local pid=$!
+  echo "$pid" >"$VERIFY_DIR/run/$name.pid"
+  sleep 0.5
+  ps -p "$pid" -o command= >"$VERIFY_DIR/run/$name.cmd" || die "$name exited at once; see $VERIFY_DIR/logs/$name.log"
+}
+
+wait_ready() {
+  local name=$1 url=$2 pid
+  pid=$(cat "$VERIFY_DIR/run/$name.pid")
+  for _ in $(seq 1 90); do
+    [[ "$(http_code "$url")" == 200 ]] && return 0
+    kill -0 "$pid" 2>/dev/null || {
+      tail -20 "$VERIFY_DIR/logs/$name.log" >&2
+      die "$name exited before answering $url"
+    }
+    sleep 1
+  done
+  die "$name did not answer $url within 90 s; see $VERIFY_DIR/logs/$name.log"
+}
+
+cmd_launch() {
+  local vite_port=3123 api_port="" api_url="" with_worker=0
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --vite-port) vite_port=$2 && shift 2 ;;
+      --api-port) api_port=$2 && shift 2 ;;
+      --api-url) api_url=${2%/} && shift 2 ;;
+      --with-worker) with_worker=1 && shift ;;
+      *) usage ;;
+    esac
+  done
+  [[ -n $api_port && -n $api_url ]] && die "pick --api-port (an API this run owns) or --api-url (borrowed, read-only)"
+  [[ -z $api_port && -z $api_url ]] && api_port=3013
+
+  VERIFY_DIR=${VERIFY_DIR:-${TMPDIR:-/tmp}/zalo-verify/$(date +%Y%m%d-%H%M%S)}
+  VERIFY_DIR=${VERIFY_DIR//\/\//\/}
+  [[ -e "$VERIFY_DIR/run" ]] && die "$VERIFY_DIR already has a run; clean it up or pick another VERIFY_DIR"
+
+  local port pid
+  for port in $vite_port $api_port; do
+    pid=$(listener_pid "$port")
+    [[ -z $pid ]] || die "port $port is taken by pid $pid from $(pid_cwd "$pid"); pick a free port and never stop another session's server"
+  done
+  [[ -n $(listener_pid 5432) ]] || die "Postgres is not on 5432: start the nest-postgres container"
+  [[ -n $(listener_pid 4566) ]] || die "Floci is not on 4566: start the marketplace-floci container"
+
+  local workers
+  workers=$(worker_pids)
+  if [[ $with_worker == 1 && -n $workers ]]; then
+    for pid in $workers; do echo "media worker pid $pid from $(pid_cwd "$pid")" >&2; done
+    die "a media worker already runs on the one pg-boss queue; do not start a second one"
+  fi
+
+  mkdir -p "$VERIFY_DIR/run" "$VERIFY_DIR/logs" "$VERIFY_DIR/evidence"
+  local api_owned=0
+  if [[ -n $api_port ]]; then
+    [[ -f "$BACKEND_DIR/dist/src/main.js" ]] || die "no backend build: run 'npm run build' in $BACKEND_DIR"
+    start api "$BACKEND_DIR" PORT="$api_port" S3_PUBLIC_ENDPOINT=$S3_LOCAL node --enable-source-maps dist/src/main
+    api_url=http://localhost:$api_port/api/v1
+    api_owned=1
+  fi
+  if [[ $with_worker == 1 ]]; then
+    start worker "$BACKEND_DIR" S3_PUBLIC_ENDPOINT=$S3_LOCAL node --enable-source-maps dist/src/worker/main.js
+  fi
+  start vite "$REPO_DIR" VITE_API_BASE_URL="$api_url" VITE_FEED_AUTOPLAY=true \
+    node node_modules/vite/bin/vite.js --port "$vite_port" --strictPort
+
+  cat >"$VERIFY_DIR/run/env" <<EOF
+BASE_URL=http://localhost:$vite_port
+VITE_PORT=$vite_port
+API_URL=$api_url
+API_OWNED=$api_owned
+EOF
+  [[ $api_owned == 1 ]] && wait_ready api "$api_url/categories"
+  wait_ready vite "http://localhost:$vite_port/"
+
+  echo "ready: app http://localhost:$vite_port, API $api_url ($([[ $api_owned == 1 ]] && echo owned || echo 'borrowed, read-only'))"
+  workers=$(worker_pids)
+  [[ -z $workers ]] && echo "note: no media worker runs, so new uploads never leave processing"
+  echo "export VERIFY_DIR=$VERIFY_DIR"
+}
+
+cmd_doctor() {
+  need_run
+  local problems=() pid ours
+
+  pid=$(listener_pid "$VITE_PORT")
+  ours=$(cat "$VERIFY_DIR/run/vite.pid" 2>/dev/null || true)
+  if [[ -z $pid ]]; then
+    problems+=("nothing listens on $VITE_PORT")
+  elif [[ $pid != "$ours" ]]; then
+    problems+=("port $VITE_PORT belongs to pid $pid from $(pid_cwd "$pid"), not to this run")
+  else
+    echo "vite    :$VITE_PORT pid $pid (this run) from $(pid_cwd "$pid")"
+    local base autoplay
+    base=$(pid_env "$pid" VITE_API_BASE_URL)
+    autoplay=$(pid_env "$pid" VITE_FEED_AUTOPLAY)
+    echo "        VITE_API_BASE_URL=$base VITE_FEED_AUTOPLAY=$autoplay"
+    [[ $base == "$API_URL" ]] || problems+=("vite talks to '$base', not $API_URL")
+    [[ $autoplay == true ]] || problems+=("VITE_FEED_AUTOPLAY is not true")
+    curl -s -m 5 "$BASE_URL/" | grep -q 'id="app"' || problems+=("$BASE_URL does not serve the app")
+  fi
+
+  local api_port
+  api_port=$(port_of "$API_URL")
+  pid=$(listener_pid "$api_port")
+  ours=$(cat "$VERIFY_DIR/run/api.pid" 2>/dev/null || true)
+  if [[ -z $pid ]]; then
+    problems+=("no API on $api_port")
+  else
+    local owner="this run"
+    [[ $pid == "$ours" ]] || owner="BORROWED, read-only"
+    [[ $API_OWNED == 1 && $pid != "$ours" ]] && problems+=("API port $api_port belongs to pid $pid, not to this run")
+    echo "api     :$api_port pid $pid ($owner) from $(pid_cwd "$pid")"
+    local s3
+    s3=$(pid_env "$pid" S3_PUBLIC_ENDPOINT)
+    echo "        S3_PUBLIC_ENDPOINT=${s3:-unset}"
+    [[ $s3 == "$S3_LOCAL" ]] || echo "        warning: media URLs point at ${s3:-the internal endpoint}; photos and previews may not load here"
+    [[ "$(http_code "$API_URL/categories")" == 200 ]] || problems+=("$API_URL/categories does not answer 200")
+    curl -s -m 5 -D - -o /dev/null -H "Origin: $BASE_URL" "$API_URL/categories" |
+      grep -qi '^access-control-allow-origin' || problems+=("the API refuses CORS from $BASE_URL")
+  fi
+
+  local front back
+  front=$(env_value_hash "$REPO_DIR/.env.local" VITE_DEV_ZALO_TOKEN)
+  back=$(env_value_hash "$BACKEND_DIR/.env" AUTH_DEV_ZALO_TOKEN)
+  if ! grep -q '^VITE_DEV_ZALO_TOKEN=.' "$REPO_DIR/.env.local" 2>/dev/null; then
+    problems+=("VITE_DEV_ZALO_TOKEN is missing from .env.local: the app cannot sign in outside Zalo")
+  elif [[ $front == "$back" ]]; then
+    echo "sign-in dev token matches the backend's AUTH_DEV_ZALO_TOKEN"
+  else
+    problems+=("VITE_DEV_ZALO_TOKEN differs from the backend's AUTH_DEV_ZALO_TOKEN")
+  fi
+
+  [[ -n $(listener_pid 5432) ]] && echo "postgres :5432 up" || problems+=("Postgres is not on 5432")
+  [[ -n $(listener_pid 4566) ]] && echo "floci    :4566 up" || problems+=("Floci is not on 4566")
+
+  local workers
+  workers=$(worker_pids)
+  [[ -z $workers ]] && echo "workers  none: uploads stay in processing"
+  ours=$(cat "$VERIFY_DIR/run/worker.pid" 2>/dev/null || true)
+  for pid in $workers; do
+    echo "worker   pid $pid from $(pid_cwd "$pid") ($([[ $pid == "$ours" ]] && echo 'this run' || echo 'not ours, leave it'))"
+  done
+
+  if [[ $API_OWNED == 1 && -f "$BACKEND_DIR/dist/src/main.js" ]]; then
+    local built committed
+    built=$(stat -f %m "$BACKEND_DIR/dist/src/main.js")
+    committed=$(git -C "$BACKEND_DIR" log -1 --format=%ct 2>/dev/null || echo 0)
+    ((built >= committed)) || echo "warning: $BACKEND_DIR/dist is older than its last commit; rebuild before trusting API behavior"
+  fi
+
+  if [[ ${#problems[@]} -gt 0 ]]; then
+    printf 'problem  %s\n' "${problems[@]}"
+    echo "verdict  DO NOT DRIVE"
+    return 1
+  fi
+  if [[ $API_OWNED == 1 ]]; then echo "verdict  DRIVE"; else echo "verdict  DRIVE read-only (borrowed API)"; fi
+}
+
+cmd_drive() {
+  need_run
+  [[ $# -ge 1 ]] || usage
+  local name=${1%.spec.ts}
+  name=${name##*/}
+  shift
+  [[ -f "$SKILL_DIR/drives/$name.spec.ts" ]] || die "no drive $SKILL_DIR/drives/$name.spec.ts"
+  local out
+  out="$VERIFY_DIR/evidence/$name-$(date +%H%M%S)"
+  mkdir -p "$out"
+  (cmd_doctor) >"$out/doctor.txt" || {
+    cat "$out/doctor.txt" >&2
+    die "doctor says do not drive"
+  }
+  set +e
+  (cd "$REPO_DIR" && VERIFY_BASE_URL=$BASE_URL E2E_BASE_URL=$BASE_URL E2E_API_URL=$API_URL \
+    VERIFY_API_OWNED=$API_OWNED VERIFY_DRIVE_OUT=$out \
+    npx playwright test -c "$SKILL_DIR/playwright.config.ts" "drives/$name.spec.ts" "$@") 2>&1 | tee "$out/run.log"
+  local status=${PIPESTATUS[0]}
+  set -e
+  echo "evidence: $out"
+  return "$status"
+}
+
+cmd_cleanup() {
+  [[ -n "${VERIFY_DIR:-}" ]] || die "export VERIFY_DIR (printed by 'verify launch')"
+  local file name pid recorded now
+  for file in "$VERIFY_DIR"/run/*.pid; do
+    [[ -f $file ]] || continue
+    name=$(basename "$file" .pid)
+    pid=$(cat "$file")
+    recorded=$(cat "$VERIFY_DIR/run/$name.cmd" 2>/dev/null || true)
+    now=$(ps -p "$pid" -o command= 2>/dev/null || true)
+    if [[ -z $now ]]; then
+      echo "$name (pid $pid) already gone"
+    elif [[ $now != "$recorded" ]]; then
+      echo "$name: pid $pid now runs something else; left alone"
+    else
+      kill "$pid"
+      for _ in $(seq 1 20); do kill -0 "$pid" 2>/dev/null || break; sleep 0.5; done
+      kill -0 "$pid" 2>/dev/null && kill -9 "$pid"
+      echo "$name (pid $pid) stopped"
+    fi
+  done
+  rm -rf "$VERIFY_DIR/run"
+  echo "kept: $VERIFY_DIR/evidence and $VERIFY_DIR/logs"
+}
+
+case ${1:-} in
+  launch | doctor | drive | cleanup)
+    command=$1
+    shift
+    "cmd_$command" "$@"
+    ;;
+  *) usage ;;
+esac
