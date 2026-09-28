@@ -10,27 +10,29 @@ import { useHasDraft } from '@/stores/listing-draft';
 type NavigationItem = {
   label: string;
   icon: 'zi-home' | 'zi-file' | 'zi-plus' | 'zi-video' | 'zi-user';
-  path?: string;
+  path: string;
   primary?: boolean;
-  disabled?: boolean;
 };
 
 // Above the tab bar (74px), below its raised "+".
 const draftBannerClass =
   'fixed inset-x-3 bottom-[84px] z-[899] shadow-[0_4px_12px_rgb(23_57_108/18%)]';
 const tabClass =
-  'relative z-[1] flex min-w-0 flex-col items-center gap-0.5 border-0 p-0 text-[10px] font-medium leading-[14px] disabled:opacity-45';
+  'relative z-[1] flex min-w-0 flex-col items-center gap-0.5 border-0 p-0 text-[10px] font-medium leading-[14px]';
 
 const navigationItems: NavigationItem[] = [
   { label: 'Trang chủ', icon: 'zi-home', path: '/' },
   { label: 'Quản lý tin', icon: 'zi-file', path: '/my-listings' },
   { label: 'Đăng tin', icon: 'zi-plus', path: '/sell', primary: true },
-  { label: 'Reels', icon: 'zi-video', disabled: true },
+  { label: 'Reels', icon: 'zi-video', path: '/reels' },
   { label: 'Cá nhân', icon: 'zi-user', path: '/profile' },
 ];
 
-/** The tab's text colour; the raised "Đăng tin" is dark even when current. */
-function getTabColorClass(item: NavigationItem, isActive: boolean) {
+/** The tab's text colour; on the white bar the raised "Đăng tin" is dark even when current. */
+function getTabColorClass(item: NavigationItem, isActive: boolean, isDark: boolean) {
+  if (isDark) {
+    return `${item.primary ? 'font-semibold' : ''} ${isActive ? 'text-white' : 'text-[#a9b0bf]'}`;
+  }
   if (item.primary) {
     return isActive ? 'font-semibold text-[#1b2a50]' : 'font-semibold text-[#17234a]';
   }
@@ -43,6 +45,8 @@ export default function AppShell({ children }: PropsWithChildren) {
   const location = useLocation();
   const currentPath = location.pathname;
   const shouldShowTabbar = !currentPath.startsWith('/products/');
+  // Over the videos on Reels.
+  const isDark = currentPath === '/reels';
   // On the sell page the draft is in front of the seller.
   const shouldShowDraft = currentPath !== '/sell';
   const isDraftBannerShown = useHasDraft() && shouldShowDraft;
@@ -59,17 +63,20 @@ export default function AppShell({ children }: PropsWithChildren) {
           className="fixed inset-x-0 bottom-0 isolate z-[900] grid h-[74px] grid-cols-5 px-[3px] pb-2 pt-3"
           aria-label="Điều hướng chính"
         >
-          {/* The bar's white shape, raised 14px around the "+". */}
+          {/* The bar's shape, raised 14px around the "+". */}
           <svg
             className="pointer-events-none absolute inset-x-0 -top-3.5 bottom-0 z-0 h-[calc(100%_+_14px)] w-full overflow-visible"
             viewBox="0 0 100 96"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
-            <path fill="white" d="M0 14H41.5C44.5 14 45 0 50 0S55.5 14 58.5 14H100V96H0Z" />
+            <path
+              fill={isDark ? 'black' : 'white'}
+              d="M0 14H41.5C44.5 14 45 0 50 0S55.5 14 58.5 14H100V96H0Z"
+            />
             <path
               fill="none"
-              stroke="#e5eaf2"
+              stroke={isDark ? '#2b2f38' : '#e5eaf2'}
               strokeWidth={0.5}
               vectorEffect="non-scaling-stroke"
               d="M0 14H41.5C44.5 14 45 0 50 0S55.5 14 58.5 14H100"
@@ -80,11 +87,10 @@ export default function AppShell({ children }: PropsWithChildren) {
             return (
               <button
                 key={item.label}
-                className={`${tabClass} ${getTabColorClass(item, isActive)}`}
+                className={`${tabClass} ${getTabColorClass(item, isActive, isDark)}`}
                 aria-current={isActive ? 'page' : undefined}
                 aria-describedby={item.primary && shouldShowDraft ? DRAFT_STATUS_ID : undefined}
-                disabled={item.disabled}
-                onClick={() => item.path && navigate(item.path)}
+                onClick={() => navigate(item.path)}
               >
                 <span
                   className={`grid size-7 place-items-center ${item.primary ? 'relative' : ''}`}
