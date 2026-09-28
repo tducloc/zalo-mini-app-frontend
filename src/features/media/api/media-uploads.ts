@@ -6,10 +6,11 @@
  */
 
 import axios from 'axios';
+import { z } from 'zod';
 
+import { MediaKind } from '@/features/media/types/media';
 import {
   type CompletedPart,
-  type MediaStatusItem,
   type RegisteredUpload,
   type ServerMediaStatus,
   type UploadRequestFile,
@@ -26,6 +27,29 @@ import { http } from '@/lib/http';
 import { getApiErrorStatus } from '@/utils/api-error';
 
 const mediaPath = (mediaId: string) => `/media/${encodeURIComponent(mediaId)}`;
+
+const targetFields = { mediaId: z.string(), objectKey: z.string(), expiresAt: z.string() };
+const uploadTarget = z.discriminatedUnion('type', [
+  z.object({ ...targetFields, type: z.literal(MediaKind.Image), presignedUrl: z.string() }),
+  z.object({
+    ...targetFields,
+    type: z.literal(MediaKind.Video),
+    uploadId: z.string(),
+    partSize: z.number().int().positive(),
+    parts: z.array(z.object({ partNumber: z.number().int().positive(), presignedUrl: z.string() })),
+  }),
+]) satisfies z.ZodType<UploadTarget>;
+const registeredUploads = z.object({
+  uploads: z.array(z.intersection(uploadTarget, z.object({ clientFileId: z.string() }))),
+}) satisfies z.ZodType<{ uploads: RegisteredUpload[] }>;
+
+function parseAnswer<T>(schema: z.ZodType<T>, data: unknown) {
+  const parsed = schema.safeParse(data);
+  if (!parsed.success) {
+    throw new UploadFailure(FailureKind.Rejected, parsed.error);
+  }
+  return parsed.data;
+}
 
 /** The response's `data`, or an UploadFailure; 0 stands for "no answer". */
 async function requestData<T>(request: () => Promise<{ data: { data: T } }>) {
@@ -45,20 +69,16 @@ async function requestData<T>(request: () => Promise<{ data: { data: T } }>) {
  * files; the app sends one at a time.
  */
 export function registerUploads(files: UploadRequestFile[]) {
-  return requestData(() =>
-    http.post<{ data: { uploads: RegisteredUpload[] } }>('/media/upload-urls', { files }),
-  ).then((data) => data.uploads);
+  return requestData(() => http.post<{ data: unknown }>('/media/upload-urls', { files })).then(
+    (data) => parseAnswer(registeredUploads, data).uploads,
+  );
 }
 
 /** Fresh URLs for a file still uploading; for a video, only `partNumbers` when given. */
 export function refreshUploadUrl(mediaId: string, partNumbers?: number[], signal?: AbortSignal) {
   return requestData(() =>
-    http.post<{ data: UploadTarget }>(
-      `${mediaPath(mediaId)}/upload-url`,
-      { partNumbers },
-      { signal },
-    ),
-  );
+    http.post<{ data: unknown }>(`${mediaPath(mediaId)}/upload-url`, { partNumbers }, { signal }),
+  ).then((data) => parseAnswer(uploadTarget, data));
 }
 
 export function completeParts(mediaId: string, parts: CompletedPart[], signal?: AbortSignal) {
@@ -79,13 +99,6 @@ export function completeUpload(mediaId: string, signal?: AbortSignal) {
       { signal },
     ),
   ).then((data) => data.status);
-}
-
-/** Statuses of the caller's media; an ID the server no longer has is left out. */
-export function fetchMediaStatuses(mediaIds: string[]) {
-  return requestData(() =>
-    http.get<{ data: MediaStatusItem[] }>('/media', { params: { ids: mediaIds.join(',') } }),
-  );
 }
 
 export function deleteMedia(mediaId: string) {

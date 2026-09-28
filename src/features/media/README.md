@@ -16,8 +16,8 @@ with `listings/types/draft-media.ts` open for the states a file goes through.
 ## The flow
 
 ```
-pick ─► MediaDetector ─► photo: image-queue ─► image-worker ─► ready ─► FileUpload ─► poll status
-        (utils/)         video: utils/video ─► convert-video ─┘         (services/)   (upload-media)
+pick ─► MediaDetector ─► photo: image-queue ─► image-worker ─► ready ─► FileUpload ─► done
+        (utils/)         video: utils/video ─► convert-video ─┘         (services/)
 ```
 
 1. **Detect** (`utils/media-detector.ts`): photo, video, or refused, from the first bytes.
@@ -26,8 +26,9 @@ pick ─► MediaDetector ─► photo: image-queue ─► image-worker ─► r
    converted to 720p (`services/convert-video.ts`).
 3. **Upload** (`listings/services/upload-media.ts`): two files at a time, each through
    `services/file-upload.ts` (presigned PUT or parts, retries, network waits).
-4. **Processing**: the server makes thumbnails and checks the file; the app asks every 3 s
-   until it says READY or FAILED.
+4. **Processing**: the server makes thumbnails and checks the file on its own. The tile shows
+   done once `complete` answers; a file the server failed comes back when the seller posts
+   (or saves an edit): the 409 names it with its reason, and its tile asks for another file.
 
 ## `features/media/`
 
@@ -54,7 +55,7 @@ page; it goes once that page imports `utils/video`.
 | `utils/listing-draft.ts`     | What Post needs from the whole draft                          |
 | `utils/tile-view.ts`         | What a tile and the viewer show for a file                    |
 | `services/add-media.ts`      | Detect, check, optimize each picked file; end a draft         |
-| `services/upload-media.ts`   | Upload queue and processing status                            |
+| `services/upload-media.ts`   | Upload queue, and the files a refused Post names              |
 | `services/media-pipeline.ts` | A draft store with its services: the sell draft, or an edit's |
 | `constants/messages.ts`      | What the seller reads: refusals, upload and server errors     |
 

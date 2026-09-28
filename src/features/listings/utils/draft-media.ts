@@ -6,7 +6,7 @@ import {
   type ListingMedia,
 } from '@/features/listings/types/draft-media';
 import { MediaKind } from '@/features/media/types/media';
-import { type ServerMedia, ServerMediaStatus } from '@/features/media/types/upload';
+import { ServerMediaStatus } from '@/features/media/types/upload';
 
 /** A file just picked, being checked. */
 export const newDraftMedia = (id: string, kind: MediaKind, file: File): DraftMedia => ({
@@ -25,14 +25,6 @@ export const newDraftMedia = (id: string, kind: MediaKind, file: File): DraftMed
   server: null,
   mediumUrl: null,
 });
-
-/**
- * The server is done with the media: READY, or FAILED with its reason. `complete` can
- * answer FAILED without the reason, when an earlier answer was lost; one poll fetches it.
- */
-export const isServerSettled = (server: ServerMedia | null) =>
-  server?.status === ServerMediaStatus.Ready ||
-  (server?.status === ServerMediaStatus.Failed && server.error !== null);
 
 /**
  * A failure the seller has to deal with (retry or remove): refused after it

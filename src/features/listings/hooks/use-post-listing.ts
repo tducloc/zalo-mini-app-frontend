@@ -47,7 +47,7 @@ export function usePostListing({
         navigate(`/products/${encodeURIComponent(error.productId)}`, { replace: true });
         return;
       case PostErrorKind.MediaConflict:
-        draftPipeline.markUnusableMedia(error.mediaIds);
+        draftPipeline.markUnusableMedia(error.media);
         showError(postMessages.mediaConflict);
         onMediaErrors();
         return;

@@ -1,11 +1,3 @@
-/**
- * Uploads a draft's files once they are ready (diagrams 04, 04b, 05), and asks the
- * server how processing goes until each is ready or failed. Module-level and driven by a
- * draft store, like add-media.ts, so uploads go on while the seller is on another page
- * (diagram 08). `createUploadService` works on any draft store; the sell page's draft has
- * one from the start (bottom of the file), an edit page makes its own while it is open.
- */
-
 import PQueue from 'p-queue';
 
 import {
@@ -13,19 +5,15 @@ import {
   type UploadSource,
   type ListingMedia,
 } from '@/features/listings/types/draft-media';
-import { isServerSettled } from '@/features/listings/utils/draft-media';
-import { deleteMedia, fetchMediaStatuses } from '@/features/media/api/media-uploads';
+import type { RefusedMedia } from '@/features/listings/types/post-error';
+import { deleteMedia } from '@/features/media/api/media-uploads';
 import { browserTransport } from '@/features/media/services/browser-transport';
 import { FileUpload } from '@/features/media/services/file-upload';
 import {
-  MediaError,
-  type MediaStatusItem,
-  type ServerMedia,
   ServerMediaStatus,
   type UploadRequestFile,
   type UploadListener,
 } from '@/features/media/types/upload';
-import { toMediaError } from '@/features/media/utils/media-error';
 import { type ListingDraftStore, useListingDraftStore } from '@/stores/listing-draft';
 import { warnInDev } from '@/utils/dev-log';
 
@@ -34,20 +22,6 @@ import { warnInDev } from '@/utils/dev-log';
  * finishing files one after another lets the server start processing the first sooner.
  */
 const FILES_IN_FLIGHT = 2;
-
-/**
- * How often to ask the server about files it is processing: a photo takes a second or
- * two, a video up to a minute. One request covers every file.
- */
-const POLL_INTERVAL_MS = 3_000;
-
-/** Right after `complete`: no thumbnail or reason yet. */
-const NOTHING_YET: ServerMedia = {
-  status: ServerMediaStatus.Processing,
-  thumbnailUrl: null,
-  placeholder: null,
-  error: null,
-};
 
 interface UploadEntry {
   upload: FileUpload;
@@ -64,7 +38,6 @@ const uploadQueue = new PQueue({ concurrency: FILES_IN_FLIGHT });
 const warn = (message: string, error: unknown) => warnInDev('upload', message, error);
 
 function deleteQuietly(mediaId: string) {
-  // Best effort: media on no listing is removed by the hourly cleanup anyway (diagram 07).
   deleteMedia(mediaId).catch((error: unknown) => warn('could not delete media', error));
 }
 
@@ -83,33 +56,13 @@ function requestFor(media: ListingMedia, upload: UploadSource): UploadRequestFil
   };
 }
 
-/** A FAILED gets a reason the app knows, so it settles and is not asked about forever. */
-function serverMediaFrom(item: MediaStatusItem | undefined): ServerMedia {
-  if (!item) {
-    // No longer listed, e.g. removed by the hourly cleanup.
-    return { ...NOTHING_YET, status: ServerMediaStatus.Failed, error: MediaError.Missing };
-  }
-  const { status, thumbnailUrl, placeholder, error } = item;
-  if (status !== ServerMediaStatus.Failed) {
-    return { status, thumbnailUrl, placeholder, error: null };
-  }
-  return {
-    status,
-    thumbnailUrl,
-    placeholder,
-    error: toMediaError(error) ?? MediaError.ProcessingFailed,
-  };
-}
+export type StopUploads = () => void;
 
 export interface UploadService {
-  /**
-   * Uploads the store's files as they become ready, and asks about those still
-   * processing, including media the store started with. Returns what stops listening.
-   */
-  start: () => () => void;
+  start: () => StopUploads;
   retryUpload: (id: string) => void;
   cancelUpload: (id: string) => void;
-  markUnusableMedia: (mediaIds: string[]) => void;
+  markUnusableMedia: (refused: RefusedMedia[]) => void;
   forgetUploads: () => void;
 }
 
@@ -117,10 +70,6 @@ export interface UploadService {
 export function createUploadService(store: ListingDraftStore): UploadService {
   /** One per draft file that is ready to upload or further on, by draft id, until removed. */
   const entries = new Map<string, UploadEntry>();
-  let pollTimer: ReturnType<typeof setTimeout> | undefined;
-  let isPolling = false;
-  /** Between start() and what it returns: an edit page's store stops with its page. */
-  let isListening = false;
 
   const draftMedia = () => store.getState().media;
 
@@ -198,10 +147,9 @@ export function createUploadService(store: ListingDraftStore): UploadService {
       update(id, {
         status: DraftMediaStatus.Uploaded,
         mediaId: result.mediaId,
-        server: { ...NOTHING_YET, status: result.status },
+        server: { status: result.status, thumbnailUrl: null, error: null },
         waitingFor: null,
       });
-      schedulePoll();
     } catch (error) {
       // Rejects only when removed, apart from a bug; the seller can still retry that.
       if (!entry.controller.signal.aborted) {
@@ -209,47 +157,6 @@ export function createUploadService(store: ListingDraftStore): UploadService {
         failed(true);
       }
     }
-  }
-
-  // ---- Processing status, until each file is ready or failed ----
-
-  const mediaToPoll = () =>
-    draftMedia().filter(
-      (media) => media.status === DraftMediaStatus.Uploaded && !isServerSettled(media.server),
-    );
-
-  /** One request at a time, every POLL_INTERVAL_MS while some file is still processing. */
-  function schedulePoll() {
-    if (!isListening || pollTimer !== undefined || isPolling || mediaToPoll().length === 0) {
-      return;
-    }
-    pollTimer = setTimeout(() => {
-      pollTimer = undefined;
-      void pollStatuses();
-    }, POLL_INTERVAL_MS);
-  }
-
-  async function pollStatuses() {
-    const waiting = mediaToPoll();
-    // The files were removed, or the draft ended, since this poll was scheduled.
-    if (waiting.length === 0) {
-      return;
-    }
-
-    isPolling = true;
-    try {
-      const statuses = await fetchMediaStatuses(waiting.flatMap((media) => media.mediaId ?? []));
-      const byId = new Map(statuses.map((item) => [item.id, item]));
-      for (const media of waiting) {
-        update(media.id, { server: serverMediaFrom(byId.get(media.mediaId ?? '')) });
-      }
-    } catch (error) {
-      // The next round asks again.
-      warn('polling media status failed', error);
-    } finally {
-      isPolling = false;
-    }
-    schedulePoll();
   }
 
   // ---- What the draft and the form call ----
@@ -280,14 +187,16 @@ export function createUploadService(store: ListingDraftStore): UploadService {
   }
 
   /** `POST /products` refused these media (409): their tiles ask for another file. */
-  function markUnusableMedia(mediaIds: string[]) {
+  function markUnusableMedia(refused: RefusedMedia[]) {
+    const errors = new Map(refused.map(({ mediaId, error }) => [mediaId, error]));
     for (const media of draftMedia()) {
-      if (media.mediaId && mediaIds.includes(media.mediaId)) {
+      const error = media.mediaId ? errors.get(media.mediaId) : undefined;
+      if (error) {
         update(media.id, {
           server: {
-            ...(media.server ?? NOTHING_YET),
+            thumbnailUrl: media.server?.thumbnailUrl ?? null,
             status: ServerMediaStatus.Failed,
-            error: MediaError.Missing,
+            error,
           },
         });
       }
@@ -303,21 +212,12 @@ export function createUploadService(store: ListingDraftStore): UploadService {
       entry.controller.abort();
     }
     entries.clear();
-    clearTimeout(pollTimer);
-    pollTimer = undefined;
   }
 
   function start() {
     const unsubscribe = store.subscribe(queueReady);
-    isListening = true;
     queueReady();
-    schedulePoll();
-    return () => {
-      isListening = false;
-      unsubscribe();
-      clearTimeout(pollTimer);
-      pollTimer = undefined;
-    };
+    return unsubscribe;
   }
 
   return { start, retryUpload, cancelUpload, markUnusableMedia, forgetUploads };

@@ -1,13 +1,11 @@
 // Only failures (isFailed) are errors, with the tile's "!" badge. Waiting for the network
 // is not: the app retries on its own, and a red mark would alarm the seller for nothing.
 export enum TileTone {
-  /** Checking, optimizing, uploading or processing: a spinner or a percentage. */
   Working = 'WORKING',
   /** Paused until the network is back; the app goes on by itself. */
   Waiting = 'WAITING',
   /** Needs the seller: retry or remove. */
   Error = 'ERROR',
-  /** Ready on the server. */
   Done = 'DONE',
 }
 

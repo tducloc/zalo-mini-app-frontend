@@ -13,20 +13,17 @@ import {
 import {
   createUploadService,
   draftUploads,
+  type StopUploads,
   type UploadService,
 } from '@/features/listings/services/upload-media';
+import type { RefusedMedia } from '@/features/listings/types/post-error';
 import { type ListingDraftStore, useListingDraftStore } from '@/stores/listing-draft';
 
 export interface MediaPipeline extends MediaIntake {
   store: ListingDraftStore;
-  /**
-   * Starts uploading picked files and asking about media still processing. Returns what
-   * stops listening; `stopAll` or `forgetAll` decide what happens to the files.
-   */
-  start: () => () => void;
+  start: () => StopUploads;
   retryUpload: (id: string) => void;
-  /** The server refused these media (409): their tiles ask for another file. */
-  markUnusableMedia: (mediaIds: string[]) => void;
+  markUnusableMedia: (refused: RefusedMedia[]) => void;
 }
 
 function pipelineOf(
