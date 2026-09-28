@@ -1,6 +1,11 @@
+import { AxiosError, AxiosHeaders } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { refreshUploadUrl, registerUploads } from '@/features/media/api/media-uploads';
+import {
+  completeParts,
+  refreshUploadUrl,
+  registerUploads,
+} from '@/features/media/api/media-uploads';
 import { MediaKind } from '@/features/media/types/media';
 import { FailureKind, type UploadRequestFile } from '@/features/media/types/upload';
 
@@ -37,6 +42,17 @@ const video = {
 
 const answer = (data: unknown) => ({ data: { data } });
 
+function apiError(status: number) {
+  const config = { headers: new AxiosHeaders() };
+  return new AxiosError('request failed', 'ERR_BAD_REQUEST', config, undefined, {
+    status,
+    statusText: '',
+    headers: {},
+    config,
+    data: {},
+  });
+}
+
 const failure = (kind: FailureKind) => expect.objectContaining({ name: 'UploadFailure', kind });
 
 beforeEach(() => {
@@ -69,5 +85,15 @@ describe('upload targets', () => {
 
     http.post.mockResolvedValue(answer(target));
     await expect(refreshUploadUrl('m1')).rejects.toEqual(failure(FailureKind.Rejected));
+  });
+});
+
+describe('parts/complete', () => {
+  it('reads a 404 as a media gone, which the upload starts over from', async () => {
+    http.post.mockRejectedValue(apiError(404));
+
+    await expect(completeParts('m2', [{ partNumber: 1, etag: '"e"' }])).rejects.toEqual(
+      failure(FailureKind.Gone),
+    );
   });
 });

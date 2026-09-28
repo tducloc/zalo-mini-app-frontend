@@ -582,6 +582,19 @@ describe('FileUpload, video', () => {
     expect(transport.put).toHaveBeenCalledTimes(6);
   });
 
+  it('starts over as a new media when parts/complete finds the upload gone', async () => {
+    const transport = fakeTransport({
+      completeParts: failing(1, FailureKind.Gone, async () => ServerMediaStatus.Uploading),
+    });
+
+    const result = await run(newUpload(videoRequest, videoBlob, transport));
+
+    expect(result.kind).toBe('uploaded');
+    expect(transport.register).toHaveBeenCalledTimes(2);
+    expect(transport.put).toHaveBeenCalledTimes(6);
+    expect(transport.completeParts).toHaveBeenCalledTimes(2);
+  });
+
   it('keeps nothing of a lost media: its URLs, their staleness, or its parts', async () => {
     const lost = { ...videoTarget, mediaId: 'm2' };
     const next = {
