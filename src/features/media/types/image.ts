@@ -42,7 +42,7 @@ export interface ImageJob {
 }
 
 export interface OptimizedImage {
-  /** A 1280 px JPEG, or the file itself when the JPEG was not smaller. */
+  /** A 1600 px JPEG, or the file itself when the JPEG was not smaller. */
   blob: Blob;
   width: number;
   height: number;
