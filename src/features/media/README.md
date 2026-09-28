@@ -60,7 +60,7 @@ page; it goes once that page imports `utils/video`.
 
 The services work on a given draft store (`createListingDraftStore`): the sell page's draft
 (one per app, `useListingDraftStore`) and an edit page's own, which starts with the listing's
-media as uploaded tiles without a local file (`ListingMedia`, `draftFromProduct` in `components/edit/edit-listing-form.tsx`). Both
+media as uploaded tiles without a local file (`ListingMedia`, `utils/edit-listing.ts`). Both
 share the one-photo-at-a-time image queue and the two upload slots; closing an edit deletes
 its new uploads, never the listing's media.
 

@@ -8,7 +8,7 @@
  * The draft store keeps the list; the services update a file by its id, so an update for
  * a file the seller removed meanwhile finds nothing and is dropped.
  *
- * An edit starts with the listing's media as files already Uploaded (`draftFromProduct` in components/edit/edit-listing-form.tsx):
+ * An edit starts with the listing's media as files already Uploaded (utils/edit-listing.ts):
  * ListingMedia, with no local `file` and the server's pictures instead.
  */
 
