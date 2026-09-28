@@ -173,10 +173,10 @@ export default function ReelItem({
           decoding="async"
         />
       )}
-      <div ref={hostRef} data-reel-video-host className="absolute inset-0" />
+      <div ref={hostRef} data-reel-video-host className="absolute inset-0 z-0" />
 
       <button
-        className="absolute inset-0 grid size-full place-items-center border-0 bg-transparent p-0 text-white"
+        className="absolute inset-0 z-[1] grid size-full transform-gpu place-items-center border-0 bg-transparent p-0 text-white"
         type="button"
         aria-label={shouldPlay(status) ? 'Tạm dừng video' : 'Phát video'}
         disabled={status === 'failed'}

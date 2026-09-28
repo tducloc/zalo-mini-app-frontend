@@ -33,7 +33,8 @@ export default function ReelOverlay({
   const sellerName = reel.seller.name ?? 'Người bán Zalo';
 
   return (
-    <div className="pointer-events-none absolute inset-0">
+    // Its own layer: iOS paints a playing video over siblings that have none.
+    <div className="pointer-events-none absolute inset-0 z-[2] transform-gpu">
       <button
         className={soundButtonClass}
         type="button"
