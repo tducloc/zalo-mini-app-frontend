@@ -2,7 +2,7 @@ import { type RefObject, useCallback, useEffect, useReducer, useRef, useState } 
 
 import { type Box, canAutoplay, pickActiveCard, visibleArea } from '@/features/feed/utils/autoplay';
 
-/** A card must rest near the centre this long, so a fast fling plays nothing. */
+/** A new row must rest near the centre this long, so a fast fling plays nothing. */
 const DWELL_MS = 300;
 
 /** Off unless VITE_FEED_AUTOPLAY=true, until it is measured on devices (plans/home-feed.md). */
@@ -70,6 +70,8 @@ export function useFeedAutoplay({
 
   // The card chosen last, kept when a new page arrives so the playing one goes on.
   const candidate = useRef<string | null>(null);
+  // The middle row last seen: a hand-over inside it needs no rest.
+  const candidateRow = useRef<string | null>(null);
   // Cards that played their preview and are still on screen: not picked again until they leave.
   const finished = useRef<ReadonlySet<string>>(new Set());
 
@@ -105,6 +107,7 @@ export function useFeedAutoplay({
     const scroller = scrollerRef.current;
     if (!scroller || isPaused) {
       candidate.current = null;
+      candidateRow.current = null;
       setActiveId(null);
       return;
     }
@@ -116,6 +119,7 @@ export function useFeedAutoplay({
     const choose = () => {
       frame = 0;
       let next: string | null = null;
+      let row: string | null = null;
       // Asked each time: the connection or the motion setting may change on the page.
       if (!document.hidden && isAutoplayAllowed()) {
         const turn = pickActiveCard(
@@ -127,16 +131,24 @@ export function useFeedAutoplay({
           finished.current,
         );
         next = turn.activeId;
+        row = turn.rowKey;
         finished.current = turn.finished;
       }
+      const isSameRow = row !== null && row === candidateRow.current;
+      candidateRow.current = row;
       if (next === candidate.current) {
         return;
       }
 
-      // The playing card stops at once; the next one waits until it rests.
+      // A finished card hands over to its row neighbour at once. On a new row the playing
+      // card stops at once and the next one waits until it rests.
       candidate.current = next;
       clearTimeout(dwell);
       isDwelling = false;
+      if (isSameRow) {
+        setActiveId(next);
+        return;
+      }
       setActiveId(null);
       if (next) {
         isDwelling = true;
@@ -161,6 +173,7 @@ export function useFeedAutoplay({
       // A card still resting is chosen again by the next run, not skipped as unchanged.
       if (isDwelling) {
         candidate.current = null;
+        candidateRow.current = null;
       }
       scroller.removeEventListener('scroll', scheduleChoose);
       window.removeEventListener('resize', scheduleChoose);

@@ -147,6 +147,18 @@ describe('pickActiveCard rows', () => {
     expect(pickActiveCard(rows(110), viewport, new Set(['row1-right'])).activeId).toBe('row2-left');
   });
 
+  it('names the middle row the same through its turns and while it scrolls', () => {
+    const first = pickActiveCard(rowOneNearest, viewport, new Set());
+    const second = pickActiveCard(scrolled(170), viewport, new Set(['row1-left']));
+    const done = pickActiveCard(rowOneNearest, viewport, new Set(['row1-left', 'row1-right']));
+    const next = pickActiveCard(rowTwoNearest, viewport, new Set());
+
+    expect(second.rowKey).toBe(first.rowKey);
+    expect(done.rowKey).toBe(first.rowKey);
+    expect(next.rowKey).not.toBe(first.rowKey);
+    expect(pickActiveCard([], viewport, new Set()).rowKey).toBeNull();
+  });
+
   it('keeps two cards whose tops differ by a pixel in one row, left first', () => {
     const row = [card('left', 281, 13), card('right', 280, 197)];
 

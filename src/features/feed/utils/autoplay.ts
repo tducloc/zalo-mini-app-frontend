@@ -39,7 +39,8 @@ export function visibleArea(scroller: Box, headerBottom: number, bottomPadding: 
  * in the visible area, whose centre is nearest the centre of that area. Then that row's
  * left-most card mostly in it and not yet `finished`. Once the whole middle row has
  * finished, none plays, even when the next row is fully visible. A card leaves `finished`
- * once no part of it is visible, so scrolling back plays it again.
+ * once no part of it is visible, so scrolling back plays it again. `rowKey` names the
+ * middle row (its left-most card), the same while it stays the middle row however it scrolls.
  */
 export function pickActiveCard(
   cards: { id: string; rect: Box }[],
@@ -80,6 +81,7 @@ export function pickActiveCard(
     .sort((a, b) => a.rect.left - b.rect.left);
   return {
     activeId: row.find(({ id }) => !finished.has(id))?.id ?? null,
+    rowKey: row[0]?.id ?? null,
     finished: stillFinished,
   };
 }
