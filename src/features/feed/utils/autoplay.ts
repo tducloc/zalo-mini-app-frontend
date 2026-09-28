@@ -36,11 +36,10 @@ export function visibleArea(scroller: Box, headerBottom: number, bottomPadding: 
 
 /**
  * Whose turn it is to play. First the middle row: the row, among those with a card mostly
- * in the visible area, whose centre is nearest the centre of that area. Then, of that
- * row's cards mostly in it and not yet `finished`, the one nearest the centre across; of
- * two as near, the first (the left one) wins. Once the whole middle row has finished, none
- * plays, even when the next row is fully visible. A card leaves `finished` once no part of
- * it is visible, so scrolling back plays it again.
+ * in the visible area, whose centre is nearest the centre of that area. Then that row's
+ * left-most card mostly in it and not yet `finished`. Once the whole middle row has
+ * finished, none plays, even when the next row is fully visible. A card leaves `finished`
+ * once no part of it is visible, so scrolling back plays it again.
  */
 export function pickActiveCard(
   cards: { id: string; rect: Box }[],
@@ -48,7 +47,6 @@ export function pickActiveCard(
   finished: ReadonlySet<string>,
 ) {
   const middleY = centre(area.top, area.bottom);
-  const middleX = centre(area.left, area.right);
 
   const stillFinished = new Set<string>();
   const mostlyVisible: { id: string; rect: Box; centreY: number }[] = [];
@@ -75,18 +73,15 @@ export function pickActiveCard(
     }
   }
 
-  let best: { id: string; distance: number } | null = null;
-  for (const { id, rect, centreY } of mostlyVisible) {
-    if (rowY === null || Math.abs(centreY - rowY) > ROW_TOLERANCE_PX || finished.has(id)) {
-      continue;
-    }
-    // Across only: a pixel of rounding between two tops must not put the right card first.
-    const distance = Math.abs(centre(rect.left, rect.right) - middleX);
-    if (!best || distance < best.distance) {
-      best = { id, distance };
-    }
-  }
-  return { activeId: best?.id ?? null, finished: stillFinished };
+  // Left to right, not nearest the centre across: a scrollbar moves that centre by a few
+  // pixels, enough to put the right card first.
+  const row = mostlyVisible
+    .filter(({ centreY }) => rowY !== null && Math.abs(centreY - rowY) <= ROW_TOLERANCE_PX)
+    .sort((a, b) => a.rect.left - b.rect.left);
+  return {
+    activeId: row.find(({ id }) => !finished.has(id))?.id ?? null,
+    finished: stillFinished,
+  };
 }
 
 export function canAutoplay({

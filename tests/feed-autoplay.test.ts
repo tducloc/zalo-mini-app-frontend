@@ -34,11 +34,11 @@ describe('pickActiveCard', () => {
     expect(pick([hidden, card('b', 520)], viewport)).toBe('b');
   });
 
-  it('in a row of two, picks the one nearer the horizontal centre', () => {
-    // Same row; a's centre is 95 px from the middle of the screen, b's 85 px.
-    const cards = [card('a', 280, 10), card('b', 280, 190)];
+  it('in a row of two, picks the left card though the right one is nearer the centre', () => {
+    // Same row, listed right first; a's centre is 95 px from the middle of the screen, b's 85 px.
+    const cards = [card('b', 280, 190), card('a', 280, 10)];
 
-    expect(pick(cards, viewport)).toBe('b');
+    expect(pick(cards, viewport)).toBe('a');
   });
 
   it('skips a card that is mostly off screen', () => {
