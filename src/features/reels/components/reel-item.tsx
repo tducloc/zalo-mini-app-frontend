@@ -4,6 +4,7 @@ import { Icon } from 'zmp-ui';
 
 import ReelOverlay from '@/features/reels/components/reel-overlay';
 import { reelHeightClass, spinnerClass } from '@/features/reels/constants/styles';
+import { videoPool } from '@/features/reels/services/video-pool';
 import type { ReelItem as Reel } from '@/features/reels/types/reel';
 import { reelPlayer, shouldPlay } from '@/features/reels/utils/reel-player';
 import type { ReelSlot } from '@/features/reels/utils/reel-slot';
@@ -26,8 +27,8 @@ function placeholderUrl(hash: string | null) {
 }
 
 /**
- * One reel: its video (with a source only in the `active` and `next` slots), the poster
- * and its placeholder under it, and the listing over it. A tap pauses or plays.
+ * One reel: its video (a pool element, borrowed only in the `active` and `next` slots), the
+ * poster and its placeholder under it, and the listing over it. A tap pauses or plays.
  */
 export default function ReelItem({
   reel,
@@ -43,7 +44,8 @@ export default function ReelItem({
   isAppVisible: boolean;
   onOpen: (productId: string) => void;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const hostRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [status, dispatch] = useReducer(reelPlayer, 'paused');
   const isMuted = useReelsStore((state) => state.isMuted);
   const setMuted = useReelsStore((state) => state.setMuted);
@@ -63,23 +65,36 @@ export default function ReelItem({
     dispatch({ type: isActive ? 'activated' : 'deactivated' });
   }, [isActive]);
 
+  const { posterUrl } = reel.video;
+  const label = `Video: ${reel.title}`;
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !src) {
+    const host = hostRef.current;
+    if (!host || !src) {
       return;
     }
 
-    // Some WebViews judge autoplay by the muted attribute, which React does not write.
-    video.defaultMuted = true;
-    // Set here, not as a prop: the cleanup drops it, and a remount must set it again.
+    const video = videoPool.claim(index, host);
+    video.className = `absolute inset-0 size-full ${fitClass}`;
+    video.poster = posterUrl ?? '';
+    video.setAttribute('aria-label', label);
     video.src = src;
+    const handlePlaying = () => dispatch({ type: 'played' });
+    const handleWaiting = () => dispatch({ type: 'stalled' });
+    // Dropping the source may fire an error with none to report; only a real one fails.
+    const handleError = () => video.error && dispatch({ type: 'errored' });
+    video.addEventListener('playing', handlePlaying);
+    video.addEventListener('waiting', handleWaiting);
+    video.addEventListener('error', handleError);
+    videoRef.current = video;
 
-    // Removing the element alone may keep its buffer; dropping the source frees it.
     return () => {
-      video.removeAttribute('src');
-      video.load();
+      video.removeEventListener('playing', handlePlaying);
+      video.removeEventListener('waiting', handleWaiting);
+      video.removeEventListener('error', handleError);
+      videoRef.current = null;
+      videoPool.release(index, video);
     };
-  }, [src]);
+  }, [index, src, fitClass, posterUrl, label]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -141,20 +156,18 @@ export default function ReelItem({
           aria-hidden
         />
       )}
-      <video
-        ref={videoRef}
-        className={`absolute inset-0 size-full ${fitClass}`}
-        poster={reel.video.posterUrl ?? undefined}
-        preload={slot === 'idle' ? 'none' : 'auto'}
-        loop
-        muted
-        playsInline
-        aria-label={`Video: ${reel.title}`}
-        onPlaying={() => dispatch({ type: 'played' })}
-        onWaiting={() => dispatch({ type: 'stalled' })}
-        // Dropping the source may fire an error with none to report; only a real one fails.
-        onError={(event) => event.currentTarget.error && dispatch({ type: 'errored' })}
-      />
+      {/* Shown until the reel borrows a video, which covers it with the same poster. */}
+      {posterUrl && (
+        <img
+          className={`absolute inset-0 size-full ${fitClass}`}
+          src={posterUrl}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          decoding="async"
+        />
+      )}
+      <div ref={hostRef} className="absolute inset-0" />
 
       <button
         className="absolute inset-0 grid size-full place-items-center border-0 bg-transparent p-0 text-white"

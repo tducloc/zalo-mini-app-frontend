@@ -22,10 +22,10 @@ async function expectPlaying(target: Locator) {
   await expect.poll(timeOf).not.toBe(start);
 }
 
-async function expectPaused(target: Locator) {
-  await expect
-    .poll(() => target.evaluate((element: HTMLVideoElement) => element.paused))
-    .toBe(true);
+/** A reel left behind gives its video back to the pool: only the one on screen and the next hold one. */
+async function expectOnlyNearbyVideos(page: Page, left: number) {
+  await expect(video(page, left)).toHaveCount(0);
+  await expect(page.locator('video[src]')).toHaveCount(2);
 }
 
 test('plays one reel at a time, muted, and comes back to it from the detail', async ({ page }) => {
@@ -39,7 +39,7 @@ test('plays one reel at a time, muted, and comes back to it from the detail', as
 
   await reel(page, 1).evaluate((element) => element.scrollIntoView({ block: 'start' }));
   await expectPlaying(video(page, 1));
-  await expectPaused(video(page, 0));
+  await expectOnlyNearbyVideos(page, 0);
 
   const title = await reel(page, 1).getAttribute('aria-label');
   expect(title).toBeTruthy();
@@ -50,7 +50,7 @@ test('plays one reel at a time, muted, and comes back to it from the detail', as
   await expect(tab(page, 'Reels')).toHaveAttribute('aria-current', 'page');
   await expect(reel(page, 1)).toBeInViewport({ ratio: 0.9 });
   await expectPlaying(video(page, 1));
-  await expectPaused(video(page, 0));
+  await expectOnlyNearbyVideos(page, 0);
 });
 
 /** A one-finger swipe of about 150 ms through the browser's real touch input, in CSS pixels. */
@@ -102,4 +102,17 @@ test('swipes left from a reel to its detail, and right below the gallery back to
   await expect(tab(page, 'Reels')).toHaveAttribute('aria-current', 'page');
   await expect(reel(page, 0)).toBeInViewport({ ratio: 0.9 });
   await expectPlaying(video(page, 0));
+});
+
+test('plays each reel past the first page with the same three video elements', async ({ page }) => {
+  await page.goto('/');
+  await tab(page, 'Reels').click();
+  await expectPlaying(video(page, 0));
+
+  // Past the first page of 10: iOS refuses elements made after the viewer's last touch.
+  for (let index = 1; index <= 12; index += 1) {
+    await reel(page, index).evaluate((element) => element.scrollIntoView({ block: 'start' }));
+    await expectPlaying(video(page, index));
+  }
+  await expect(page.locator('video')).toHaveCount(3);
 });

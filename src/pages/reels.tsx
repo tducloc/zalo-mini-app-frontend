@@ -9,6 +9,7 @@ import { useReels } from '@/features/reels/api/get-reels';
 import ReelItem from '@/features/reels/components/reel-item';
 import { reelHeightClass, spinnerClass } from '@/features/reels/constants/styles';
 import { useActiveReel } from '@/features/reels/hooks/use-active-reel';
+import { videoPool } from '@/features/reels/services/video-pool';
 import { slotOf } from '@/features/reels/utils/reel-slot';
 import { useReelsStore } from '@/stores/reels';
 import { getConnection, isSavingData } from '@/utils/network';
@@ -28,6 +29,12 @@ export default function ReelsPage() {
   );
   const scrollerRef = useRef<HTMLDivElement>(null);
   const isAppVisible = useIsDocumentVisible();
+  const parkingRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    videoPool.setParking(parkingRef.current);
+    return () => videoPool.setParking(null);
+  }, []);
 
   const reels = reelsQuery.data?.pages.flatMap((page) => page.data) ?? [];
   const { hasNextPage, isFetching, isFetchNextPageError, fetchNextPage } = reelsQuery;
@@ -126,6 +133,7 @@ export default function ReelsPage() {
     // No reset to the top: it would land after the restore when StrictMode runs effects twice.
     <Page ref={scrollerRef} className={scrollerClass} hideScrollbar resetScroll={false}>
       {content}
+      <div ref={parkingRef} hidden />
     </Page>
   );
 }
