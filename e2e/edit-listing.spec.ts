@@ -155,6 +155,25 @@ async function holdProcessingListUntilPublished(
   );
 }
 
+/** Answers the save as the API does when the worker has not finished the new photo yet. */
+async function answerSaveAsProcessing(page: Page, productId: string) {
+  await page.route(
+    (url) => url.pathname.endsWith(`/products/${productId}`),
+    async (route) => {
+      if (route.request().method() !== 'PATCH') {
+        await route.fallback();
+        return;
+      }
+      const response = await route.fetch();
+      const body = await response.json();
+      await route.fulfill({
+        response,
+        json: { ...body, data: { ...body.data, status: 'PROCESSING' } },
+      });
+    },
+  );
+}
+
 test('edits the title and price and replaces a photo', async ({ page, request }) => {
   const oldTitle = title('trước');
   const newTitle = title('sau');
@@ -185,7 +204,8 @@ test('edits the title and price and replaces a photo', async ({ page, request })
   await expect(tiles).toHaveCount(2);
   await expect(saveButton(page)).toBeEnabled({ timeout: MEDIA_TIMEOUT_MS });
 
-  // PROCESSING when the worker has not finished the new photo by then (it often has).
+  // The worker finishes the new photo between the save and the list: the page must follow.
+  await answerSaveAsProcessing(page, productId);
   await holdProcessingListUntilPublished(page, request, token, productId);
   const saved = waitForSave(page, productId);
   await saveButton(page).click();
