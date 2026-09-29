@@ -12,6 +12,7 @@ import { myListingKeys } from '@/features/my-listings/api/keys';
 import { productKeys } from '@/features/products/api/keys';
 import type { ProductDetail } from '@/features/products/types/product';
 import { useToast } from '@/hooks/use-toast';
+import { useMyListingsStore } from '@/stores/my-listings';
 import { warnInDev } from '@/utils/dev-log';
 
 interface SaveListingOptions {
@@ -42,6 +43,7 @@ export function useSaveListing({
 }: SaveListingOptions) {
   const queryClient = useQueryClient();
   const { showError, showInfo, showSuccess } = useToast();
+  const followListing = useMyListingsStore((state) => state.follow);
 
   const handleError = (error: SaveError) => {
     switch (error.kind) {
@@ -107,6 +109,8 @@ export function useSaveListing({
     // The listing has the new media now: closing the page must not delete it.
     pipeline.forgetAll();
     refreshCaches(saved);
+    // New media makes it PROCESSING: My listings opens that tab, and follows it from there.
+    followListing(productId, saved.status);
     showSuccess(saved.status === 'PROCESSING' ? saveMessages.processing : saveMessages.saved);
     onDone();
   };

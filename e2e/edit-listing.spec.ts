@@ -132,14 +132,43 @@ function waitForSave(page: Page, productId: string) {
   );
 }
 
-test('edits the title and price and replaces a photo', async ({ page }) => {
+/**
+ * Holds the app's next "Đang xử lý" list until the worker has published the listing, as a
+ * fast worker does on its own: the list then comes back without the listing.
+ */
+async function holdProcessingListUntilPublished(
+  page: Page,
+  request: APIRequestContext,
+  token: () => string,
+  productId: string,
+) {
+  await page.route(
+    (url) =>
+      url.pathname.endsWith('/me/products') && url.searchParams.get('status') === 'PROCESSING',
+    async (route) => {
+      await expect
+        .poll(() => listingStatus(request, token(), productId), { timeout: MEDIA_TIMEOUT_MS })
+        .toBe('PUBLISHED');
+      await route.continue();
+    },
+    { times: 1 },
+  );
+}
+
+test('edits the title and price and replaces a photo', async ({ page, request }) => {
   const oldTitle = title('trước');
   const newTitle = title('sau');
+  const token = watchToken(page);
 
   await openSellPage(page);
   await addPhotos(page, ['photo-a.jpg', 'photo-b.jpg']);
   await fillFields(page, oldTitle);
   const productId = await post(page);
+  await expect
+    .poll(() => listingStatus(request, token(), productId), { timeout: MEDIA_TIMEOUT_MS })
+    .toBe('PUBLISHED');
+  // Picked by the seller: the page no longer follows the posted listing.
+  await page.getByRole('tab', { name: /^Đang hiển thị/ }).click();
 
   await openEdit(page, oldTitle);
   const form = editForm(page);
@@ -156,6 +185,8 @@ test('edits the title and price and replaces a photo', async ({ page }) => {
   await expect(tiles).toHaveCount(2);
   await expect(saveButton(page)).toBeEnabled({ timeout: MEDIA_TIMEOUT_MS });
 
+  // PROCESSING when the worker has not finished the new photo by then (it often has).
+  await holdProcessingListUntilPublished(page, request, token, productId);
   const saved = waitForSave(page, productId);
   await saveButton(page).click();
   const response = await saved;
@@ -170,7 +201,14 @@ test('edits the title and price and replaces a photo', async ({ page }) => {
 
   await expect(page.getByText(/^Đã lưu/)).toBeVisible();
   await expect(tab(page, 'Quản lý tin')).toHaveAttribute('aria-current', 'page');
-  await page.getByRole('button', { name: `Xem chi tiết ${newTitle}` }).click();
+  // My listings follows the listing to the tab it is on now.
+  await expect(page.getByRole('tab', { name: /^Đang hiển thị/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  const openListing = page.getByRole('button', { name: `Xem chi tiết ${newTitle}` });
+  await expect(openListing).toBeVisible();
+  await openListing.click();
   await expect(page.getByRole('heading', { name: newTitle, level: 1 })).toBeVisible();
   await expect(page.getByText('6.500.000 đ').first()).toBeVisible();
 });

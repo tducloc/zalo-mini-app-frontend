@@ -22,7 +22,6 @@ import {
 const title = (what: string) => `E2E L7 ${what} ${Date.now()}`;
 /** The media worker publishing a one-photo listing on the local stack. */
 const PUBLISH_TIMEOUT_MS = 90_000;
-const CREATED_STATUS = 201;
 
 const statusTab = (page: Page, name: string) =>
   page.getByRole('tab', { name: new RegExp(`^${name}`) });
@@ -53,7 +52,7 @@ async function totalOf(page: Page, name: string) {
   return tabTotal(page);
 }
 
-/** Posts a one-photo listing; true when the server published it at once (201). */
+/** Posts a one-photo listing; the app then opens My listings. */
 async function postListing(page: Page, listingTitle: string) {
   await openSellPage(page);
   await addPhotos(page, ['photo-a.jpg']);
@@ -65,7 +64,6 @@ async function postListing(page: Page, listingTitle: string) {
   const response = await created;
   expect([201, 202], await response.text()).toContain(response.status());
   await expect(tab(page, 'Quản lý tin')).toHaveAttribute('aria-current', 'page');
-  return response.status() === CREATED_STATUS;
 }
 
 async function openCardActions(page: Page, listingTitle: string) {
@@ -83,14 +81,13 @@ test('finds posted listings on their tab, then marks sold, hides and shows again
 
   // ---- Posted listings are on the tab of their status ----
 
+  // The page opens the listing's tab, and follows it to "Đang hiển thị" once published.
   for (const listingTitle of [soldTitle, hiddenTitle]) {
-    const isPublished = await postListing(page, listingTitle);
-    const expectedTab = isPublished ? 'Đang hiển thị' : 'Đang xử lý';
-    await statusTab(page, expectedTab).click();
+    await postListing(page, listingTitle);
+    await expect(statusTab(page, 'Đang hiển thị')).toHaveAttribute('aria-selected', 'true', {
+      timeout: PUBLISH_TIMEOUT_MS,
+    });
     await expect(card(page, listingTitle)).toBeVisible();
-    if (!isPublished) {
-      await expect(card(page, listingTitle)).toContainText('Đang xử lý ảnh, video');
-    }
   }
 
   // Once the worker has published them, both show to buyers.

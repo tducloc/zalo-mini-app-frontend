@@ -23,18 +23,6 @@ import type { ProductStatus } from '@/features/products/types/product';
 import { getApiErrorStatus } from '@/utils/api-error';
 import { formatShortRelativeTime } from '@/utils/format';
 
-const isMyListingsTab = (value: unknown): value is MyListingsTab =>
-  MY_LISTINGS_TABS.some((tab) => tab === value);
-
-/** The tab another page asked for in the router state (`{ tab }`), else the first one. */
-export function readRequestedTab(routerState: unknown): MyListingsTab {
-  const tab =
-    typeof routerState === 'object' && routerState !== null && 'tab' in routerState
-      ? routerState.tab
-      : undefined;
-  return isMyListingsTab(tab) ? tab : DEFAULT_TAB;
-}
-
 export function getTabForStatus(status: ProductStatus): MyListingsTab {
   return MY_LISTINGS_TABS.find((tab) => tabConfigs[tab].status === status) ?? DEFAULT_TAB;
 }
@@ -103,6 +91,14 @@ export const getListingActions = (status: ProductStatus) => actionsByStatus[stat
 export function getStatusChangeErrorMessage(error: unknown) {
   const status = getApiErrorStatus(error);
   return (status && statusChangeErrors[status]) || STATUS_CHANGE_FAILED;
+}
+
+/** Whether the listing is on the pages loaded so far. */
+export function includesListing(
+  data: InfiniteData<MyListingsPage, unknown> | undefined,
+  listingId: string,
+) {
+  return data?.pages.some((page) => page.data.some((listing) => listing.id === listingId)) ?? false;
 }
 
 /** The pages without one listing, for a tab it has just left. */

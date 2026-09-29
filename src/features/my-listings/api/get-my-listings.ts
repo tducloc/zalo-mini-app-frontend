@@ -10,6 +10,11 @@ import { tabConfigs } from '@/features/my-listings/constants/tabs';
 import { http } from '@/lib/http';
 
 const MY_LISTINGS_PAGE_SIZE = 20;
+/**
+ * "Đang xử lý" asks again this often while it lists anything: its listings leave as the
+ * worker finishes them.
+ */
+const PROCESSING_REFRESH_MS = 3_000;
 // The first page has no cursor; typed so later pages can pass one.
 const FIRST_PAGE_CURSOR: string | undefined = undefined;
 
@@ -40,6 +45,10 @@ export function useMyListings(tab: MyListingsTab, viewerId: string | null) {
     initialPageParam: FIRST_PAGE_CURSOR,
     getNextPageParam: (lastPage) => lastPage.meta.nextCursor ?? undefined,
     enabled: Boolean(viewerId),
+    refetchInterval: (query) =>
+      tab === 'processing' && query.state.data?.pages[0]?.data.length
+        ? PROCESSING_REFRESH_MS
+        : false,
   });
 }
 
