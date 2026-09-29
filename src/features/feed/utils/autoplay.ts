@@ -4,6 +4,8 @@
  * less data.
  */
 
+import { isDataConstrained } from '@/utils/network';
+
 export interface Box {
   top: number;
   bottom: number;
@@ -13,9 +15,6 @@ export interface Box {
 
 /** A card must show this share of its height to be picked. */
 const MIN_VISIBLE_SHARE = 0.6;
-
-/** Networks too slow to spend on previews. */
-const SLOW_NETWORKS = new Set(['slow-2g', '2g']);
 
 const centre = (start: number, end: number) => (start + end) / 2;
 
@@ -74,6 +73,10 @@ export function canAutoplay({
   saveData: boolean | undefined;
   effectiveType: string | undefined;
 }) {
-  const isSlowNetwork = SLOW_NETWORKS.has(effectiveType ?? '');
-  return isEnabled && !wasRefused && !prefersReducedMotion && !saveData && !isSlowNetwork;
+  return (
+    isEnabled &&
+    !wasRefused &&
+    !prefersReducedMotion &&
+    !isDataConstrained({ saveData, effectiveType })
+  );
 }
