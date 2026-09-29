@@ -1,7 +1,7 @@
 import type { MyListingsTab } from '@/features/my-listings/types/my-listing';
 import type { ProductStatus } from '@/features/products/types/product';
 
-/** In the order they show; other pages may open one with `navigate('/my-listings', { state: { tab } })`. */
+/** In the order they show; posting or saving a listing opens its tab (`useMyListingsStore`). */
 export const MY_LISTINGS_TABS = ['published', 'processing', 'failed', 'sold', 'archived'] as const;
 
 export const DEFAULT_TAB: MyListingsTab = 'published';

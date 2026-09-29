@@ -11,9 +11,9 @@ import { PostErrorKind, type PostError } from '@/features/listings/types/post-er
 import { mediaIdsForPost, postBlocker } from '@/features/listings/utils/listing-draft';
 import { myListingKeys } from '@/features/my-listings/api/keys';
 import { productKeys } from '@/features/products/api/keys';
-import type { MyListingsTab } from '@/features/my-listings/types/my-listing';
 import { useToast } from '@/hooks/use-toast';
 import { useListingDraftStore } from '@/stores/listing-draft';
+import { useMyListingsStore } from '@/stores/my-listings';
 import { warnInDev } from '@/utils/dev-log';
 
 /**
@@ -34,6 +34,7 @@ export function usePostListing({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showError, showInfo, showSuccess } = useToast();
+  const followListing = useMyListingsStore((state) => state.follow);
 
   const handleError = (error: PostError) => {
     switch (error.kind) {
@@ -66,9 +67,9 @@ export function usePostListing({
     }
 
     setPosting(true);
-    let isPublished: boolean;
+    let posted: Awaited<ReturnType<typeof createListing>>;
     try {
-      isPublished = await createListing(fields, mediaIdsForPost(media), idempotencyKey);
+      posted = await createListing(fields, mediaIdsForPost(media), idempotencyKey);
     } catch (error) {
       warnInDev('post', 'posting the listing failed', error);
       handleError(readPostError(error));
@@ -81,10 +82,10 @@ export function usePostListing({
     void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
     // Published at once (201): the home feed must show it too.
     void queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
-    showSuccess(isPublished ? postMessages.published : postMessages.processing);
+    showSuccess(posted.status === 'PUBLISHED' ? postMessages.published : postMessages.processing);
     // On the tab that lists it. Back from My listings goes to where the seller came from,
     // not to an empty form.
-    const tab: MyListingsTab = isPublished ? 'published' : 'processing';
-    navigate('/my-listings', { replace: true, state: { tab } });
+    followListing(posted.id, posted.status);
+    navigate('/my-listings', { replace: true });
   };
 }
