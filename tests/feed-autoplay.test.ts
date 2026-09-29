@@ -35,7 +35,6 @@ describe('pickActiveCard', () => {
   });
 
   it('in a row of two, picks the left card though the right one is nearer the centre', () => {
-    // Same row, listed right first; a's centre is 95 px from the middle of the screen, b's 85 px.
     const cards = [card('b', 280, 190), card('a', 280, 10)];
 
     expect(pick(cards, viewport)).toBe('a');
@@ -55,7 +54,6 @@ describe('pickActiveCard', () => {
 });
 
 describe('pickActiveCard turns', () => {
-  // The real grid's even row: left and right are equally near the middle.
   const row = [card('left', 280, 13), card('right', 280, 197)];
 
   it('plays the left card, then the right one, then none', () => {
@@ -79,7 +77,6 @@ describe('pickActiveCard turns', () => {
   });
 
   it('keeps a finished card finished while any part of it is still visible', () => {
-    // Only 50 of its 250 px show: too little to play, enough to stay finished.
     const mostlyAway = [card('left', 750, 13)];
     const turn = pickActiveCard(mostlyAway, viewport, new Set(['left']));
 
@@ -98,14 +95,11 @@ describe('pickActiveCard turns', () => {
 });
 
 describe('pickActiveCard rows', () => {
-  // The real square grid: 250 px cards, rows 268 px apart, columns at x = 13 and 197.
   const gridRow = (name: string, top: number, columns: ('left' | 'right')[] = ['left', 'right']) =>
     columns.map((column) => card(`${name}-${column}`, top, column === 'left' ? 13 : 197));
   const scrolled = (top: number) => [...gridRow('row1', top), ...gridRow('row2', top + 268)];
 
-  // Row 1's centre is 125 px above the middle, row 2's 143 px below it, fully visible.
   const rowOneNearest = scrolled(150);
-  // 40 px further down: row 2's centre is now 103 px from the middle, row 1's 165 px.
   const rowTwoNearest = scrolled(110);
 
   it('plays the middle row left, then right, then none though the next row is in full view', () => {
@@ -130,7 +124,6 @@ describe('pickActiveCard rows', () => {
 
   it('switches to the next row once it is nearest, even while a card plays', () => {
     expect(pick(rowTwoNearest, viewport)).toBe('row2-left');
-    // row1-left has finished and row1-right is playing: row 2's left card takes over.
     expect(pickActiveCard(rowTwoNearest, viewport, new Set(['row1-left'])).activeId).toBe(
       'row2-left',
     );

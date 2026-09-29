@@ -14,14 +14,8 @@ import { formatShortRelativeTime } from '@/utils/format';
 const THUMBNAIL_SIZE = 400;
 /** Times a preview plays before the card shows its cover again. */
 const PREVIEW_PLAYS = 2;
-/** The preview's fade, as its duration-200 class. */
 const FADE_MS = 200;
-/**
- * A play that has not started by then counts as failed and ends the turn. A 3 s clip starts
- * well within it on 3G (autoplay is off on 2G), and it is shorter than a full turn (two plays
- * of the clip), so a broken preview holds its row less long than a working one.
- */
-const STALL_MS = 5000;
+const START_TIMEOUT_MS = 5000;
 
 const videoBadgeClass =
   'absolute bottom-2 left-2 inline-flex items-center gap-[3px] rounded-[10px] bg-marketplace-ink/70 py-0.5 pl-1.5 pr-2 text-micro font-semibold leading-4 text-white';
@@ -44,7 +38,6 @@ export default function ListingCard({
   onOpen: (productId: string) => void;
   /** The WebView refused to play the preview. */
   onPreviewRefused: () => void;
-  /** The preview played its turn and the cover shows again. */
   onPreviewFinished: (productId: string) => void;
 }) {
   // Remember WHICH url failed, so a changed thumbnail (e.g. an edited listing)
@@ -117,8 +110,7 @@ export default function ListingCard({
 /**
  * The listing's short muted clip over its cover, played a couple of times and then back to
  * the cover, so nothing moves on and on. It shows once it really plays, so a slow start
- * or a refused autoplay leaves the cover as it was. It reports the end of its turn itself,
- * also when the clip fails or never starts, so a broken preview never holds its row.
+ * or a refused autoplay leaves the cover as it was.
  */
 function CardPreview({
   src,
@@ -131,7 +123,6 @@ function CardPreview({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  // The card passes a new callback each render; the turn must not restart for it.
   const onFinishedRef = useRef(onFinished);
   onFinishedRef.current = onFinished;
 
@@ -155,7 +146,7 @@ function CardPreview({
     };
     const play = () => {
       clearTimeout(timer);
-      timer = setTimeout(finish, STALL_MS);
+      timer = setTimeout(finish, START_TIMEOUT_MS);
       // Old WebViews return nothing from play().
       video.play()?.catch((error: unknown) => {
         const name = error instanceof DOMException ? error.name : '';
@@ -178,8 +169,6 @@ function CardPreview({
         play();
         return;
       }
-      // Reported once the fade back to the cover is over, so the next card's turn does not
-      // cut it; the timer covers a WebView that sends no transitionend.
       setIsPlaying(false);
       video.addEventListener('transitionend', finish);
       timer = setTimeout(finish, FADE_MS + 100);

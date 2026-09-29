@@ -1,9 +1,3 @@
-/**
- * Which feed card plays its preview (plans/home-feed.md, Phase 4): one at a time, a card of
- * the row nearest the middle of the screen, and never when the viewer asked for less motion
- * or less data.
- */
-
 export interface Box {
   top: number;
   bottom: number;
@@ -14,7 +8,6 @@ export interface Box {
 /** A card must show this share of its height to be picked. */
 const MIN_VISIBLE_SHARE = 0.6;
 
-/** Cards whose vertical centres are this close sit in one row (rounding moves a top by a pixel). */
 const ROW_TOLERANCE_PX = 8;
 
 /** Networks too slow to spend on previews. */
@@ -34,14 +27,6 @@ export function visibleArea(scroller: Box, headerBottom: number, bottomPadding: 
   };
 }
 
-/**
- * Whose turn it is to play. First the middle row: the row, among those with a card mostly
- * in the visible area, whose centre is nearest the centre of that area. Then that row's
- * left-most card mostly in it and not yet `finished`. Once the whole middle row has
- * finished, none plays, even when the next row is fully visible. A card leaves `finished`
- * once no part of it is visible, so scrolling back plays it again. `rowKey` names the
- * middle row (its left-most card), the same while it stays the middle row however it scrolls.
- */
 export function pickActiveCard(
   cards: { id: string; rect: Box }[],
   area: Box,
@@ -66,7 +51,6 @@ export function pickActiveCard(
     }
   }
 
-  // Finished cards count here: a middle row that has played keeps its place, silent.
   let rowY: number | null = null;
   for (const { centreY } of mostlyVisible) {
     if (rowY === null || Math.abs(centreY - middleY) < Math.abs(rowY - middleY)) {
@@ -74,8 +58,6 @@ export function pickActiveCard(
     }
   }
 
-  // Left to right, not nearest the centre across: a scrollbar moves that centre by a few
-  // pixels, enough to put the right card first.
   const row = mostlyVisible
     .filter(({ centreY }) => rowY !== null && Math.abs(centreY - rowY) <= ROW_TOLERANCE_PX)
     .sort((a, b) => a.rect.left - b.rect.left);

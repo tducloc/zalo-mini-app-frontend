@@ -2,7 +2,6 @@ import { type RefObject, useCallback, useEffect, useReducer, useRef, useState } 
 
 import { type Box, canAutoplay, pickActiveCard, visibleArea } from '@/features/feed/utils/autoplay';
 
-/** A new row must rest near the centre this long, so a fast fling plays nothing. */
 const DWELL_MS = 300;
 
 /** Off unless VITE_FEED_AUTOPLAY=true, until it is measured on devices (plans/home-feed.md). */
@@ -46,15 +45,6 @@ interface FeedAutoplayOptions {
   headerRef: RefObject<HTMLElement>;
 }
 
-/**
- * The one feed card whose preview plays: a card with a preview in the row nearest the
- * middle of what is visible, once it has rested there. The row's cards take turns: one
- * whose preview has finished (`onFinished`) gives way to the next in its row, and once the
- * whole row has finished none plays until another row comes to the middle. None
- * while paused, while the app is in the background, or once the WebView refused to play.
- * The cards in `previewIds` register their element with `cardRef(id)`; a new page of
- * cards is looked at without a scroll.
- */
 export function useFeedAutoplay({
   previewIds,
   isPaused,
@@ -70,12 +60,9 @@ export function useFeedAutoplay({
 
   // The card chosen last, kept when a new page arrives so the playing one goes on.
   const candidate = useRef<string | null>(null);
-  // The middle row last seen: a hand-over inside it needs no rest.
   const candidateRow = useRef<string | null>(null);
-  // Cards that played their preview and are still on screen: not picked again until they leave.
   const finished = useRef<ReadonlySet<string>>(new Set());
 
-  // Bumped when a play is refused or finished, so the choice is made again.
   const [choiceCount, chooseAgain] = useReducer((count: number) => count + 1, 0);
 
   const cardRef = useCallback((id: string) => {
@@ -140,8 +127,6 @@ export function useFeedAutoplay({
         return;
       }
 
-      // A finished card hands over to its row neighbour at once. On a new row the playing
-      // card stops at once and the next one waits until it rests.
       candidate.current = next;
       clearTimeout(dwell);
       isDwelling = false;

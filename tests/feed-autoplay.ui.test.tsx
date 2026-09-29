@@ -6,7 +6,6 @@ import type { Box } from '@/features/feed/utils/autoplay';
 type UseFeedAutoplay = typeof import('@/features/feed/hooks/use-feed-autoplay').useFeedAutoplay;
 let useFeedAutoplay: UseFeedAutoplay;
 
-// The hook reads the flag when its module loads.
 beforeAll(async () => {
   vi.stubEnv('VITE_FEED_AUTOPLAY', 'true');
   ({ useFeedAutoplay } = await import('@/features/feed/hooks/use-feed-autoplay'));
@@ -29,7 +28,6 @@ describe('useFeedAutoplay', () => {
   });
 
   it('hands over to the row neighbour at once and rests only on a new row', () => {
-    // The real square grid in a 390×800 viewport: 250 px cards, rows 268 px apart.
     let scrollTop = 0;
     const scroller = withRect(document.createElement('div'), () => ({
       top: 0,
@@ -69,7 +67,6 @@ describe('useFeedAutoplay', () => {
     wait(20);
     expect(result.current.activeId).toBe('row1-right');
 
-    // Row 2 comes to the middle while row1-right plays.
     scrollTop = 60;
     act(() => {
       scroller.dispatchEvent(new Event('scroll'));

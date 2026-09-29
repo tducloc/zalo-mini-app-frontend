@@ -19,7 +19,6 @@ const product: ProductCard = {
   publishedAt: '2026-09-28T00:00:00.000Z',
 };
 
-// What each call to play() does; jsdom has no media playback.
 let plays: (() => Promise<void>)[];
 const never = () => new Promise<void>(() => {});
 const rejectWith = (name: string) => () => Promise.reject(new DOMException('', name));
