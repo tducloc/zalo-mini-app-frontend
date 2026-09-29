@@ -8,7 +8,10 @@ import { useMyListingsStore } from '@/stores/my-listings';
 import { getApiErrorStatus, HttpStatus } from '@/utils/api-error';
 import { warnInDev } from '@/utils/dev-log';
 
-/** A failed lookup asks again this often: once "Đang xử lý" is empty, nothing refetches it. */
+/**
+ * A lookup that failed, or found the listing still processing past the loaded pages, asks
+ * again this often: once "Đang xử lý" is empty, nothing refetches it.
+ */
 const LOOKUP_RETRY_MS = 3_000;
 
 /**
@@ -27,12 +30,12 @@ export function useFollowListing(
   const [lookupAttempt, setLookupAttempt] = useState(0);
 
   // A list loaded since the tab opened; a cached one may be older than the save, and a
-  // failed load says nothing about where the listing is.
+  // failed load says nothing about where the listing is. A poll in flight does not count:
+  // it would drop a lookup still waiting for its answer.
   const missingId =
     followedId !== null &&
     listingsQuery.isFetchedAfterMount &&
     listingsQuery.isSuccess &&
-    !listingsQuery.isFetching &&
     !includesListing(listingsQuery.data, followedId)
       ? followedId
       : null;
@@ -43,12 +46,21 @@ export function useFollowListing(
     }
     let isCurrent = true;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    const retryLater = () => {
+      retryTimer = setTimeout(() => setLookupAttempt((attempt) => attempt + 1), LOOKUP_RETRY_MS);
+    };
     queryClient
       .fetchQuery({ ...productDetailQueryOptions(missingId, viewerId), staleTime: 0 })
       .then((listing) => {
-        if (isCurrent) {
-          selectTab(getTabForStatus(listing.status));
+        if (!isCurrent) {
+          return;
         }
+        // Still processing, past the pages loaded so far: the worker has yet to move it.
+        if (listing.status === 'PROCESSING') {
+          retryLater();
+          return;
+        }
+        selectTab(getTabForStatus(listing.status));
       })
       .catch((error: unknown) => {
         if (!isCurrent) {
@@ -60,7 +72,7 @@ export function useFollowListing(
           return;
         }
         warnInDev('my-listings', 'finding the followed listing failed', error);
-        retryTimer = setTimeout(() => setLookupAttempt((attempt) => attempt + 1), LOOKUP_RETRY_MS);
+        retryLater();
       });
     return () => {
       isCurrent = false;
