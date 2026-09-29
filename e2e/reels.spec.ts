@@ -30,12 +30,17 @@ async function expectOnlyNearbyVideos(page: Page, left: number) {
 
 test('starts with sound from the tab tap and comes back to the same reel', async ({ page }) => {
   await page.addInitScript(() => {
+    // WebKit allows sound only from a play() made while the tap's handler runs.
+    let isInTap = false;
+    window.addEventListener('click', () => (isInTap = true), true);
+    window.addEventListener('click', () => (isInTap = false));
     const play = HTMLMediaElement.prototype.play;
     HTMLMediaElement.prototype.play = function () {
       if (!this.muted && !document.documentElement.dataset.firstAudibleHost) {
         document.documentElement.dataset.firstAudibleHost = this.closest('[data-reel-index="0"]')
           ? 'reel'
           : 'outside';
+        document.documentElement.dataset.firstAudibleInTap = String(isInTap);
       }
       return play.call(this);
     };
@@ -59,6 +64,7 @@ test('starts with sound from the tab tap and comes back to the same reel', async
   expect(Math.max(...tabPositions.map(Math.abs))).toBeLessThan(2);
   await expect(tab(page, 'Reels')).toHaveAttribute('aria-current', 'page');
   await expect(page.locator('html')).toHaveAttribute('data-first-audible-host', 'reel');
+  await expect(page.locator('html')).toHaveAttribute('data-first-audible-in-tap', 'true');
 
   await expectPlaying(video(page, 0));
   await expect(reel(page, 0).getByRole('button', { name: 'Xem chi tiết' })).toBeVisible();

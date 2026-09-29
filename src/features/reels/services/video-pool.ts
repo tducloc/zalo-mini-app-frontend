@@ -29,8 +29,6 @@ export class VideoPool {
 
   private parking: HTMLElement | null = null;
 
-  private armedFirstUrl: string | null = null;
-
   constructor(size = POOL_SIZE) {
     this.videos = Array.from({ length: size }, createVideo);
   }
@@ -46,34 +44,6 @@ export class VideoPool {
         parking?.append(video);
       }
     }
-  }
-
-  armFirstSound(src: string) {
-    this.armedFirstUrl = src;
-  }
-
-  /** Start in the visible reel host, still inside the tab tap. */
-  startFirstWithSound(host: HTMLElement) {
-    const src = this.armedFirstUrl;
-    if (!src) {
-      return;
-    }
-    const video = this.claim(0, host);
-    video.className = 'absolute inset-0 size-full object-cover';
-    video.muted = false;
-    video.defaultMuted = false;
-    if (video.getAttribute('src') !== src) {
-      video.src = src;
-    }
-    return video.play();
-  }
-
-  cancelFirstSound() {
-    this.armedFirstUrl = null;
-  }
-
-  isFirstSoundStart(index: number, src: string) {
-    return index === 0 && this.armedFirstUrl === src;
   }
 
   claim(index: number, host: HTMLElement) {
@@ -96,7 +66,6 @@ export class VideoPool {
         return;
       }
       video.pause();
-      if (index === 0) this.armedFirstUrl = null;
       video.removeAttribute('src');
       video.load();
       this.parking?.append(video);

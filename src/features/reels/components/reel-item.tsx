@@ -38,14 +38,13 @@ export default function ReelItem({
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [status, dispatch] = useReducer(
-    reelPlayer,
-    videoPool.isFirstSoundStart(index, reel.video.url) ? 'loading' : 'paused',
-  );
+  const isActive = slot === 'active' && isAppVisible;
+  // A reel that mounts on screen plays in its first effects, which the Reels tab tap runs
+  // inside the tap (flushSync): the one moment WebKit allows sound.
+  const [status, dispatch] = useReducer(reelPlayer, isActive ? 'loading' : 'paused');
   const isMuted = useReelsStore((state) => state.isMuted);
   const setMuted = useReelsStore((state) => state.setMuted);
 
-  const isActive = slot === 'active' && isAppVisible;
   const isPlayWanted = isActive && shouldPlay(status);
   const src = slot !== 'idle' && status !== 'failed' ? reel.video.url : null;
   const { width, height } = reel.video;
@@ -163,7 +162,7 @@ export default function ReelItem({
           decoding="async"
         />
       )}
-      <div ref={hostRef} data-reel-video-host className="absolute inset-0 z-0" />
+      <div ref={hostRef} className="absolute inset-0 z-0" />
 
       <button
         className="absolute inset-0 z-[1] grid size-full transform-gpu place-items-center border-0 bg-transparent p-0 text-white"

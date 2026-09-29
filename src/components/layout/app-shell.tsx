@@ -11,7 +11,6 @@ import { useHasDraft } from '@/stores/listing-draft';
 import { useReelsStore } from '@/stores/reels';
 import { reelKeys, reelsQueryOptions } from '@/features/reels/api/get-reels';
 import { videoPool } from '@/features/reels/services/video-pool';
-import { isPlayRefused } from '@/features/reels/utils/reel-player';
 import type { ReelsPage } from '@/features/reels/types/reel';
 
 type NavigationItem = {
@@ -72,26 +71,13 @@ export default function AppShell({ children }: PropsWithChildren) {
       currentPath !== '/reels' &&
       useReelsStore.getState().activeProductId === null
     ) {
-      const first = queryClient.getQueryData<InfiniteData<ReelsPage>>(reelKeys.all())?.pages[0]
-        ?.data[0];
-      if (first) {
-        videoPool.armFirstSound(first.video.url);
+      const hasFirstReel = Boolean(
+        queryClient.getQueryData<InfiniteData<ReelsPage>>(reelKeys.all())?.pages[0]?.data.length,
+      );
+      if (hasFirstReel) {
         flushSync(() => {
           useReelsStore.getState().setMuted(false);
           navigate(path);
-        });
-        const host = document.querySelector<HTMLElement>(
-          '[data-reels-pager] [data-reel-index="0"] [data-reel-video-host]',
-        );
-        if (!host) {
-          videoPool.cancelFirstSound();
-          useReelsStore.getState().setMuted(true);
-          return;
-        }
-        videoPool.startFirstWithSound(host)?.catch((error: unknown) => {
-          if (isPlayRefused(error)) {
-            useReelsStore.getState().setMuted(true);
-          }
         });
         return;
       }
