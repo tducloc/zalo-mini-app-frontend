@@ -1,10 +1,5 @@
-import {
-  applyPriceEdit,
-  caretAfterDigits,
-  formatPriceDigits,
-  parsePriceRange,
-  priceToInputDigits,
-} from '@/features/feed/utils/price';
+import { parsePriceRange, priceToInputDigits } from '@/features/feed/utils/price';
+import { applyPriceEdit, caretAfterDigits, formatPriceDigits } from '@/utils/price-input';
 import { MAX_PRICE_VND } from '@/features/products/constants/product';
 
 const group = (value: number) => new Intl.NumberFormat('vi-VN').format(value);
