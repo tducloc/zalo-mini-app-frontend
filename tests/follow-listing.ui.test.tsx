@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { AxiosError, AxiosHeaders } from 'axios';
 import type { ReactNode } from 'react';
 
 import { useMyListings } from '@/features/my-listings/api/get-my-listings';
@@ -21,6 +22,8 @@ interface Server {
   /** How many of the next requests fail, for the lists and for the detail. */
   failingLists: number;
   failingDetails: number;
+  /** The listing was deleted: its detail answers 404. */
+  isGone: boolean;
 }
 
 let server: Server;
@@ -41,6 +44,16 @@ function answer(url: string, config?: { params?: unknown }) {
       },
     };
     return { data: page };
+  }
+  if (server.isGone) {
+    const headers = new AxiosHeaders();
+    throw new AxiosError('Not found', 'ERR_BAD_REQUEST', { headers }, null, {
+      status: 404,
+      statusText: '',
+      headers,
+      config: { headers },
+      data: { error: { code: 'NOT_FOUND', message: 'Product not found' } },
+    });
   }
   if (server.failingDetails > 0) {
     server.failingDetails -= 1;
@@ -69,7 +82,7 @@ const detailRequests = () =>
   vi.mocked(http.get).mock.calls.filter(([url]) => url === `/products/${LISTING_ID}`);
 
 beforeEach(() => {
-  server = { status: 'PROCESSING', failingLists: 0, failingDetails: 0 };
+  server = { status: 'PROCESSING', failingLists: 0, failingDetails: 0, isGone: false };
   vi.mocked(http.get).mockImplementation(async (url, config) => answer(url, config));
   useMyListingsStore.setState({ tab: 'published', followedId: null });
   // Saved with a new photo: PROCESSING.
@@ -134,5 +147,35 @@ describe('useFollowListing', () => {
 
     await waitFor(() => expect(useMyListingsStore.getState().tab).toBe('published'));
     expect(detailRequests()).toHaveLength(2);
+  });
+
+  it('stops following a listing that no longer exists', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    server.status = 'PUBLISHED';
+    server.isGone = true;
+
+    renderMyListings();
+
+    await waitFor(() => expect(useMyListingsStore.getState().followedId).toBeNull());
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(detailRequests()).toHaveLength(1);
+    expect(useMyListingsStore.getState().tab).toBe('processing');
+  });
+
+  it('leaves the tab alone when the seller moves a published listing on', async () => {
+    // Posted and published at once (201): nothing will move it on its own.
+    server.status = 'PUBLISHED';
+    useMyListingsStore.getState().follow(LISTING_ID, 'PUBLISHED');
+    const { result } = renderMyListings();
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // "Đánh dấu đã bán": the card leaves "Đang hiển thị".
+    server.status = 'SOLD';
+    await act(() => result.current.refetch());
+    // Time for a lookup to answer, had the page asked.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+
+    expect(useMyListingsStore.getState().tab).toBe('published');
+    expect(detailRequests()).toHaveLength(0);
   });
 });

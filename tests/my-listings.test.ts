@@ -70,6 +70,11 @@ describe('tabs', () => {
     store.getState().follow('prd_1', 'PROCESSING');
     expect(store.getState()).toMatchObject({ tab: 'processing', followedId: 'prd_1' });
 
+    // Only a PROCESSING listing moves on by itself: any other is not followed.
+    store.getState().follow('prd_2', 'PUBLISHED');
+    expect(store.getState()).toMatchObject({ tab: 'published', followedId: null });
+
+    store.getState().follow('prd_1', 'PROCESSING');
     // The seller picks a tab, or the page moves to where the listing went: no longer followed.
     store.getState().selectTab('published');
     expect(store.getState()).toMatchObject({ tab: 'published', followedId: null });

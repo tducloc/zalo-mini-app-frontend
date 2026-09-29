@@ -5,6 +5,7 @@ import type { useMyListings } from '@/features/my-listings/api/get-my-listings';
 import { getTabForStatus, includesListing } from '@/features/my-listings/utils/my-listing';
 import { productDetailQueryOptions } from '@/features/products/api/get-product-detail';
 import { useMyListingsStore } from '@/stores/my-listings';
+import { getApiErrorStatus, HttpStatus } from '@/utils/api-error';
 import { warnInDev } from '@/utils/dev-log';
 
 /** A failed lookup asks again this often: once "Đang xử lý" is empty, nothing refetches it. */
@@ -22,6 +23,7 @@ export function useFollowListing(
   const queryClient = useQueryClient();
   const followedId = useMyListingsStore((state) => state.followedId);
   const selectTab = useMyListingsStore((state) => state.selectTab);
+  const unfollow = useMyListingsStore((state) => state.unfollow);
   const [lookupAttempt, setLookupAttempt] = useState(0);
 
   // A list loaded since the tab opened; a cached one may be older than the save, and a
@@ -49,17 +51,20 @@ export function useFollowListing(
         }
       })
       .catch((error: unknown) => {
-        warnInDev('my-listings', 'finding the followed listing failed', error);
-        if (isCurrent) {
-          retryTimer = setTimeout(
-            () => setLookupAttempt((attempt) => attempt + 1),
-            LOOKUP_RETRY_MS,
-          );
+        if (!isCurrent) {
+          return;
         }
+        // Deleted: there is no tab to follow it to.
+        if (getApiErrorStatus(error) === HttpStatus.NotFound) {
+          unfollow();
+          return;
+        }
+        warnInDev('my-listings', 'finding the followed listing failed', error);
+        retryTimer = setTimeout(() => setLookupAttempt((attempt) => attempt + 1), LOOKUP_RETRY_MS);
       });
     return () => {
       isCurrent = false;
       clearTimeout(retryTimer);
     };
-  }, [missingId, lookupAttempt, viewerId, queryClient, selectTab]);
+  }, [missingId, lookupAttempt, viewerId, queryClient, selectTab, unfollow]);
 }
