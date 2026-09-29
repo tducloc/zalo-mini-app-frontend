@@ -55,7 +55,6 @@ export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
   const productQuery = useProductDetail(productId, viewerId);
   const reportMutation = useCreateReport(productId, viewerId);
   const ownerActions = useOwnerListingActions();
-  // Swiping right goes back, anywhere but the gallery, which swipes through the photos.
   const goBack = useGoBack('/');
   const backSwipe = useSwipe((direction) => direction === 'right' && goBack());
   const backSwipeHandlers = isEmbedded ? {} : backSwipe;

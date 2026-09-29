@@ -21,7 +21,6 @@ describe('slotOf', () => {
   });
 
   it('leaves every reel idle while the end of the list is on screen', () => {
-    // The footer after the last reel takes the index after it.
     expect(slots(3, 3, true)).toEqual(['idle', 'idle', 'idle']);
   });
 });

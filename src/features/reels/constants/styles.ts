@@ -1,6 +1,3 @@
-// Tailwind class groups shared by the Reels page and its reels.
-
-/** A reel's height: the screen above the tab bar (74px). */
 export const reelHeightClass = 'h-[calc(100vh_-_74px)]';
 
 export const spinnerClass =

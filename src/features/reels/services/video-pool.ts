@@ -7,13 +7,12 @@
  * gets element `index % POOL_SIZE`.
  */
 
-/** The reel on screen, the one below it (loading ahead) and the one above it. */
-export const POOL_SIZE = 3;
+const POOL_SLOTS = ['previous', 'onScreen', 'next'] as const;
+export const POOL_SIZE = POOL_SLOTS.length;
 
 function createVideo() {
   const video = document.createElement('video');
   video.muted = true;
-  // Some WebViews judge autoplay by the attribute, which the property does not write.
   video.defaultMuted = true;
   video.loop = true;
   // The attribute, which every iOS version reads; without it iOS plays full screen.
@@ -26,7 +25,6 @@ function createVideo() {
 export class VideoPool {
   private readonly videos: HTMLVideoElement[];
 
-  /** Which reel holds each element; an element missing here waits in the parking. */
   private readonly owners = new Map<HTMLVideoElement, number>();
 
   private parking: HTMLElement | null = null;
@@ -50,7 +48,6 @@ export class VideoPool {
     }
   }
 
-  /** Mark the first player before route render, so its initial reducer state wants playback. */
   armFirstSound(src: string) {
     this.armedFirstUrl = src;
   }
@@ -79,7 +76,6 @@ export class VideoPool {
     return index === 0 && this.armedFirstUrl === src;
   }
 
-  /** Reel `index`'s element, moved into `host`. The reel that held it before has let it go. */
   claim(index: number, host: HTMLElement) {
     const video = this.videos[index % this.videos.length];
     this.owners.set(video, index);
@@ -89,7 +85,6 @@ export class VideoPool {
     return video;
   }
 
-  /** Gives the element back, unless another reel has claimed it since: its source goes. */
   release(index: number, video: HTMLVideoElement) {
     if (this.owners.get(video) !== index) {
       return;

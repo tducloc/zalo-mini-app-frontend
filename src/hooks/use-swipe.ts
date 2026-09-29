@@ -2,14 +2,12 @@ import { type TouchEvent, useRef } from 'react';
 
 import { type SwipeDirection, swipeDirection } from '@/utils/swipe';
 
-/** Touch handlers to spread on an element; `onSwipe` runs when one finger swipes sideways. */
 export function useSwipe(onSwipe: (direction: SwipeDirection) => void) {
   const startRef = useRef<{ x: number; y: number } | null>(null);
 
   return {
     onTouchStart: (event: TouchEvent) => {
       const touch = event.touches[0];
-      // A second finger is a pinch, not a swipe.
       startRef.current = event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY } : null;
     },
     onTouchEnd: (event: TouchEvent) => {

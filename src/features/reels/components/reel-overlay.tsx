@@ -10,11 +10,9 @@ const avatarClass =
 // In the 44px row under the status bar, like Home's title: Zalo's capsule takes its right end.
 const soundButtonClass =
   'pointer-events-auto absolute left-3 top-[calc(max(24px,var(--zaui-safe-area-inset-top,env(safe-area-inset-top,0px)))_+_2px)] grid size-10 place-items-center rounded-full border-0 bg-black/40 p-0 text-white';
-// The draft banner, while it shows, sits over the reel's bottom.
 const detailsClass =
   'absolute inset-x-0 bottom-0 flex flex-col gap-2 bg-gradient-to-t from-black/75 via-black/40 to-transparent px-4 pb-5 pt-20 text-white [.has-draft-banner_&]:pb-[82px]';
 
-/** The listing over its reel: seller, title, price, place, the way to its detail, and sound. */
 export default function ReelOverlay({
   reel,
   videoRef,
@@ -58,7 +56,6 @@ export default function ReelOverlay({
         <h2 className="m-0 line-clamp-2 text-[15px] font-semibold leading-5">{reel.title}</h2>
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col items-start gap-1.5">
-            {/* On white: the brand blue is too dark to read on the video. */}
             <Price
               className="m-0 rounded-md bg-white px-2 py-0.5 text-[15px] leading-5"
               value={reel.price}
@@ -83,7 +80,6 @@ export default function ReelOverlay({
   );
 }
 
-/** How far the video is; drawn every frame while it plays, without re-rendering. */
 function ProgressBar({
   videoRef,
   isPlaying,

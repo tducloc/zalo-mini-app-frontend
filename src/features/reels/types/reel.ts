@@ -1,8 +1,6 @@
 import type { ProductLocation } from '@/features/products/types/product';
 
-/** One item of `GET /reels`: a published listing and its ready video (api-spec). */
 export interface ReelItem {
-  /** The product ID; the detail is `GET /products/:id`. */
   id: string;
   title: string;
   price: number;
@@ -16,11 +14,8 @@ export interface ReelItem {
   video: {
     id: string;
     url: string;
-    /** Null, like the fields below, for media stored before the worker wrote it. */
     posterUrl: string | null;
-    /** Base64 ThumbHash of the poster; null for media stored before the worker wrote it. */
     placeholder: string | null;
-    /** As played (rotation applied); null like `placeholder`, and then treated as portrait. */
     width: number | null;
     height: number | null;
     durationMs: number | null;

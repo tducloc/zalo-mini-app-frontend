@@ -1,4 +1,11 @@
-import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  type RefObject,
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Page, useLocation } from 'zmp-ui';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -11,23 +18,21 @@ import { reelHeightClass, spinnerClass } from '@/features/reels/constants/styles
 import { useActiveReel } from '@/features/reels/hooks/use-active-reel';
 import { slotOf } from '@/features/reels/utils/reel-slot';
 import { useReelsStore } from '@/stores/reels';
-import { getConnection, isSavingData } from '@/utils/network';
+import { getConnection, isDataConstrained } from '@/utils/network';
 import ProductDetailPage from '@/pages/product-detail';
 
-/** The next page loads once this many reels or fewer are left below the one on screen. */
 const REELS_LEFT_TO_LOAD_MORE = 3;
 
-// The scroller is the page; its bottom padding (the tab bar) lets the last reel reach the top.
 const scrollerClass = 'snap-y snap-mandatory bg-black pb-[74px] text-white';
 const centredClass = `flex flex-col items-center justify-center ${reelHeightClass}`;
 
 export default function ReelsPage() {
   const isCurrentRoute = useLocation().pathname === '/reels';
   const reelsQuery = useReels();
-  const { activeId, setActiveId, setTabbarHost, setPagerInteractive } = useReelsStore(
+  const { activeProductId, setActiveProductId, setTabbarHost, setPagerInteractive } = useReelsStore(
     useShallow((state) => ({
-      activeId: state.activeId,
-      setActiveId: state.setActiveId,
+      activeProductId: state.activeProductId,
+      setActiveProductId: state.setActiveProductId,
       setTabbarHost: state.setTabbarHost,
       setPagerInteractive: state.setPagerInteractive,
     })),
@@ -39,19 +44,7 @@ export default function ReelsPage() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const isAppVisible = useIsDocumentVisible();
 
-  useLayoutEffect(() => {
-    const pager = pagerRef.current;
-    if (!pager) {
-      return;
-    }
-    // Cancel a pending smooth return before this page leaves or is reused by AnimationRoutes.
-    pager.scrollLeft = 0;
-    setPagerInteractive(false);
-    return () => {
-      pager.scrollLeft = 0;
-      setPagerInteractive(false);
-    };
-  }, [isCurrentRoute, setPagerInteractive]);
+  useCancelPagerReturnOnRouteChange(pagerRef, isCurrentRoute, setPagerInteractive);
 
   useEffect(() => {
     if (!isDetailShowing) {
@@ -78,16 +71,13 @@ export default function ReelsPage() {
   const reels = reelsQuery.data?.pages.flatMap((page) => page.data) ?? [];
   const { hasNextPage, isFetching, isFetchNextPageError, fetchNextPage } = reelsQuery;
 
-  // Back from detail (the page remounts): the reel that was on screen, if still listed.
   const restoredIndex = Math.max(
     0,
-    reels.findIndex((reel) => reel.id === activeId),
+    reels.findIndex((reel) => reel.id === activeProductId),
   );
   const activeIndex = useActiveReel(scrollerRef, reels.length + 1, restoredIndex);
-  // Undefined on the footer after the last reel.
   const activeReelId = reels[activeIndex]?.id;
-  // Asked each render: the connection may change while the viewer swipes.
-  const canPreload = !isSavingData(getConnection());
+  const canPreload = !isDataConstrained(getConnection());
 
   const hasRestoredRef = useRef(false);
   useLayoutEffect(() => {
@@ -104,12 +94,11 @@ export default function ReelsPage() {
 
   useEffect(() => {
     if (activeReelId) {
-      setActiveId(activeReelId);
+      setActiveProductId(activeReelId);
     }
-  }, [activeReelId, setActiveId]);
+  }, [activeReelId, setActiveProductId]);
 
   const isNearEnd = reels.length - 1 - activeIndex <= REELS_LEFT_TO_LOAD_MORE;
-  // Never while any fetch runs, and not again after a failed page until the viewer retries.
   const canLoadMore = hasNextPage && !isFetching && !isFetchNextPageError;
   useEffect(() => {
     if (isNearEnd && canLoadMore) {
@@ -154,7 +143,6 @@ export default function ReelsPage() {
             onOpen={showDetail}
           />
         ))}
-        {/* After the last reel, and watched like one so that no video plays behind it. */}
         <div className={`snap-start ${centredClass}`} data-reel-index={reels.length}>
           {isFetchNextPageError ? (
             <InlineRetry message="Không tải thêm được video." onRetry={() => fetchNextPage()} />
@@ -209,7 +197,6 @@ export default function ReelsPage() {
   );
 }
 
-/** The shape of a reel's details while the first page loads. */
 function ReelSkeleton() {
   return (
     <div className={`relative ${reelHeightClass}`} role="status" aria-label="Đang tải video">
@@ -223,6 +210,26 @@ function ReelSkeleton() {
       </div>
     </div>
   );
+}
+
+/** Back on the Reels pane whenever the route comes or goes, cutting short a smooth return. */
+function useCancelPagerReturnOnRouteChange(
+  pagerRef: RefObject<HTMLDivElement>,
+  isCurrentRoute: boolean,
+  setPagerInteractive: (isInteractive: boolean) => void,
+) {
+  useLayoutEffect(() => {
+    const pager = pagerRef.current;
+    if (!pager) {
+      return;
+    }
+    pager.scrollLeft = 0;
+    setPagerInteractive(false);
+    return () => {
+      pager.scrollLeft = 0;
+      setPagerInteractive(false);
+    };
+  }, [pagerRef, isCurrentRoute, setPagerInteractive]);
 }
 
 function useIsDocumentVisible() {

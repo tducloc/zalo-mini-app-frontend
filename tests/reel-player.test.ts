@@ -10,8 +10,8 @@ const run = (from: PlayerStatus, ...events: PlayerEvent[]) => events.reduce(reel
 const activated: PlayerEvent = { type: 'activated' };
 const deactivated: PlayerEvent = { type: 'deactivated' };
 const tapped: PlayerEvent = { type: 'tapped' };
-const played: PlayerEvent = { type: 'played' };
-const stalled: PlayerEvent = { type: 'stalled' };
+const playing: PlayerEvent = { type: 'playing' };
+const waiting: PlayerEvent = { type: 'waiting' };
 const errored: PlayerEvent = { type: 'errored' };
 const refusedWithSound: PlayerEvent = { type: 'refused', wasMuted: false };
 const refusedMuted: PlayerEvent = { type: 'refused', wasMuted: true };
@@ -19,7 +19,7 @@ const refusedMuted: PlayerEvent = { type: 'refused', wasMuted: true };
 describe('reelPlayer', () => {
   it('loads when the reel comes on screen and plays once the video does', () => {
     expect(run('paused', activated)).toBe('loading');
-    expect(run('paused', activated, played)).toBe('playing');
+    expect(run('paused', activated, playing)).toBe('playing');
   });
 
   it('pauses when the reel leaves the screen, and plays again when it comes back', () => {
@@ -34,7 +34,7 @@ describe('reelPlayer', () => {
   it('toggles between paused and playing on a tap', () => {
     expect(run('playing', tapped)).toBe('paused');
     expect(run('playing', tapped, tapped)).toBe('loading');
-    expect(run('playing', tapped, tapped, played)).toBe('playing');
+    expect(run('playing', tapped, tapped, playing)).toBe('playing');
   });
 
   it('lets the viewer pause a video that is still loading', () => {
@@ -42,13 +42,13 @@ describe('reelPlayer', () => {
   });
 
   it('stays paused when a play started before the pause lands after it', () => {
-    expect(run('loading', tapped, played)).toBe('paused');
+    expect(run('loading', tapped, playing)).toBe('paused');
   });
 
   it('shows loading while a playing video waits for data', () => {
-    expect(run('playing', stalled)).toBe('loading');
-    expect(run('playing', stalled, played)).toBe('playing');
-    expect(run('paused', stalled)).toBe('paused');
+    expect(run('playing', waiting)).toBe('loading');
+    expect(run('playing', waiting, playing)).toBe('playing');
+    expect(run('paused', waiting)).toBe('paused');
   });
 
   describe('a refused play', () => {
@@ -61,9 +61,9 @@ describe('reelPlayer', () => {
       expect(run('loading', refusedMuted)).toBe('blocked');
     });
 
-    it('is played by a tap, a user gesture', () => {
+    it('is playing by a tap, a user gesture', () => {
       expect(run('blocked', tapped)).toBe('loading');
-      expect(run('blocked', tapped, played)).toBe('playing');
+      expect(run('blocked', tapped, playing)).toBe('playing');
     });
 
     it('is ignored once the viewer paused', () => {
@@ -77,7 +77,7 @@ describe('reelPlayer', () => {
 
   it('fails on a video error, and stays failed whatever happens next', () => {
     expect(run('playing', errored)).toBe('failed');
-    for (const event of [activated, deactivated, tapped, played, stalled, refusedMuted]) {
+    for (const event of [activated, deactivated, tapped, playing, waiting, refusedMuted]) {
       expect(run('failed', event)).toBe('failed');
     }
   });

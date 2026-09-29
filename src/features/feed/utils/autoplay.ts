@@ -4,7 +4,7 @@
  * less data.
  */
 
-import { isSavingData } from '@/utils/network';
+import { isDataConstrained } from '@/utils/network';
 
 export interface Box {
   top: number;
@@ -74,6 +74,9 @@ export function canAutoplay({
   effectiveType: string | undefined;
 }) {
   return (
-    isEnabled && !wasRefused && !prefersReducedMotion && !isSavingData({ saveData, effectiveType })
+    isEnabled &&
+    !wasRefused &&
+    !prefersReducedMotion &&
+    !isDataConstrained({ saveData, effectiveType })
   );
 }

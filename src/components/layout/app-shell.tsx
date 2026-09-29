@@ -11,6 +11,7 @@ import { useHasDraft } from '@/stores/listing-draft';
 import { useReelsStore } from '@/stores/reels';
 import { reelKeys, reelsQueryOptions } from '@/features/reels/api/get-reels';
 import { videoPool } from '@/features/reels/services/video-pool';
+import { isPlayRefused } from '@/features/reels/utils/reel-player';
 import type { ReelsPage } from '@/features/reels/types/reel';
 
 type NavigationItem = {
@@ -34,7 +35,6 @@ const navigationItems: NavigationItem[] = [
   { label: 'Cá nhân', icon: 'zi-user', path: '/profile' },
 ];
 
-/** The tab's text colour; on the white bar the raised "Đăng tin" is dark even when current. */
 function getTabColorClass(item: NavigationItem, isActive: boolean, isDark: boolean) {
   if (isDark) {
     return `${item.primary ? 'font-semibold' : ''} ${isActive ? 'text-white' : 'text-[#a9b0bf]'}`;
@@ -54,7 +54,6 @@ export default function AppShell({ children }: PropsWithChildren) {
   const tabbarHost = useReelsStore((state) => state.tabbarHost);
   const isPagerInteractive = useReelsStore((state) => state.isPagerInteractive);
   const shouldShowTabbar = !currentPath.startsWith('/products/');
-  // Over the videos on Reels.
   const isDark = currentPath === '/reels';
   // On the sell page the draft is in front of the seller.
   const shouldShowDraft = currentPath !== '/sell';
@@ -71,7 +70,7 @@ export default function AppShell({ children }: PropsWithChildren) {
     if (
       path === '/reels' &&
       currentPath !== '/reels' &&
-      useReelsStore.getState().activeId === null
+      useReelsStore.getState().activeProductId === null
     ) {
       const first = queryClient.getQueryData<InfiniteData<ReelsPage>>(reelKeys.all())?.pages[0]
         ?.data[0];
@@ -90,7 +89,7 @@ export default function AppShell({ children }: PropsWithChildren) {
           return;
         }
         videoPool.startFirstWithSound(host)?.catch((error: unknown) => {
-          if (error instanceof DOMException && error.name === 'NotAllowedError') {
+          if (isPlayRefused(error)) {
             useReelsStore.getState().setMuted(true);
           }
         });
@@ -108,7 +107,6 @@ export default function AppShell({ children }: PropsWithChildren) {
           className="pointer-events-auto fixed inset-x-0 bottom-0 isolate z-[900] grid h-[74px] grid-cols-5 px-[3px] pb-2 pt-3"
           aria-label="Điều hướng chính"
         >
-          {/* The bar's shape, raised 14px around the "+". */}
           <svg
             className="pointer-events-none absolute inset-x-0 -top-3.5 bottom-0 z-0 h-[calc(100%_+_14px)] w-full overflow-visible"
             viewBox="0 0 100 96"

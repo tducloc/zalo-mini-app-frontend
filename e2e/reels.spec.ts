@@ -2,19 +2,18 @@ import type { Locator, Page } from '@playwright/test';
 
 import { expect, tab, test } from './support';
 
-/**
- * Reels against the real stack: needs at least two published listings with a ready video
- * (the seed has them). One video plays at a time, muted, and coming back from a listing's
- * detail finds the same reel on screen.
- */
-
-// Reels only; the footer after the last one has the next index too.
 const reel = (page: Page, index: number) => page.locator(`section[data-reel-index="${index}"]`);
 const video = (page: Page, index: number) => reel(page, index).locator('video');
 const pager = (page: Page) => page.locator('[data-reels-pager]');
+const FRAME_MS = 16;
+
+const waitForRouteSlideIn = (page: Page) =>
+  expect
+    .poll(() => pager(page).evaluate((element) => element.getBoundingClientRect().left))
+    .toBe(0);
+
 const pagerPosition = (page: Page) => pager(page).evaluate((element) => element.scrollLeft);
 
-/** Playing: not paused, and its time moves (a looping clip may come round to the start). */
 async function expectPlaying(target: Locator) {
   const timeOf = () => target.evaluate((element: HTMLVideoElement) => element.currentTime);
   await expect
@@ -24,7 +23,6 @@ async function expectPlaying(target: Locator) {
   await expect.poll(timeOf).not.toBe(start);
 }
 
-/** A reel left behind gives its video back to the pool: only the one on screen and the next hold one. */
 async function expectOnlyNearbyVideos(page: Page, left: number) {
   await expect(video(page, left)).toHaveCount(0);
   await expect(page.locator('video[src]')).toHaveCount(2);
@@ -103,7 +101,6 @@ test('starts muted when the first reel is not ready at the tab tap', async ({ pa
   expect(await video(page, 0).evaluate((element: HTMLVideoElement) => element.muted)).toBe(true);
 });
 
-/** A one-finger swipe of about 150 ms through the browser's real touch input, in CSS pixels. */
 async function swipe(
   page: Page,
   from: { x: number; y: number },
@@ -119,8 +116,7 @@ async function swipe(
       y: from.y + ((to.y - from.y) * step) / steps,
     };
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point] });
-    // A finger takes about a frame per step; the gallery's gesture reads the pace.
-    await page.waitForTimeout(16);
+    await page.waitForTimeout(FRAME_MS);
     if (step === steps / 2) await onHalfway?.();
   }
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
@@ -136,20 +132,14 @@ test('swipes left from a reel to its detail, and right below the gallery back to
   const title = await reel(page, 0).getAttribute('aria-label');
   expect(title).toBeTruthy();
   await expect(pager(page).locator('footer')).toBeAttached();
-  // Swipe once the route has slid in: a drag during that animation snaps back.
-  await expect
-    .poll(() => pager(page).evaluate((element) => element.getBoundingClientRect().left))
-    .toBe(0);
+  await waitForRouteSlideIn(page);
 
   const { width, height } = page.viewportSize() ?? { width: 412, height: 839 };
   const middle = height / 2;
   await swipe(page, { x: width * 0.8, y: middle }, { x: width * 0.2, y: middle }, async () => {
     const left = await pagerPosition(page);
-    // The finger is 30% across; the pager starts after the touch slop, so it trails a little.
     expect(left).toBeGreaterThan(width * 0.1);
     expect(left).toBeLessThan(width * 0.8);
-    // The tab bar moves with the Reels pane. Compared on screen, not with scrollLeft: the
-    // route may still be sliding in, which shifts both.
     const drift = await pager(page).evaluate((element) => {
       const tabBar = document.querySelector('nav[aria-label="Điều hướng chính"]');
       const pane = element.firstElementChild;
@@ -176,7 +166,6 @@ test('swipes left from a reel to its detail, and right below the gallery back to
   const heading = page.getByRole('heading', { level: 1, name: title ?? '' });
   await expect(heading).toBeVisible();
 
-  // The gallery turns its photo while the pager stays on the detail panel.
   const counter = page.getByLabel(/^Nội dung \d+ trên \d+$/);
   await expect(counter).toHaveText(/^1 \//);
   await swipe(page, { x: width * 0.3, y: 150 }, { x: width * 0.9, y: 150 });
@@ -184,7 +173,6 @@ test('swipes left from a reel to its detail, and right below the gallery back to
   await expect.poll(() => pagerPosition(page)).toBeGreaterThan(width * 0.9);
   await expect(heading).toBeVisible();
 
-  // Below the gallery (square, full width), away from the edge.
   const belowGallery = width + 60;
   await swipe(page, { x: width * 0.25, y: belowGallery }, { x: width * 0.85, y: belowGallery });
   await expect.poll(() => pagerPosition(page)).toBe(0);
@@ -204,7 +192,6 @@ test('plays each reel past the first page with the same three video elements', a
   await tab(page, 'Reels').click();
   await expectPlaying(video(page, 0));
 
-  // Past the first page of 10: iOS refuses elements made after the viewer's last touch.
   for (let index = 1; index <= 12; index += 1) {
     await reel(page, index).evaluate((element) => element.scrollIntoView({ block: 'start' }));
     await expectPlaying(video(page, index));

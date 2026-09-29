@@ -6,14 +6,12 @@ import ReelOverlay from '@/features/reels/components/reel-overlay';
 import { reelHeightClass, spinnerClass } from '@/features/reels/constants/styles';
 import { videoPool } from '@/features/reels/services/video-pool';
 import type { ReelItem as Reel } from '@/features/reels/types/reel';
-import { reelPlayer, shouldPlay } from '@/features/reels/utils/reel-player';
+import { isPlayRefused, reelPlayer, shouldPlay } from '@/features/reels/utils/reel-player';
 import type { ReelSlot } from '@/features/reels/utils/reel-slot';
 import { useReelsStore } from '@/stores/reels';
 
-/** A start slower than this shows a spinner; a preloaded reel starts well within it. */
 const SPINNER_DELAY_MS = 400;
 
-/** The poster's ThumbHash as an image; null when missing or not a ThumbHash. */
 function placeholderUrl(hash: string | null) {
   if (!hash) {
     return null;
@@ -25,10 +23,6 @@ function placeholderUrl(hash: string | null) {
   }
 }
 
-/**
- * One reel: its video (a pool element, borrowed only in the `active` and `next` slots), the
- * poster and its placeholder under it, and the listing over it. A tap pauses or plays.
- */
 export default function ReelItem({
   reel,
   index,
@@ -37,7 +31,6 @@ export default function ReelItem({
   onOpen,
 }: {
   reel: Reel;
-  /** Its place in the list, which the page watches to know the reel on screen. */
   index: number;
   slot: ReelSlot;
   isAppVisible: boolean;
@@ -79,11 +72,12 @@ export default function ReelItem({
     video.className = `absolute inset-0 size-full ${fitClass}`;
     video.poster = posterUrl ?? '';
     video.setAttribute('aria-label', label);
-    if (video.getAttribute('src') !== src) video.src = src;
-    const handlePlaying = () => dispatch({ type: 'played' });
-    const handleWaiting = () => dispatch({ type: 'stalled' });
-    // Dropping the source may fire an error with none to report; only a real one fails.
-    const handleError = () => video.error && dispatch({ type: 'errored' });
+    if (video.getAttribute('src') !== src) {
+      video.src = src;
+    }
+    const handlePlaying = () => dispatch({ type: 'playing' });
+    const handleWaiting = () => dispatch({ type: 'waiting' });
+    const handleError = () => dispatch({ type: 'errored' });
     video.addEventListener('playing', handlePlaying);
     video.addEventListener('waiting', handleWaiting);
     video.addEventListener('error', handleError);
@@ -109,15 +103,12 @@ export default function ReelItem({
       video.pause();
       return;
     }
-    // Old WebViews return nothing from play().
-    video.play()?.catch((error: unknown) => {
-      // AbortError is our own source removal; NotAllowedError is the WebView saying no.
-      if (!(error instanceof DOMException && error.name === 'NotAllowedError')) {
+    video.play().catch((error: unknown) => {
+      if (!isPlayRefused(error)) {
         return;
       }
       dispatch({ type: 'refused', wasMuted: video.muted });
       if (!video.muted) {
-        // Tried again muted by this effect; the toggle then shows the sound off.
         setMuted(true);
       }
     });
@@ -126,7 +117,7 @@ export default function ReelItem({
   const handleTap = () => {
     if (!shouldPlay(status)) {
       // Within the tap: a WebView that refused to autoplay lets a user gesture play.
-      videoRef.current?.play()?.catch(() => undefined);
+      videoRef.current?.play().catch(() => undefined);
     }
     dispatch({ type: 'tapped' });
   };
@@ -137,8 +128,8 @@ export default function ReelItem({
     if (video) {
       video.muted = !isMuted;
       if (isMuted && isActive) {
-        video.play()?.catch((error: unknown) => {
-          if (error instanceof DOMException && error.name === 'NotAllowedError') {
+        video.play().catch((error: unknown) => {
+          if (isPlayRefused(error)) {
             video.muted = true;
             setMuted(true);
           }
@@ -162,7 +153,6 @@ export default function ReelItem({
           aria-hidden
         />
       )}
-      {/* Shown until the reel borrows a video, which covers it with the same poster. */}
       {posterUrl && (
         <img
           className={`absolute inset-0 size-full ${fitClass}`}
@@ -207,7 +197,6 @@ export default function ReelItem({
   );
 }
 
-/** True once `isOn` has stayed true for `delayMs`. */
 function useIsLate(isOn: boolean, delayMs: number) {
   const [isLate, setIsLate] = useState(false);
 
