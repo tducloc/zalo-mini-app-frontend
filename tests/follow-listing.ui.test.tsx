@@ -24,19 +24,38 @@ interface Server {
   failingDetails: number;
   /** The listing was deleted: its detail answers 404. */
   isGone: boolean;
+  /** Another listing of the seller's is processing too, so "Đang xử lý" keeps polling. */
+  hasOtherProcessing: boolean;
+  /** The listing is past the pages loaded so far: its list does not show it. */
+  isPastLoadedPages: boolean;
+  /** How long a list and the detail take to answer. */
+  listDelayMs: number;
+  detailDelayMs: number;
 }
 
 let server: Server;
 
-function answer(url: string, config?: { params?: unknown }) {
+function listed(status: ProductStatus) {
+  const listings: MyListing[] = [];
+  if (status === server.status && !server.isPastLoadedPages) {
+    listings.push({ id: LISTING_ID, status } as MyListing);
+  }
+  if (status === 'PROCESSING' && server.hasOtherProcessing) {
+    listings.push({ id: 'prd_other', status } as MyListing);
+  }
+  return listings;
+}
+
+async function answer(url: string, config?: { params?: unknown }) {
   if (url === '/me/products') {
     if (server.failingLists > 0) {
       server.failingLists -= 1;
       throw new Error('network');
     }
-    const { status: listed } = config?.params as { status: ProductStatus };
+    await new Promise((resolve) => setTimeout(resolve, server.listDelayMs));
+    const { status } = config?.params as { status: ProductStatus };
     const page: MyListingsPage = {
-      data: listed === server.status ? [{ id: LISTING_ID, status: listed } as MyListing] : [],
+      data: listed(status),
       meta: {
         nextCursor: null,
         hasNextPage: false,
@@ -45,6 +64,7 @@ function answer(url: string, config?: { params?: unknown }) {
     };
     return { data: page };
   }
+  await new Promise((resolve) => setTimeout(resolve, server.detailDelayMs));
   if (server.isGone) {
     const headers = new AxiosHeaders();
     throw new AxiosError('Not found', 'ERR_BAD_REQUEST', { headers }, null, {
@@ -82,7 +102,16 @@ const detailRequests = () =>
   vi.mocked(http.get).mock.calls.filter(([url]) => url === `/products/${LISTING_ID}`);
 
 beforeEach(() => {
-  server = { status: 'PROCESSING', failingLists: 0, failingDetails: 0, isGone: false };
+  server = {
+    status: 'PROCESSING',
+    failingLists: 0,
+    failingDetails: 0,
+    isGone: false,
+    hasOtherProcessing: false,
+    isPastLoadedPages: false,
+    listDelayMs: 0,
+    detailDelayMs: 0,
+  };
   vi.mocked(http.get).mockImplementation(async (url, config) => answer(url, config));
   useMyListingsStore.setState({ tab: 'published', followedId: null });
   // Saved with a new photo: PROCESSING.
@@ -147,6 +176,43 @@ describe('useFollowListing', () => {
 
     await waitFor(() => expect(useMyListingsStore.getState().tab).toBe('published'));
     expect(detailRequests()).toHaveLength(2);
+  });
+
+  it('finishes a lookup that answers slower than "Đang xử lý" polls', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    // The worker published it; another listing keeps the tab polling every 3 s.
+    server.status = 'PUBLISHED';
+    server.hasOtherProcessing = true;
+    // The lookup answers while the next poll is loading.
+    server.listDelayMs = 2_000;
+    server.detailDelayMs = 4_000;
+
+    renderMyListings();
+
+    await vi.advanceTimersByTimeAsync(12_000);
+
+    await waitFor(() => expect(useMyListingsStore.getState().tab).toBe('published'));
+    expect(detailRequests()).toHaveLength(1);
+  });
+
+  it('keeps following a listing still processing past the loaded pages', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    server.isPastLoadedPages = true;
+
+    renderMyListings();
+
+    await waitFor(() => expect(detailRequests()).toHaveLength(1));
+    await vi.advanceTimersByTimeAsync(100);
+    expect(useMyListingsStore.getState()).toMatchObject({
+      tab: 'processing',
+      followedId: LISTING_ID,
+    });
+
+    // The worker publishes it later: the page still moves there.
+    server.status = 'PUBLISHED';
+    await vi.advanceTimersByTimeAsync(5_000);
+
+    await waitFor(() => expect(useMyListingsStore.getState().tab).toBe('published'));
   });
 
   it('stops following a listing that no longer exists', async () => {
