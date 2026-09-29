@@ -23,9 +23,22 @@ async function expectPlaying(target: Locator) {
   await expect.poll(timeOf).not.toBe(start);
 }
 
-async function expectOnlyNearbyVideos(page: Page, left: number) {
-  await expect(video(page, left)).toHaveCount(0);
-  await expect(page.locator('video[src]')).toHaveCount(2);
+/** The reel above keeps its loaded video, paused, for an instant swipe back; none further up. */
+async function expectPreviousKept(page: Page, active: number) {
+  const previous = video(page, active - 1);
+  await expect(previous).toHaveCount(1);
+  await expect
+    .poll(() => previous.evaluate((element: HTMLVideoElement) => element.paused))
+    .toBe(true);
+  expect(
+    await previous.evaluate(
+      (element: HTMLVideoElement) => element.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA,
+    ),
+  ).toBe(true);
+  if (active >= 2) {
+    await expect(video(page, active - 2)).toHaveCount(0);
+  }
+  await expect(page.locator('video[src]')).toHaveCount(3);
 }
 
 test('starts with sound from the tab tap and comes back to the same reel', async ({ page }) => {
@@ -73,7 +86,7 @@ test('starts with sound from the tab tap and comes back to the same reel', async
 
   await reel(page, 1).evaluate((element) => element.scrollIntoView({ block: 'start' }));
   await expectPlaying(video(page, 1));
-  await expectOnlyNearbyVideos(page, 0);
+  await expectPreviousKept(page, 1);
 
   const title = await reel(page, 1).getAttribute('aria-label');
   expect(title).toBeTruthy();
@@ -87,7 +100,7 @@ test('starts with sound from the tab tap and comes back to the same reel', async
   await expect(tab(page, 'Reels')).toHaveAttribute('aria-current', 'page');
   await expect(reel(page, 1)).toBeInViewport({ ratio: 0.9 });
   await expectPlaying(video(page, 1));
-  await expectOnlyNearbyVideos(page, 0);
+  await expectPreviousKept(page, 1);
 
   await tab(page, 'Trang chủ').click();
   await tab(page, 'Reels').click();
@@ -202,6 +215,7 @@ test('plays each reel past the first page with the same three video elements', a
     await reel(page, index).evaluate((element) => element.scrollIntoView({ block: 'start' }));
     await expectPlaying(video(page, index));
   }
+  await expectPreviousKept(page, 12);
   await expect(
     page.locator('[data-reels-pager] > div:first-child video, [data-reel-video-parking] video'),
   ).toHaveCount(3);

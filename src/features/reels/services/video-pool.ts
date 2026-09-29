@@ -1,3 +1,5 @@
+import type { ReelSlot } from '@/features/reels/utils/reel-slot';
+
 /**
  * The few <video> elements every reel plays in, kept for the whole session.
  *
@@ -7,7 +9,10 @@
  * gets element `index % POOL_SIZE`.
  */
 
-const POOL_SLOTS = ['previous', 'onScreen', 'next'] as const;
+const POOL_SLOTS = ['previous', 'active', 'next'] as const satisfies readonly Exclude<
+  ReelSlot,
+  'idle'
+>[];
 export const POOL_SIZE = POOL_SLOTS.length;
 
 function createVideo() {

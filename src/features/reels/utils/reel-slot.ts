@@ -1,8 +1,11 @@
-export type ReelSlot = 'active' | 'next' | 'idle';
+export type ReelSlot = 'previous' | 'active' | 'next' | 'idle';
 
 export function slotOf(index: number, activeIndex: number, canPreload: boolean): ReelSlot {
   if (index === activeIndex) {
     return 'active';
+  }
+  if (index === activeIndex - 1) {
+    return 'previous';
   }
   if (canPreload && index === activeIndex + 1) {
     return 'next';
