@@ -1,9 +1,8 @@
-import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import { type Box, canAutoplay, pickActiveCard, visibleArea } from '@/features/feed/utils/autoplay';
 import { getConnection } from '@/utils/network';
 
-/** A card must rest near the centre this long, so a fast fling plays nothing. */
 const DWELL_MS = 300;
 
 /** Off unless VITE_FEED_AUTOPLAY=true, until it is measured on devices (plans/home-feed.md). */
@@ -42,12 +41,6 @@ interface FeedAutoplayOptions {
   headerRef: RefObject<HTMLElement>;
 }
 
-/**
- * The one feed card whose preview plays: the card with a preview nearest the middle of
- * what is visible, once it has rested there. None while paused, while the app is in the
- * background, or once the WebView refused to play. The cards in `previewIds` register
- * their element with `cardRef(id)`; a new page of cards is looked at without a scroll.
- */
 export function useFeedAutoplay({
   previewIds,
   isPaused,
@@ -63,9 +56,10 @@ export function useFeedAutoplay({
 
   // The card chosen last, kept when a new page arrives so the playing one goes on.
   const candidate = useRef<string | null>(null);
+  const candidateRow = useRef<string | null>(null);
+  const finished = useRef<ReadonlySet<string>>(new Set());
 
-  // Bumped when a play is refused, so the choice is made again (and finds none).
-  const [refusals, setRefusals] = useState(0);
+  const [choiceCount, chooseAgain] = useReducer((count: number) => count + 1, 0);
 
   const cardRef = useCallback((id: string) => {
     let ref = cardRefs.current.get(id);
@@ -84,13 +78,19 @@ export function useFeedAutoplay({
 
   const handleRefused = useCallback(() => {
     wasRefused = true;
-    setRefusals((count) => count + 1);
+    chooseAgain();
+  }, []);
+
+  const handleFinished = useCallback((id: string) => {
+    finished.current = new Set(finished.current).add(id);
+    chooseAgain();
   }, []);
 
   useEffect(() => {
     const scroller = scrollerRef.current;
     if (!scroller || isPaused) {
       candidate.current = null;
+      candidateRow.current = null;
       setActiveId(null);
       return;
     }
@@ -101,25 +101,35 @@ export function useFeedAutoplay({
 
     const choose = () => {
       frame = 0;
+      let next: string | null = null;
+      let row: string | null = null;
       // Asked each time: the connection or the motion setting may change on the page.
-      const next =
-        document.hidden || !isAutoplayAllowed()
-          ? null
-          : pickActiveCard(
-              [...cards.current].map(([id, element]) => ({
-                id,
-                rect: element.getBoundingClientRect(),
-              })),
-              areaOf(scroller, headerRef.current),
-            );
+      if (!document.hidden && isAutoplayAllowed()) {
+        const turn = pickActiveCard(
+          [...cards.current].map(([id, element]) => ({
+            id,
+            rect: element.getBoundingClientRect(),
+          })),
+          areaOf(scroller, headerRef.current),
+          finished.current,
+        );
+        next = turn.activeId;
+        row = turn.rowKey;
+        finished.current = turn.finished;
+      }
+      const isSameRow = row !== null && row === candidateRow.current;
+      candidateRow.current = row;
       if (next === candidate.current) {
         return;
       }
 
-      // The playing card stops at once; the next one waits until it rests.
       candidate.current = next;
       clearTimeout(dwell);
       isDwelling = false;
+      if (isSameRow) {
+        setActiveId(next);
+        return;
+      }
       setActiveId(null);
       if (next) {
         isDwelling = true;
@@ -144,13 +154,14 @@ export function useFeedAutoplay({
       // A card still resting is chosen again by the next run, not skipped as unchanged.
       if (isDwelling) {
         candidate.current = null;
+        candidateRow.current = null;
       }
       scroller.removeEventListener('scroll', scheduleChoose);
       window.removeEventListener('resize', scheduleChoose);
       document.removeEventListener('visibilitychange', scheduleChoose);
     };
     // previewKey: new cards on screen are looked at even before the next scroll.
-  }, [scrollerRef, headerRef, isPaused, previewKey, refusals]);
+  }, [scrollerRef, headerRef, isPaused, previewKey, choiceCount]);
 
-  return { activeId, cardRef, onRefused: handleRefused };
+  return { activeId, cardRef, onRefused: handleRefused, onFinished: handleFinished };
 }

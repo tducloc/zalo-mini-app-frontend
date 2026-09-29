@@ -39,7 +39,7 @@ export default function ProductFeed({
 }) {
   const products = feed.data?.pages.flatMap((page) => page.data) ?? [];
   const previewIds = products.flatMap((product) => (product.previewUrl ? [product.id] : []));
-  const { activeId, cardRef, onRefused } = useFeedAutoplay({
+  const { activeId, cardRef, onRefused, onFinished } = useFeedAutoplay({
     previewIds,
     isPaused: isAutoplayPaused,
     scrollerRef,
@@ -87,6 +87,7 @@ export default function ProductFeed({
             product={product}
             onOpen={onOpenProduct}
             onPreviewRefused={onRefused}
+            onPreviewFinished={onFinished}
           />
         ))}
       </div>
