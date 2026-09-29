@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Page, useLocation, useNavigate } from 'zmp-ui';
+import { Page, useNavigate } from 'zmp-ui';
 
 import ConfirmDialog from '@/components/feedback/confirm-dialog';
 import AppSheet from '@/components/app-sheet';
@@ -14,13 +14,11 @@ import MyListingsTabs, {
   tabPanelId,
 } from '@/features/my-listings/components/tabs/my-listings-tabs';
 import { tabConfigs } from '@/features/my-listings/constants/tabs';
+import { useFollowListing } from '@/features/my-listings/hooks/use-follow-listing';
 import { useOwnerListingActions } from '@/features/my-listings/hooks/use-owner-listing-actions';
-import type {
-  ListingAction,
-  MyListing,
-  MyListingsTab,
-} from '@/features/my-listings/types/my-listing';
-import { getTabTotal, readRequestedTab } from '@/features/my-listings/utils/my-listing';
+import type { ListingAction, MyListing } from '@/features/my-listings/types/my-listing';
+import { getTabTotal } from '@/features/my-listings/utils/my-listing';
+import { useMyListingsStore } from '@/stores/my-listings';
 
 // Under the fixed header (44px and the safe area), the tabs stay in view while the list scrolls.
 const tabsBarClass = 'sticky top-[calc(44px_+_var(--zaui-safe-area-inset-top))] z-10';
@@ -28,11 +26,11 @@ const headerSpacerClass = 'h-[calc(44px_+_var(--zaui-safe-area-inset-top))]';
 
 export default function MyListingsPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { session, isBootstrapping } = useSession();
 
-  // Another page may open a tab, e.g. "Đang xử lý" right after posting.
-  const [activeTab, setActiveTab] = useState<MyListingsTab>(() => readRequestedTab(location.state));
+  // Posting or saving a listing opens its tab (`follow`).
+  const activeTab = useMyListingsStore((state) => state.tab);
+  const selectTab = useMyListingsStore((state) => state.selectTab);
 
   // the "•••" sheet
   const [sheetListing, setSheetListing] = useState<MyListing | null>(null);
@@ -40,6 +38,7 @@ export default function MyListingsPage() {
 
   const viewerId = session?.user.id ?? null;
   const listingsQuery = useMyListings(activeTab, viewerId);
+  useFollowListing(listingsQuery, viewerId);
   const counts = useMyListingCounts(viewerId);
   const ownerActions = useOwnerListingActions();
 
@@ -67,7 +66,7 @@ export default function MyListingsPage() {
       <MobilePageHeader title="Quản lý tin" />
       <div className={headerSpacerClass} />
       <div className={tabsBarClass}>
-        <MyListingsTabs activeTab={activeTab} counts={counts} onChange={setActiveTab} />
+        <MyListingsTabs activeTab={activeTab} counts={counts} onChange={selectTab} />
       </div>
 
       <main

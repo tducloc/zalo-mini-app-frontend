@@ -16,9 +16,10 @@ import {
   getTabBadge,
   getTabForStatus,
   getTabTotal,
-  readRequestedTab,
+  includesListing,
   withoutListing,
 } from '@/features/my-listings/utils/my-listing';
+import { useMyListingsStore } from '@/stores/my-listings';
 
 const now = Date.parse('2026-09-27T10:00:00.000Z');
 const hoursAgo = (hours: number) => new Date(now - hours * 3_600_000).toISOString();
@@ -62,12 +63,21 @@ function httpError(status: number) {
 }
 
 describe('tabs', () => {
-  it('opens the tab another page asked for, else "Đang hiển thị"', () => {
-    expect(readRequestedTab({ tab: 'processing' })).toBe('processing');
-    expect(readRequestedTab({ tab: 'published' })).toBe('published');
-    expect(readRequestedTab({ tab: 'deleted' })).toBe('published');
-    expect(readRequestedTab(null)).toBe('published');
-    expect(readRequestedTab(undefined)).toBe('published');
+  it('opens "Đang hiển thị" first, then the tab of a listing just posted or saved', () => {
+    const store = useMyListingsStore;
+    expect(store.getState()).toMatchObject({ tab: 'published', followedId: null });
+
+    store.getState().follow('prd_1', 'PROCESSING');
+    expect(store.getState()).toMatchObject({ tab: 'processing', followedId: 'prd_1' });
+
+    // Only a PROCESSING listing moves on by itself: any other is not followed.
+    store.getState().follow('prd_2', 'PUBLISHED');
+    expect(store.getState()).toMatchObject({ tab: 'published', followedId: null });
+
+    store.getState().follow('prd_1', 'PROCESSING');
+    // The seller picks a tab, or the page moves to where the listing went: no longer followed.
+    store.getState().selectTab('published');
+    expect(store.getState()).toMatchObject({ tab: 'published', followedId: null });
   });
 
   it('gives processing and failed listings a tab each', () => {
@@ -191,13 +201,30 @@ describe('getStatusChangeErrorMessage', () => {
   });
 });
 
+const listingsPage = (ids: string[]): MyListingsPage => ({
+  data: ids.map((id) => listing({ id })),
+  meta: { nextCursor: null, hasNextPage: false, counts: counts() },
+});
+
+describe('includesListing', () => {
+  it('looks through every page loaded so far', () => {
+    const data = {
+      pages: [listingsPage(['a']), listingsPage(['b'])],
+      pageParams: [undefined, 'cur'],
+    };
+
+    expect(includesListing(data, 'b')).toBe(true);
+    expect(includesListing(data, 'c')).toBe(false);
+    expect(includesListing(undefined, 'a')).toBe(false);
+  });
+});
+
 describe('withoutListing', () => {
   it('takes one listing out of every page, keeping the rest and the page params', () => {
-    const page = (ids: string[]): MyListingsPage => ({
-      data: ids.map((id) => listing({ id })),
-      meta: { nextCursor: null, hasNextPage: false, counts: counts() },
-    });
-    const data = { pages: [page(['a', 'b']), page(['c'])], pageParams: [undefined, 'cur'] };
+    const data = {
+      pages: [listingsPage(['a', 'b']), listingsPage(['c'])],
+      pageParams: [undefined, 'cur'],
+    };
 
     const result = withoutListing(data, 'b');
 

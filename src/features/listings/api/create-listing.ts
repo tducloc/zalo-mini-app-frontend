@@ -8,25 +8,26 @@ import { z } from 'zod';
 import { refusedFieldsOf, refusedMediaOf } from '@/features/listings/api/listing-errors';
 import type { ListingFieldValues } from '@/features/listings/schemas';
 import { PostErrorKind, type PostError } from '@/features/listings/types/post-error';
+import type { ProductDetail } from '@/features/products/types/product';
 import { http } from '@/lib/http';
 import { getApiErrorDetails, getApiErrorStatus, HttpStatus } from '@/utils/api-error';
 
 /**
  * Posts the listing; `idempotencyKey` is the draft's, the same on every retry, so a post
- * whose answer was lost is not made twice. Resolves true when it is published at once
- * (201: every file was ready), false while it waits for its media (202).
+ * whose answer was lost is not made twice. Resolves with the new listing: PUBLISHED at once
+ * (201: every file was ready), or PROCESSING while it waits for its media (202).
  */
 export async function createListing(
   fields: ListingFieldValues,
   mediaIds: string[],
   idempotencyKey: string,
 ) {
-  const response = await http.post<{ data?: { status?: string } }>(
+  const response = await http.post<{ data: Pick<ProductDetail, 'id' | 'status'> }>(
     '/products',
     { ...fields, mediaIds },
     { headers: { 'Idempotency-Key': idempotencyKey } },
   );
-  return response.data.data?.status === 'PUBLISHED';
+  return response.data.data;
 }
 
 const reusedDetails = z.object({ productId: z.string() });
