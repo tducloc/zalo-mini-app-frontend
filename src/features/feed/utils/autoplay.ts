@@ -1,9 +1,3 @@
-/**
- * Which feed card plays its preview (plans/home-feed.md, Phase 4): one at a time, the one
- * nearest the middle of the screen, and never when the viewer asked for less motion or
- * less data.
- */
-
 import { isDataConstrained } from '@/utils/network';
 
 export interface Box {
@@ -15,6 +9,8 @@ export interface Box {
 
 /** A card must show this share of its height to be picked. */
 const MIN_VISIBLE_SHARE = 0.6;
+
+const ROW_TOLERANCE_PX = 8;
 
 const centre = (start: number, end: number) => (start + end) / 2;
 
@@ -30,32 +26,45 @@ export function visibleArea(scroller: Box, headerBottom: number, bottomPadding: 
   };
 }
 
-/**
- * The card nearest the centre of the visible area among those mostly in it, else null.
- * Of two cards as near, the first (the left one of a row) wins.
- */
-export function pickActiveCard(cards: { id: string; rect: Box }[], area: Box) {
+export function pickActiveCard(
+  cards: { id: string; rect: Box }[],
+  area: Box,
+  finished: ReadonlySet<string>,
+) {
   const middleY = centre(area.top, area.bottom);
-  const middleX = centre(area.left, area.right);
 
-  let best: { id: string; distance: number } | null = null;
+  const stillFinished = new Set<string>();
+  const mostlyVisible: { id: string; rect: Box; centreY: number }[] = [];
   for (const { id, rect } of cards) {
     const height = rect.bottom - rect.top;
     const visible = Math.min(rect.bottom, area.bottom) - Math.max(rect.top, area.top);
     // A zero-size box is a card that is not laid out (hidden), not a visible one.
-    if (height <= 0 || visible < height * MIN_VISIBLE_SHARE) {
+    if (height <= 0 || visible <= 0) {
       continue;
     }
-
-    const distance = Math.hypot(
-      centre(rect.top, rect.bottom) - middleY,
-      centre(rect.left, rect.right) - middleX,
-    );
-    if (!best || distance < best.distance) {
-      best = { id, distance };
+    if (finished.has(id)) {
+      stillFinished.add(id);
+    }
+    if (visible >= height * MIN_VISIBLE_SHARE) {
+      mostlyVisible.push({ id, rect, centreY: centre(rect.top, rect.bottom) });
     }
   }
-  return best?.id ?? null;
+
+  let rowY: number | null = null;
+  for (const { centreY } of mostlyVisible) {
+    if (rowY === null || Math.abs(centreY - middleY) < Math.abs(rowY - middleY)) {
+      rowY = centreY;
+    }
+  }
+
+  const row = mostlyVisible
+    .filter(({ centreY }) => rowY !== null && Math.abs(centreY - rowY) <= ROW_TOLERANCE_PX)
+    .sort((a, b) => a.rect.left - b.rect.left);
+  return {
+    activeId: row.find(({ id }) => !finished.has(id))?.id ?? null,
+    rowKey: row[0]?.id ?? null,
+    finished: stillFinished,
+  };
 }
 
 export function canAutoplay({

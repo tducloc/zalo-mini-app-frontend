@@ -14,6 +14,8 @@ import { formatShortRelativeTime } from '@/utils/format';
 const THUMBNAIL_SIZE = 400;
 /** Times a preview plays before the card shows its cover again. */
 const PREVIEW_PLAYS = 2;
+const FADE_MS = 200;
+const START_TIMEOUT_MS = 5000;
 
 const videoBadgeClass =
   'absolute bottom-2 left-2 inline-flex items-center gap-[3px] rounded-[10px] bg-marketplace-ink/70 py-0.5 pl-1.5 pr-2 text-micro font-semibold leading-4 text-white';
@@ -25,6 +27,7 @@ export default function ListingCard({
   cardRef,
   onOpen,
   onPreviewRefused,
+  onPreviewFinished,
 }: {
   product: ProductCard;
   isAboveFold: boolean;
@@ -35,6 +38,7 @@ export default function ListingCard({
   onOpen: (productId: string) => void;
   /** The WebView refused to play the preview. */
   onPreviewRefused: () => void;
+  onPreviewFinished: (productId: string) => void;
 }) {
   // Remember WHICH url failed, so a changed thumbnail (e.g. an edited listing)
   // is tried again instead of keeping the placeholder forever.
@@ -75,6 +79,7 @@ export default function ListingCard({
             key={product.previewUrl}
             src={product.previewUrl}
             onRefused={onPreviewRefused}
+            onFinished={() => onPreviewFinished(product.id)}
           />
         )}
         {product.hasVideo && (
@@ -107,10 +112,19 @@ export default function ListingCard({
  * the cover, so nothing moves on and on. It shows once it really plays, so a slow start
  * or a refused autoplay leaves the cover as it was.
  */
-function CardPreview({ src, onRefused }: { src: string; onRefused: () => void }) {
+function CardPreview({
+  src,
+  onRefused,
+  onFinished,
+}: {
+  src: string;
+  onRefused: () => void;
+  onFinished: () => void;
+}) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const playsRef = useRef(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const onFinishedRef = useRef(onFinished);
+  onFinishedRef.current = onFinished;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -118,34 +132,69 @@ function CardPreview({ src, onRefused }: { src: string; onRefused: () => void })
       return;
     }
 
+    let plays = 0;
+    let isOver = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const finish = () => {
+      if (isOver) {
+        return;
+      }
+      isOver = true;
+      clearTimeout(timer);
+      setIsPlaying(false);
+      onFinishedRef.current();
+    };
+    const play = () => {
+      clearTimeout(timer);
+      timer = setTimeout(finish, START_TIMEOUT_MS);
+      // Old WebViews return nothing from play().
+      video.play()?.catch((error: unknown) => {
+        const name = error instanceof DOMException ? error.name : '';
+        // NotAllowedError is the WebView saying no; AbortError is the cleanup's load().
+        if (name === 'NotAllowedError') {
+          clearTimeout(timer);
+          onRefused();
+        } else if (name !== 'AbortError') {
+          finish();
+        }
+      });
+    };
+    const handlePlaying = () => {
+      clearTimeout(timer);
+      setIsPlaying(true);
+    };
+    const handleEnded = () => {
+      plays += 1;
+      if (plays < PREVIEW_PLAYS) {
+        play();
+        return;
+      }
+      setIsPlaying(false);
+      video.addEventListener('transitionend', finish);
+      timer = setTimeout(finish, FADE_MS + 100);
+    };
+
+    video.addEventListener('playing', handlePlaying);
+    video.addEventListener('ended', handleEnded);
+    video.addEventListener('error', finish);
     // Some WebViews judge autoplay by the muted attribute, which React does not write.
     video.defaultMuted = true;
     // Set here, not as a prop: the cleanup drops it, and a remount must set it again.
     video.src = src;
-    playsRef.current = 0;
-    // Old WebViews return nothing from play().
-    video.play()?.catch((error: unknown) => {
-      // AbortError is the cleanup's load(); NotAllowedError is the WebView saying no.
-      if (error instanceof DOMException && error.name === 'NotAllowedError') {
-        onRefused();
-      }
-    });
+    play();
 
-    // Removing the element alone may keep its buffer; dropping the source frees it.
     return () => {
+      isOver = true;
+      clearTimeout(timer);
+      video.removeEventListener('playing', handlePlaying);
+      video.removeEventListener('ended', handleEnded);
+      video.removeEventListener('error', finish);
+      video.removeEventListener('transitionend', finish);
+      // Removing the element alone may keep its buffer; dropping the source frees it.
       video.removeAttribute('src');
       video.load();
     };
   }, [src, onRefused]);
-
-  const handleEnded = () => {
-    playsRef.current += 1;
-    if (playsRef.current < PREVIEW_PLAYS) {
-      void videoRef.current?.play()?.catch(() => setIsPlaying(false));
-      return;
-    }
-    setIsPlaying(false);
-  };
 
   return (
     <video
@@ -158,9 +207,6 @@ function CardPreview({ src, onRefused }: { src: string; onRefused: () => void })
       playsInline
       // play() loads it; nothing is fetched for a preview the WebView will not play.
       preload="none"
-      onPlaying={() => setIsPlaying(true)}
-      onEnded={handleEnded}
-      onError={() => setIsPlaying(false)}
     />
   );
 }
