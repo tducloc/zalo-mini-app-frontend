@@ -36,6 +36,7 @@ test('posts a listing with two photos and a video', async ({ page }) => {
   await sellForm(page).getByLabel('Tiêu đề').fill(TITLE);
   await sellForm(page).getByLabel('Mô tả').fill('Máy dùng tốt, pin 90%, đủ hộp và cáp.');
   await sellForm(page).getByLabel('Giá bán (VNĐ)').fill('6990000');
+  await expect(sellForm(page).getByLabel('Giá bán (VNĐ)')).toHaveValue('6.990.000');
   await sellForm(page).getByLabel('Như mới').check();
   await sellForm(page).getByLabel('Địa điểm').selectOption({ label: 'Hà Nội' });
 
