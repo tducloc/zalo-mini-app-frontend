@@ -9,6 +9,7 @@ import HomePage from '@/pages/home';
 import MyListingsPage from '@/pages/my-listings';
 import ProductDetailPage from '@/pages/product-detail';
 import ProfilePage from '@/pages/profile';
+import ReelsPage from '@/pages/reels';
 import SellPage from '@/pages/sell';
 import { warnInDev } from '@/utils/dev-log';
 
@@ -36,6 +37,7 @@ export default function MyApp() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/my-listings" element={<MyListingsPage />} />
                 <Route path="/sell" element={<SellPage />} />
+                <Route path="/reels" element={<ReelsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 {MediaLabPage && (
                   <Route
