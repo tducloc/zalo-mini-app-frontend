@@ -18,6 +18,8 @@ import ProductSellerContact from '@/features/products/components/detail/seller-c
 import { useCreateReport } from '@/features/reports/api/create-report';
 import ProductReportSheet from '@/features/reports/components/report-sheet';
 import type { CreateReportInput } from '@/features/reports/types/report';
+import { useGoBack } from '@/hooks/use-go-back';
+import { useSwipe } from '@/hooks/use-swipe';
 import { useToast } from '@/hooks/use-toast';
 import { getApiErrorStatus, HttpStatus } from '@/utils/api-error';
 
@@ -31,8 +33,14 @@ const reportErrorMessages: Partial<Record<number, string>> = {
 const detailPageClass =
   'bg-white pb-[calc(76px_+_var(--zaui-safe-area-inset-bottom))] [.has-draft-banner_&]:pb-[calc(140px_+_var(--zaui-safe-area-inset-bottom))]';
 
-export default function ProductDetailPage() {
-  const { productId = '' } = useParams<{ productId: string }>();
+type ProductDetailPageProps =
+  { mode?: 'route' } | { mode: 'embedded'; productId: string; onBack: () => void };
+
+export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
+  const { productId: routeProductId = '' } = useParams<{ productId: string }>();
+  const isEmbedded = props.mode === 'embedded';
+  const productId = isEmbedded ? props.productId : routeProductId;
+  const onEmbeddedBack = isEmbedded ? props.onBack : undefined;
   const navigate = useNavigate();
   const { showError, showInfo, showSuccess } = useToast();
   const { session, isBootstrapping } = useSession();
@@ -47,6 +55,10 @@ export default function ProductDetailPage() {
   const productQuery = useProductDetail(productId, viewerId);
   const reportMutation = useCreateReport(productId, viewerId);
   const ownerActions = useOwnerListingActions();
+  const goBack = useGoBack('/');
+  const backSwipe = useSwipe((direction) => direction === 'right' && goBack());
+  const backSwipeHandlers = isEmbedded ? {} : backSwipe;
+  const backSwipeClass = isEmbedded ? '' : 'touch-pan-y';
 
   const handleSubmitReport = (input: CreateReportInput) =>
     reportMutation.mutate(input, {
@@ -71,7 +83,7 @@ export default function ProductDetailPage() {
   if (productQuery.isPending || isWaitingForViewer) {
     return (
       <Page className={pageClass}>
-        <ProductDetailHeader />
+        <ProductDetailHeader onBack={onEmbeddedBack} />
         <DetailSkeleton />
       </Page>
     );
@@ -83,8 +95,11 @@ export default function ProductDetailPage() {
     // Nothing to retry once the listing is gone: offer the way back instead.
     return (
       <Page className={pageClass}>
-        <ProductDetailHeader isOverMedia={false} />
-        <main className="px-4 pb-4 pt-[calc(72px_+_var(--zaui-safe-area-inset-top))]">
+        <ProductDetailHeader isOverMedia={false} onBack={onEmbeddedBack} />
+        <main
+          className={`${backSwipeClass} px-4 pb-4 pt-[calc(72px_+_var(--zaui-safe-area-inset-top))]`}
+          {...backSwipeHandlers}
+        >
           {isGone ? (
             <FeedbackState
               type="empty"
@@ -110,46 +125,53 @@ export default function ProductDetailPage() {
   const isOwner = product.viewer.isOwner || session?.user.id === product.seller.id;
   // A sold listing is final and not shown to buyers: its owner has nothing left to do.
   const hasActions = !isOwner || product.status !== 'SOLD';
+  const contactAction = (
+    <ProductContactAction
+      key={product.id}
+      product={product}
+      banner={<DraftBanner className="mb-3" />}
+      onContactError={showError}
+      position={isEmbedded ? 'absolute' : 'fixed'}
+    />
+  );
   return (
-    <Page className={detailPageClass}>
-      <ProductDetailHeader />
-      <main className="bg-white">
-        <ProductMediaGallery media={product.media} productTitle={product.title} />
-        <section className="px-4">
-          <ProductInformation
-            product={product}
-            onOpenActions={hasActions ? () => setActionsOpen(true) : undefined}
-          />
-          <ProductSellerContact product={product} />
-        </section>
-      </main>
-      <ProductContactAction
-        key={product.id}
-        product={product}
-        banner={<DraftBanner className="mb-3" />}
-        onContactError={showError}
-      />
-      <ProductActionsSheet
-        isOwner={isOwner}
-        hasReported={product.viewer.hasReported}
-        // The anonymous placeholder cannot know whether this viewer reported.
-        isReportAvailable={!productQuery.isPlaceholderData}
-        isOwnerActionPending={ownerActions.isPending}
-        product={product}
-        visible={actionsOpen}
-        onClose={() => setActionsOpen(false)}
-        onError={showError}
-        onOwnerAction={(action) => ownerActions.selectAction(product.id, action)}
-        onReport={() => setReportOpen(true)}
-      />
-      {/* After the sheet: it closes as the dialog opens, and the dialog keeps the scroll lock. */}
-      <ConfirmDialog {...ownerActions.markSoldDialog} />
-      <ProductReportSheet
-        isPending={reportMutation.isPending}
-        visible={reportOpen}
-        onClose={() => setReportOpen(false)}
-        onSubmit={handleSubmitReport}
-      />
-    </Page>
+    <>
+      <Page className={detailPageClass}>
+        <ProductDetailHeader onBack={onEmbeddedBack} />
+        <main className="bg-white">
+          <ProductMediaGallery media={product.media} productTitle={product.title} />
+          <section className={`${backSwipeClass} px-4`} {...backSwipeHandlers}>
+            <ProductInformation
+              product={product}
+              onOpenActions={hasActions ? () => setActionsOpen(true) : undefined}
+            />
+            <ProductSellerContact product={product} />
+          </section>
+        </main>
+        {!isEmbedded && contactAction}
+        <ProductActionsSheet
+          isOwner={isOwner}
+          hasReported={product.viewer.hasReported}
+          // The anonymous placeholder cannot know whether this viewer reported.
+          isReportAvailable={!productQuery.isPlaceholderData}
+          isOwnerActionPending={ownerActions.isPending}
+          product={product}
+          visible={actionsOpen}
+          onClose={() => setActionsOpen(false)}
+          onError={showError}
+          onOwnerAction={(action) => ownerActions.selectAction(product.id, action)}
+          onReport={() => setReportOpen(true)}
+        />
+        {/* After the sheet: it closes as the dialog opens, and the dialog keeps the scroll lock. */}
+        <ConfirmDialog {...ownerActions.markSoldDialog} />
+        <ProductReportSheet
+          isPending={reportMutation.isPending}
+          visible={reportOpen}
+          onClose={() => setReportOpen(false)}
+          onSubmit={handleSubmitReport}
+        />
+      </Page>
+      {isEmbedded && contactAction}
+    </>
   );
 }

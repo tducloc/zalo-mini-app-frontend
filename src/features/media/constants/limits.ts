@@ -32,7 +32,7 @@ export const MAX_IMAGE_PIXELS = 50_000_000;
 export const IMAGE_HEAD_BYTES = 256 * 1024;
 
 /** Long edge of the uploaded photo. The server scales anything larger to the same size. */
-export const PHOTO_MAX_EDGE = 1280;
+export const PHOTO_MAX_EDGE = 1600;
 
 // ---- Videos ----
 

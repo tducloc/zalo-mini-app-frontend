@@ -9,11 +9,13 @@ export default function ProductContactAction({
   product,
   banner,
   onContactError,
+  position = 'fixed',
 }: {
   product: ProductDetail;
   /** Above the button, in the same bar, so the two never overlap. */
   banner: ReactNode;
   onContactError: (message: string) => void;
+  position?: 'fixed' | 'absolute';
 }) {
   const contact = product.seller.contact;
   const canContact = Boolean(contact);
@@ -48,7 +50,9 @@ export default function ProductContactAction({
   const isPhoneFallbackShown = showPhoneFallback && Boolean(contact?.phoneNumber);
 
   return (
-    <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-solid border-marketplace-line bg-white px-4 pb-[calc(12px_+_var(--zaui-safe-area-inset-bottom))] pt-3">
+    <footer
+      className={`${position} inset-x-0 bottom-0 z-20 border-t border-solid border-marketplace-line bg-white px-4 pb-[calc(12px_+_var(--zaui-safe-area-inset-bottom))] pt-3`}
+    >
       {banner}
       <Button className="h-11" fullWidth disabled={!canContact || isSold} onClick={contactSeller}>
         {contactLabel}
