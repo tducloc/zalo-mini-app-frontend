@@ -20,8 +20,10 @@ import type { ListingFieldValues } from '@/features/listings/schemas';
 import type { DraftFields } from '@/features/listings/types/listing-draft';
 import { useLocations } from '@/features/locations/api/get-locations';
 import { conditionLabels, productConditions } from '@/features/products/constants/product';
+import { usePriceInput } from '@/hooks/use-price-input';
 import type { ListQuery } from '@/lib/list-query';
 import { formatNumber } from '@/utils/format';
+import { formatPriceDigits } from '@/utils/price-input';
 
 interface Option {
   id: string;
@@ -113,19 +115,15 @@ export default function ListingFields({
         />
       </FieldShell>
 
-      <FieldShell id="listing-price" label="Giá bán (VNĐ)" error={errors.price?.message}>
-        <input
-          id="listing-price"
-          className={controlClass}
-          {...register('price')}
-          // Text, not number: a number input drops the "6.990.000" a seller types.
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="Ví dụ: 150.000"
-          aria-invalid={!!errors.price}
-          aria-describedby="listing-price-note"
-        />
-      </FieldShell>
+      <Controller
+        control={control}
+        name="price"
+        render={({ field, fieldState }) => (
+          <FieldShell id="listing-price" label="Giá bán (VNĐ)" error={fieldState.error?.message}>
+            <PriceControl field={field} isInvalid={!!fieldState.error} />
+          </FieldShell>
+        )}
+      />
 
       <fieldset className="my-5 border-0 p-0" aria-describedby="listing-condition-note">
         <legend className="mb-2.5 font-semibold">
@@ -218,6 +216,43 @@ function FieldNote({
     <small id={id} className={`block text-xs leading-normal ${toneClass} ${className}`}>
       {error ?? hint}
     </small>
+  );
+}
+
+/**
+ * The price, grouped as the seller types it ("6.990.000"), like the filter's. The form
+ * keeps it grouped, as the edit form starts it, so retyping the saved price is no change.
+ */
+function PriceControl({
+  field,
+  isInvalid,
+}: {
+  field: ControllerRenderProps<DraftFields, 'price'>;
+  isInvalid: boolean;
+}) {
+  const price = usePriceInput(field.value.replace(/\D/g, ''), (digits) =>
+    field.onChange(formatPriceDigits(digits)),
+  );
+
+  return (
+    <input
+      ref={(element) => {
+        price.inputRef.current = element;
+        field.ref(element);
+      }}
+      id="listing-price"
+      className={controlClass}
+      name={field.name}
+      value={price.value}
+      onChange={price.onChange}
+      onBlur={field.onBlur}
+      // Text, not number: a number input cannot show the grouping dots.
+      inputMode="numeric"
+      autoComplete="off"
+      placeholder="Ví dụ: 150.000"
+      aria-invalid={isInvalid}
+      aria-describedby="listing-price-note"
+    />
   );
 }
 
