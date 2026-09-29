@@ -136,17 +136,29 @@ test('swipes left from a reel to its detail, and right below the gallery back to
   const title = await reel(page, 0).getAttribute('aria-label');
   expect(title).toBeTruthy();
   await expect(pager(page).locator('footer')).toBeAttached();
+  // Swipe once the route has slid in: a drag during that animation snaps back.
+  await expect
+    .poll(() => pager(page).evaluate((element) => element.getBoundingClientRect().left))
+    .toBe(0);
 
   const { width, height } = page.viewportSize() ?? { width: 412, height: 839 };
   const middle = height / 2;
   await swipe(page, { x: width * 0.8, y: middle }, { x: width * 0.2, y: middle }, async () => {
     const left = await pagerPosition(page);
-    expect(left).toBeGreaterThan(width * 0.2);
+    // The finger is 30% across; the pager starts after the touch slop, so it trails a little.
+    expect(left).toBeGreaterThan(width * 0.1);
     expect(left).toBeLessThan(width * 0.8);
-    const tabLeft = await page
-      .getByRole('navigation', { name: 'Điều hướng chính' })
-      .evaluate((element) => element.getBoundingClientRect().left);
-    expect(Math.abs(tabLeft + left)).toBeLessThan(3);
+    // The tab bar moves with the Reels pane. Compared on screen, not with scrollLeft: the
+    // route may still be sliding in, which shifts both.
+    const drift = await pager(page).evaluate((element) => {
+      const tabBar = document.querySelector('nav[aria-label="Điều hướng chính"]');
+      const pane = element.firstElementChild;
+      return (
+        (tabBar?.getBoundingClientRect().left ?? Number.NaN) -
+        (pane?.getBoundingClientRect().left ?? Number.NaN)
+      );
+    });
+    expect(Math.abs(drift)).toBeLessThan(3);
     const contactPosition = await pager(page)
       .locator('footer')
       .evaluate((element) => {
