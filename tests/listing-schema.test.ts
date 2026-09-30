@@ -63,26 +63,13 @@ describe('listingFieldsSchema', () => {
     expect(messages.description).toContain('5.000');
   });
 
-  it('reads a price typed with separators, and refuses one that is not a whole number above 0', () => {
-    for (const typed of ['6.990.000', '6,990,000', '6 990 000', ' 6990000 ']) {
-      expect(listingFieldsSchema.parse({ ...filled, price: typed }).price).toBe(6_990_000);
-    }
-    for (const typed of [
-      '0',
-      '-5',
-      '12k',
-      '1.5e6',
-      '',
-      '1.5',
-      '25,5',
-      '1.50.000',
-      '6.990.00',
-      '1.000,000',
-    ]) {
+  it("takes the price's digits, and refuses anything else or 0", () => {
+    expect(listingFieldsSchema.parse(filled).price).toBe(6_990_000);
+    for (const typed of ['0', '', '-5', '12k', '1.5', '6.990.000', ' 6990000 ']) {
       expect(errorFor({ price: typed }, 'price')).toBe(messages.price);
     }
     // A car or a home: past the 2.1 billion the server's integer column once capped.
-    expect(errorFor({ price: '3.500.000.000' }, 'price')).toBeUndefined();
+    expect(errorFor({ price: '3500000000' }, 'price')).toBeUndefined();
     expect(errorFor({ price: String(MAX_PRICE_VND) }, 'price')).toBeUndefined();
     expect(errorFor({ price: String(MAX_PRICE_VND + 1) }, 'price')).toBe(messages.priceTooHigh);
   });

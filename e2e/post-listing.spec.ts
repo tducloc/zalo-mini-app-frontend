@@ -74,7 +74,13 @@ test('shows every missing field on the first tap, then keeps Post disabled until
   await expect(page.getByText(/^Vui lòng thêm ít nhất 1 ảnh/)).toBeVisible();
   await expect(postButton(page)).toBeDisabled();
 
+  // Only digits stay, so what the seller sees is what posts; 0 is still refused.
   await sellForm(page).getByLabel('Giá bán (VNĐ)').fill('1.5');
+  await expect(sellForm(page).getByLabel('Giá bán (VNĐ)')).toHaveValue('15');
+  await sellForm(page).getByLabel('Giá bán (VNĐ)').fill('0');
+  await expect(
+    page.getByText('Vui lòng nhập giá bán là số đồng lớn hơn 0, ví dụ 150.000.', { exact: true }),
+  ).toHaveCount(1);
   await addPhotos(page, ['photo-a.jpg']);
   await fillFields(page, title('validation'));
   await expect(sellForm(page).getByLabel('Giá bán (VNĐ)')).toHaveValue('6.990.000');
