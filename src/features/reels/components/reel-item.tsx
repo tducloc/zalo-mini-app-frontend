@@ -41,7 +41,11 @@ export default function ReelItem({
   const isActive = slot === 'active' && isAppVisible;
   // A reel that mounts on screen plays in its first effects, which the Reels tab tap runs
   // inside the tap (flushSync): the one moment WebKit allows sound.
-  const [status, dispatch] = useReducer(reelPlayer, isActive ? 'loading' : 'paused');
+  // Off-screen reels also start loading. Starting them paused paints the play icon for
+  // one frame when they become active, before the effect below can catch up.
+  const [status, dispatch] = useReducer(reelPlayer, 'loading');
+  const isActiveRef = useRef(isActive);
+  isActiveRef.current = isActive;
   const isMuted = useReelsStore((state) => state.isMuted);
   const setMuted = useReelsStore((state) => state.setMuted);
 
@@ -74,8 +78,14 @@ export default function ReelItem({
     if (video.getAttribute('src') !== src) {
       video.src = src;
     }
-    const handlePlaying = () => dispatch({ type: 'playing' });
-    const handleWaiting = () => dispatch({ type: 'waiting' });
+    // A play() started just before the reel left can still fire. Applying it would
+    // mark an off-screen reel as playing after deactivated put it back to loading.
+    const handlePlaying = () => {
+      if (isActiveRef.current) dispatch({ type: 'playing' });
+    };
+    const handleWaiting = () => {
+      if (isActiveRef.current) dispatch({ type: 'waiting' });
+    };
     const handleError = () => dispatch({ type: 'errored' });
     video.addEventListener('playing', handlePlaying);
     video.addEventListener('waiting', handleWaiting);
@@ -167,7 +177,7 @@ export default function ReelItem({
       <button
         className="absolute inset-0 z-[1] grid size-full transform-gpu place-items-center border-0 bg-transparent p-0 text-white"
         type="button"
-        aria-label={shouldPlay(status) ? 'Tạm dừng video' : 'Phát video'}
+        aria-label={isActive && shouldPlay(status) ? 'Tạm dừng video' : 'Phát video'}
         disabled={status === 'failed'}
         onClick={handleTap}
       >

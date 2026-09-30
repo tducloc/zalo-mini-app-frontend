@@ -1,18 +1,15 @@
 import type { ReelSlot } from '@/features/reels/utils/reel-slot';
 
 /**
- * The few <video> elements every reel plays in, kept for the whole session.
+ * The one <video> element every reel plays in, kept for the whole session.
  *
  * iOS lets a video load and play (with sound too, once allowed) only if the element already
  * existed when the viewer last touched the page. A new element per reel was refused from the
- * second page of reels on, even muted, so reels borrow these instead: reel `index` always
- * gets element `index % POOL_SIZE`.
+ * second page of reels on, even muted, so every reel borrows this one. Neighbours show their
+ * poster until they become the reel on screen.
  */
 
-const POOL_SLOTS = ['previous', 'active', 'next'] as const satisfies readonly Exclude<
-  ReelSlot,
-  'idle'
->[];
+const POOL_SLOTS = ['active'] as const satisfies readonly Exclude<ReelSlot, 'idle'>[];
 export const POOL_SIZE = POOL_SLOTS.length;
 
 function createVideo() {

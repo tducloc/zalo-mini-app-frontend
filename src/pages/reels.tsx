@@ -18,7 +18,6 @@ import { reelHeightClass, spinnerClass } from '@/features/reels/constants/styles
 import { useActiveReel } from '@/features/reels/hooks/use-active-reel';
 import { slotOf } from '@/features/reels/utils/reel-slot';
 import { useReelsStore } from '@/stores/reels';
-import { getConnection, isDataConstrained } from '@/utils/network';
 import ProductDetailPage from '@/pages/product-detail';
 
 const REELS_LEFT_TO_LOAD_MORE = 3;
@@ -77,7 +76,6 @@ export default function ReelsPage() {
   );
   const activeIndex = useActiveReel(scrollerRef, reels.length + 1, restoredIndex);
   const activeReelId = reels[activeIndex]?.id;
-  const canPreload = !isDataConstrained(getConnection());
 
   const hasRestoredRef = useRef(false);
   useLayoutEffect(() => {
@@ -138,7 +136,7 @@ export default function ReelsPage() {
             key={reel.id}
             reel={reel}
             index={index}
-            slot={slotOf(index, activeIndex, canPreload)}
+            slot={slotOf(index, activeIndex)}
             isAppVisible={isAppVisible && isFeedVisible}
             onOpen={showDetail}
           />
