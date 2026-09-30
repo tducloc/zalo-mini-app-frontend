@@ -5,6 +5,7 @@ import { cardClass, pageClass, pageContentClass, stateIconClass } from '@/compon
 import { useSession } from '@/features/auth/hooks/use-session';
 import { getAuthStatusLabel } from '@/features/auth/utils/auth-status';
 import PhoneNumberCard from '@/features/contact/components/phone-number-card';
+import ZaloPermissionCard from '@/features/contact/components/zalo-permission-card';
 
 // Dev-only entry to the media measurement page. Remove with src/pages/media-lab.tsx.
 const showMediaLab = import.meta.env.DEV || import.meta.env.VITE_MEDIA_LAB === 'true';
@@ -31,6 +32,7 @@ export default function ProfilePage() {
         </section>
 
         {user && <PhoneNumberCard />}
+        {user && <ZaloPermissionCard />}
 
         {showMediaLab && (
           <section className={`${cardClass} mt-3 p-4`}>

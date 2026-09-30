@@ -42,6 +42,18 @@ it('does not retry twice', async () => {
   await expect(http.get('/me')).rejects.toBeDefined();
   expect(request).toHaveBeenCalledTimes(2);
 });
+it('refreshes the name without showing the sign-in error', async () => {
+  const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  apiClient.defaults.adapter = async (c: any) => response(c, 200, { data: session });
+  await restoreSession();
+  apiClient.defaults.adapter = async (c: any) => response(c, 500);
+  const { refreshSellerProfile } = await import('@/features/auth/api/session');
+  const { useAuthStore } = await import('@/stores/auth');
+  await refreshSellerProfile();
+  expect(getSession()).toEqual(session);
+  expect(useAuthStore.getState().error).toBeNull();
+  consoleWarn.mockRestore();
+});
 it('rejects empty Zalo token and cools down', async () => {
   const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   getAccessToken.mockResolvedValueOnce('');
