@@ -13,7 +13,6 @@ import { MediaError, type ServerMedia, ServerMediaStatus } from '@/features/medi
 import { toMediaError } from '@/features/media/utils/media-error';
 import type { ProductDetail, ProductStatus } from '@/features/products/types/product';
 import type { ListingDraftStart } from '@/stores/listing-draft';
-import { formatNumber } from '@/utils/format';
 
 type ProductMedia = ProductDetail['media'][number];
 
@@ -72,8 +71,8 @@ function tileOf(item: ProductMedia): ListingMedia {
 }
 
 /**
- * What the edit form starts with: the fields as the seller would type them (the price as
- * "6.990.000"), and the listing's media as tiles, the photos first in display order.
+ * What the edit form starts with: the fields as the form holds them (the price as its
+ * digits, "6990000"), and the listing's media as tiles, the photos first in display order.
  */
 export function draftFromProduct(product: ProductDetail): ListingDraftStart<ListingMedia> {
   const ordered = [...product.media].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -84,7 +83,7 @@ export function draftFromProduct(product: ProductDetail): ListingDraftStart<List
     fields: {
       title: product.title,
       description: product.description,
-      price: formatNumber(product.price),
+      price: String(product.price),
       categoryId: product.category.id,
       condition: product.condition,
       locationId: product.location.id ?? '',

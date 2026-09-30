@@ -1,10 +1,5 @@
-import {
-  applyPriceEdit,
-  caretAfterDigits,
-  formatPriceDigits,
-  parsePriceRange,
-  priceToInputDigits,
-} from '@/features/feed/utils/price';
+import { parsePriceRange, priceToInputDigits } from '@/features/feed/utils/price';
+import { applyPriceEdit, caretAfterDigits, formatPriceDigits } from '@/utils/price-input';
 import { MAX_PRICE_VND } from '@/features/products/constants/product';
 
 const group = (value: number) => new Intl.NumberFormat('vi-VN').format(value);
@@ -83,6 +78,10 @@ describe('formatPriceDigits and priceToInputDigits', () => {
   it('groups digits for display and leaves empty input empty', () => {
     expect(formatPriceDigits('1000000')).toBe(group(1_000_000));
     expect(formatPriceDigits('')).toBe('');
+  });
+
+  it('keeps every digit of a number too long to be exact', () => {
+    expect(formatPriceDigits('12345678901234567')).toBe('12.345.678.901.234.567');
   });
 
   it('turns an applied price back into input digits', () => {
