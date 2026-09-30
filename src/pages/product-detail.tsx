@@ -9,10 +9,12 @@ import DraftBanner from '@/features/listings/components/draft/draft-banner';
 import { useOwnerListingActions } from '@/features/my-listings/hooks/use-owner-listing-actions';
 import { useProductDetail } from '@/features/products/api/get-product-detail';
 import ProductActionsSheet from '@/features/products/components/detail/actions-sheet';
+import DetailBottomBar from '@/features/products/components/detail/bottom-bar';
 import ProductContactAction from '@/features/products/components/detail/contact-action';
 import ProductDetailHeader from '@/features/products/components/detail/detail-header';
 import DetailSkeleton from '@/features/products/components/detail/detail-skeleton';
 import ProductInformation from '@/features/products/components/detail/information';
+import ProductOwnerBar from '@/features/products/components/detail/owner-bar';
 import ProductMediaGallery from '@/features/products/components/gallery/media-gallery';
 import ProductSellerContact from '@/features/products/components/detail/seller-card';
 import { useCreateReport } from '@/features/reports/api/create-report';
@@ -29,9 +31,7 @@ const reportErrorMessages: Partial<Record<number, string>> = {
   429: 'Bạn đã gửi quá nhiều báo cáo. Vui lòng thử lại sau.',
 };
 
-// No tab bar: room for the contact bar (and the draft banner in it, 52px and 12px).
-const detailPageClass =
-  'bg-white pb-[calc(76px_+_var(--zaui-safe-area-inset-bottom))] [.has-draft-banner_&]:pb-[calc(140px_+_var(--zaui-safe-area-inset-bottom))]';
+const BAR_GAP_PX = 8;
 
 type ProductDetailPageProps =
   { mode?: 'route' } | { mode: 'embedded'; productId: string; onBack: () => void };
@@ -48,6 +48,7 @@ export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
   // sheets
   const [reportOpen, setReportOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [barHeight, setBarHeight] = useState(0);
 
   // Public detail loads immediately; once sign-in finishes the viewer changes
   // the key and the owner/report fields are fetched for that user.
@@ -125,18 +126,24 @@ export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
   const isOwner = product.viewer.isOwner || session?.user.id === product.seller.id;
   // A sold listing is final and not shown to buyers: its owner has nothing left to do.
   const hasActions = !isOwner || product.status !== 'SOLD';
-  const contactAction = (
-    <ProductContactAction
-      key={product.id}
-      product={product}
-      banner={<DraftBanner className="mb-3" />}
-      onContactError={showError}
-      position={isEmbedded ? 'absolute' : 'fixed'}
-    />
+  const bottomBar = (
+    <DetailBottomBar position={isEmbedded ? 'absolute' : 'fixed'} onHeightChange={setBarHeight}>
+      <DraftBanner className="mb-3" />
+      {isOwner ? (
+        <ProductOwnerBar
+          status={product.status}
+          isPending={ownerActions.isPending}
+          onAction={(action) => ownerActions.selectAction(product.id, action)}
+        />
+      ) : (
+        <ProductContactAction key={product.id} product={product} onContactError={showError} />
+      )}
+    </DetailBottomBar>
   );
   return (
     <>
-      <Page className={detailPageClass}>
+      {/* No tab bar: room for the bottom bar, and a gap above it. */}
+      <Page className="bg-white" style={{ paddingBottom: barHeight + BAR_GAP_PX }}>
         <ProductDetailHeader onBack={onEmbeddedBack} />
         <main className="bg-white">
           <ProductMediaGallery media={product.media} productTitle={product.title} />
@@ -148,7 +155,7 @@ export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
             <ProductSellerContact product={product} />
           </section>
         </main>
-        {!isEmbedded && contactAction}
+        {!isEmbedded && bottomBar}
         <ProductActionsSheet
           isOwner={isOwner}
           hasReported={product.viewer.hasReported}
@@ -171,7 +178,7 @@ export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
           onSubmit={handleSubmitReport}
         />
       </Page>
-      {isEmbedded && contactAction}
+      {isEmbedded && bottomBar}
     </>
   );
 }

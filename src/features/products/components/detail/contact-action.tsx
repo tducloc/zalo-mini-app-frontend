@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { useState } from 'react';
 import { Button } from 'zmp-ui';
 import { openPhone, openProfile } from 'zmp-sdk';
 
@@ -7,15 +7,10 @@ import { ProductDetail } from '@/features/products/types/product';
 /** Keyed by the product at the call site, so another product starts without the fallback. */
 export default function ProductContactAction({
   product,
-  banner,
   onContactError,
-  position = 'fixed',
 }: {
   product: ProductDetail;
-  /** Above the button, in the same bar, so the two never overlap. */
-  banner: ReactNode;
   onContactError: (message: string) => void;
-  position?: 'fixed' | 'absolute';
 }) {
   const contact = product.seller.contact;
   const canContact = Boolean(contact);
@@ -50,10 +45,7 @@ export default function ProductContactAction({
   const isPhoneFallbackShown = showPhoneFallback && Boolean(contact?.phoneNumber);
 
   return (
-    <footer
-      className={`${position} inset-x-0 bottom-0 z-20 border-t border-solid border-marketplace-line bg-white px-4 pb-[calc(12px_+_var(--zaui-safe-area-inset-bottom))] pt-3`}
-    >
-      {banner}
+    <>
       <Button className="h-11" fullWidth disabled={!canContact || isSold} onClick={contactSeller}>
         {contactLabel}
       </Button>
@@ -65,6 +57,6 @@ export default function ProductContactAction({
           Gọi số điện thoại người bán
         </button>
       )}
-    </footer>
+    </>
   );
 }
