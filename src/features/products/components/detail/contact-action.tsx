@@ -13,12 +13,10 @@ export default function ProductContactAction({
   onContactError: (message: string) => void;
 }) {
   const contact = product.seller.contact;
-  const canContact = Boolean(contact);
   const isSold = product.status === 'SOLD';
   const [showPhoneFallback, setShowPhoneFallback] = useState(false);
 
   const contactSeller = async () => {
-    if (!contact) return;
     try {
       await openProfile({ id: contact.zaloProfileId, type: 'user' });
     } catch {
@@ -31,7 +29,7 @@ export default function ProductContactAction({
   };
 
   const callSeller = async () => {
-    if (!contact?.phoneNumber) return;
+    if (!contact.phoneNumber) return;
     try {
       await openPhone({ phoneNumber: contact.phoneNumber });
     } catch {
@@ -39,14 +37,13 @@ export default function ProductContactAction({
     }
   };
 
-  const openLabel = canContact ? 'Liên hệ người bán' : 'Người bán chưa bật liên hệ';
-  const contactLabel = isSold ? 'Sản phẩm đã bán' : openLabel;
+  const contactLabel = isSold ? 'Sản phẩm đã bán' : 'Liên hệ người bán';
   // A refetch can drop the number while the fallback is up.
-  const isPhoneFallbackShown = showPhoneFallback && Boolean(contact?.phoneNumber);
+  const isPhoneFallbackShown = showPhoneFallback && Boolean(contact.phoneNumber);
 
   return (
     <>
-      <Button className="h-11" fullWidth disabled={!canContact || isSold} onClick={contactSeller}>
+      <Button className="h-11" fullWidth disabled={isSold} onClick={contactSeller}>
         {contactLabel}
       </Button>
       {isPhoneFallbackShown && (

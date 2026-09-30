@@ -55,7 +55,12 @@ const product = (change: Partial<ProductDetail> = {}): ProductDetail => ({
     item('m_v', { type: 'VIDEO', sortOrder: 1, mediumUrl: 'https://m/v.mp4' }),
     item('m_a', { role: 'MAIN', sortOrder: 0 }),
   ],
-  seller: { id: 'u_1', name: 'Lộc', avatarUrl: null, contact: null },
+  seller: {
+    id: 'u_1',
+    name: 'Lộc',
+    avatarUrl: null,
+    contact: { zaloProfileId: 'zalo_seller', phoneNumber: null },
+  },
   viewer: { isOwner: true, hasReported: false },
   createdAt: '2026-09-27T01:00:00.000Z',
   publishedAt: '2026-09-27T01:00:00.000Z',
