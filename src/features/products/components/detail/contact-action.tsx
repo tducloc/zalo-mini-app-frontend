@@ -1,10 +1,16 @@
-import { useState } from 'react';
-import { Button } from 'zmp-ui';
-import { openPhone, openProfile } from 'zmp-sdk';
+import { Button, Icon } from 'zmp-ui';
+import { openChat, openPhone, openProfile } from 'zmp-sdk';
 
 import { ProductDetail } from '@/features/products/types/product';
 
-/** Keyed by the product at the call site, so another product starts without the fallback. */
+/** The first message in the chat, which the buyer can edit before sending. */
+export const chatGreeting = (title: string) =>
+  `Chào bạn, mình quan tâm tin "${title}" trên Chợ Zalo. Sản phẩm còn không ạ?`;
+
+/**
+ * A buyer's two ways to the seller: a Zalo chat about this listing, and a call, possible
+ * once the seller has shared their number. A sold listing offers neither.
+ */
 export default function ProductContactAction({
   product,
   onContactError,
@@ -12,48 +18,53 @@ export default function ProductContactAction({
   product: ProductDetail;
   onContactError: (message: string) => void;
 }) {
-  const contact = product.seller.contact;
-  const isSold = product.status === 'SOLD';
-  const [showPhoneFallback, setShowPhoneFallback] = useState(false);
+  const { zaloProfileId, phoneNumber } = product.seller.contact;
 
-  const contactSeller = async () => {
+  if (product.status === 'SOLD') {
+    return (
+      <Button className="h-11" fullWidth disabled>
+        Sản phẩm đã bán
+      </Button>
+    );
+  }
+
+  const messageSeller = async () => {
     try {
-      await openProfile({ id: contact.zaloProfileId, type: 'user' });
+      await openChat({ type: 'user', id: zaloProfileId, message: chatGreeting(product.title) });
     } catch {
-      if (contact.phoneNumber) {
-        setShowPhoneFallback(true);
-        return;
+      // The profile has its own "Nhắn tin", where the chat may not open directly.
+      try {
+        await openProfile({ type: 'user', id: zaloProfileId });
+      } catch {
+        onContactError('Không thể mở Zalo trên thiết bị này.');
       }
-      onContactError('Không thể mở liên hệ trên thiết bị này.');
     }
   };
 
   const callSeller = async () => {
-    if (!contact.phoneNumber) return;
+    if (!phoneNumber) return;
     try {
-      await openPhone({ phoneNumber: contact.phoneNumber });
+      await openPhone({ phoneNumber });
     } catch {
       onContactError('Không thể mở cuộc gọi trên thiết bị này.');
     }
   };
 
-  const contactLabel = isSold ? 'Sản phẩm đã bán' : 'Liên hệ người bán';
-  // A refetch can drop the number while the fallback is up.
-  const isPhoneFallbackShown = showPhoneFallback && Boolean(contact.phoneNumber);
-
   return (
-    <>
-      <Button className="h-11" fullWidth disabled={isSold} onClick={contactSeller}>
-        {contactLabel}
+    <div className="flex gap-2">
+      {/* Shown, disabled, without a number: the buyer sees that calling is not possible. */}
+      <Button
+        className="h-11 flex-1"
+        variant="secondary"
+        disabled={!phoneNumber}
+        prefixIcon={<Icon icon="zi-call" />}
+        onClick={callSeller}
+      >
+        Gọi điện
       </Button>
-      {isPhoneFallbackShown && (
-        <button
-          className="mt-2 block w-full border-0 p-1.5 text-caption font-semibold text-marketplace-blue"
-          onClick={callSeller}
-        >
-          Gọi số điện thoại người bán
-        </button>
-      )}
-    </>
+      <Button className="h-11 flex-1" prefixIcon={<Icon icon="zi-chat" />} onClick={messageSeller}>
+        Nhắn qua Zalo
+      </Button>
+    </div>
   );
 }
