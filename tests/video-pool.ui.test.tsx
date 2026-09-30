@@ -9,7 +9,7 @@ beforeEach(() => {
 });
 
 function setUp() {
-  const pool = new VideoPool(3);
+  const pool = new VideoPool();
   const parking = document.createElement('div');
   pool.setParking(parking);
   const hosts = Array.from({ length: 8 }, () => document.createElement('div'));
@@ -21,7 +21,7 @@ describe('VideoPool', () => {
     const { parking } = setUp();
 
     const videos = Array.from(parking.querySelectorAll('video'));
-    expect(videos).toHaveLength(3);
+    expect(videos).toHaveLength(1);
     expect(
       videos.every((video) => video.muted && video.hasAttribute('playsinline') && video.loop),
     ).toBe(true);
@@ -36,15 +36,16 @@ describe('VideoPool', () => {
 
     expect(fourth).toBe(first);
     expect(hosts[3].contains(fourth)).toBe(true);
-    expect(pool.claim(4, hosts[4])).not.toBe(fourth);
+    expect(pool.claim(4, hosts[4])).toBe(fourth);
   });
 
-  it('gives neighbouring reels different elements', () => {
+  it('gives every reel the same element', () => {
     const { pool, hosts } = setUp();
 
     const videos = [4, 5, 6].map((index) => pool.claim(index, hosts[index]));
 
-    expect(new Set(videos).size).toBe(3);
+    expect(new Set(videos).size).toBe(1);
+    expect(hosts[6].contains(videos[0])).toBe(true);
   });
 
   it('drops the source and parks the element on release', async () => {

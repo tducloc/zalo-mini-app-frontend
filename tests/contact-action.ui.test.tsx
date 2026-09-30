@@ -93,6 +93,17 @@ describe('ProductContactAction', () => {
     expect(openProfile).toHaveBeenCalledWith({ type: 'user', id: 'zalo_seller' });
   });
 
+  it('stays on screen when the seller has no contact', () => {
+    const bare = product('PUBLISHED', null);
+    bare.seller.contact = null;
+    render(<ProductContactAction product={bare} onContactError={vi.fn()} />);
+
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Gọi điện' }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Nhắn qua Zalo' }).disabled).toBe(
+      true,
+    );
+  });
+
   it('offers nothing on a sold listing', () => {
     renderAction('SOLD', '0912345678');
 

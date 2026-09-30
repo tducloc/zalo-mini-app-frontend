@@ -18,7 +18,8 @@ export default function ProductContactAction({
   product: ProductDetail;
   onContactError: (message: string) => void;
 }) {
-  const { zaloProfileId, phoneNumber } = product.seller.contact;
+  const zaloProfileId = product.seller.contact?.zaloProfileId;
+  const phoneNumber = product.seller.contact?.phoneNumber ?? null;
 
   if (product.status === 'SOLD') {
     return (
@@ -29,6 +30,7 @@ export default function ProductContactAction({
   }
 
   const messageSeller = async () => {
+    if (!zaloProfileId) return;
     try {
       await openChat({ type: 'user', id: zaloProfileId, message: chatGreeting(product.title) });
     } catch {
@@ -62,7 +64,12 @@ export default function ProductContactAction({
       >
         Gọi điện
       </Button>
-      <Button className="h-11 flex-1" prefixIcon={<Icon icon="zi-chat" />} onClick={messageSeller}>
+      <Button
+        className="h-11 flex-1"
+        disabled={!zaloProfileId}
+        prefixIcon={<Icon icon="zi-chat" />}
+        onClick={messageSeller}
+      >
         Nhắn qua Zalo
       </Button>
     </div>

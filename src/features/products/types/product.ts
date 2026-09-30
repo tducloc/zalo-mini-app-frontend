@@ -44,11 +44,14 @@ export type ProductDetail = {
     id: string;
     name: string | null;
     avatarUrl: string | null;
-    /** Every seller can be reached on Zalo; the number only once they share it. */
+    /**
+     * Null when this API still omits sellers who never turned contact on.
+     * The Zalo id is how a buyer messages them. The number is null until they share it.
+     */
     contact: {
       zaloProfileId: string;
       phoneNumber: string | null;
-    };
+    } | null;
   };
   viewer: {
     isOwner: boolean;

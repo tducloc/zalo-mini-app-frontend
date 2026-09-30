@@ -22,9 +22,11 @@ describe('reelPlayer', () => {
     expect(run('paused', activated, playing)).toBe('playing');
   });
 
-  it('pauses when the reel leaves the screen, and plays again when it comes back', () => {
-    expect(run('playing', deactivated)).toBe('paused');
+  it('stays ready to play when the reel leaves, and starts again when it comes back', () => {
+    expect(run('playing', deactivated)).toBe('loading');
+    expect(run('paused', deactivated)).toBe('loading');
     expect(run('playing', deactivated, activated)).toBe('loading');
+    expect(run('playing', deactivated, activated, playing)).toBe('playing');
   });
 
   it('keeps a playing reel playing when told again that it is on screen', () => {

@@ -1,11 +1,4 @@
-import {
-  type RefObject,
-  type ReactNode,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Page, useLocation } from 'zmp-ui';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -16,12 +9,13 @@ import { useReels } from '@/features/reels/api/get-reels';
 import ReelItem from '@/features/reels/components/reel-item';
 import { reelHeightClass, spinnerClass } from '@/features/reels/constants/styles';
 import { useActiveReel } from '@/features/reels/hooks/use-active-reel';
+import { useLoadMoreReels } from '@/features/reels/hooks/use-load-more-reels';
+import { useRemovedReels } from '@/features/reels/hooks/use-removed-reels';
+import { useRestoreReelScroll } from '@/features/reels/hooks/use-restore-reel-scroll';
+import type { ReelItem as Reel } from '@/features/reels/types/reel';
 import { slotOf } from '@/features/reels/utils/reel-slot';
 import { useReelsStore } from '@/stores/reels';
-import { getConnection, isDataConstrained } from '@/utils/network';
 import ProductDetailPage from '@/pages/product-detail';
-
-const REELS_LEFT_TO_LOAD_MORE = 3;
 
 const scrollerClass = 'snap-y snap-mandatory bg-black pb-[74px] text-white';
 const centredClass = `flex flex-col items-center justify-center ${reelHeightClass}`;
@@ -57,6 +51,7 @@ export default function ReelsPage() {
     if (!pager || !isCurrentRoute) {
       return;
     }
+
     setPagerInteractive(pager.scrollLeft > 0);
     setFeedVisible(pager.scrollLeft < 12);
     setDetailShowing(pager.scrollLeft >= pager.clientWidth / 2);
@@ -66,6 +61,7 @@ export default function ReelsPage() {
     setPagerInteractive(true);
     pagerRef.current?.scrollTo({ left: pagerRef.current.clientWidth, behavior: 'smooth' });
   };
+
   const showReels = () => pagerRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
 
   const reels = reelsQuery.data?.pages.flatMap((page) => page.data) ?? [];
@@ -75,22 +71,19 @@ export default function ReelsPage() {
     0,
     reels.findIndex((reel) => reel.id === activeProductId),
   );
-  const activeIndex = useActiveReel(scrollerRef, reels.length + 1, restoredIndex);
+  const [activeIndex, setActiveIndex] = useActiveReel(scrollerRef, reels.length + 1, restoredIndex);
   const activeReelId = reels[activeIndex]?.id;
-  const canPreload = !isDataConstrained(getConnection());
 
-  const hasRestoredRef = useRef(false);
-  useLayoutEffect(() => {
-    const scroller = scrollerRef.current;
-    if (hasRestoredRef.current || !scroller || !reels.length) {
-      return;
-    }
-    hasRestoredRef.current = true;
-    const reel = scroller.querySelector(`[data-reel-index="${activeIndex}"]`);
-    if (reel) {
-      scroller.scrollTop += reel.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
-    }
-  }, [reels.length, activeIndex]);
+  useRemovedReels(reels, activeIndex, activeReelId, setActiveIndex);
+  useRestoreReelScroll(scrollerRef, reels.length, activeIndex);
+  useLoadMoreReels(
+    reels.length,
+    activeIndex,
+    hasNextPage,
+    isFetching,
+    isFetchNextPageError,
+    fetchNextPage,
+  );
 
   useEffect(() => {
     if (activeReelId) {
@@ -98,63 +91,21 @@ export default function ReelsPage() {
     }
   }, [activeReelId, setActiveProductId]);
 
-  const isNearEnd = reels.length - 1 - activeIndex <= REELS_LEFT_TO_LOAD_MORE;
-  const canLoadMore = hasNextPage && !isFetching && !isFetchNextPageError;
-  useEffect(() => {
-    if (isNearEnd && canLoadMore) {
-      void fetchNextPage();
-    }
-  }, [isNearEnd, canLoadMore, fetchNextPage]);
-
-  let content: ReactNode;
-  if (reelsQuery.isPending) {
-    content = <ReelSkeleton />;
-  } else if (reelsQuery.isError && !reelsQuery.data) {
-    content = (
-      <div className={centredClass}>
-        <FeedbackState
-          type="error"
-          title="Không tải được video"
-          description="Vui lòng kiểm tra kết nối mạng và thử lại."
-          onAction={() => reelsQuery.refetch()}
-        />
-      </div>
-    );
-  } else if (!reels.length) {
-    content = (
-      <div className={centredClass}>
-        <FeedbackState
-          type="empty"
-          title="Chưa có video nào"
-          description="Vui lòng quay lại sau."
-        />
-      </div>
-    );
-  } else {
-    content = (
-      <>
-        {reels.map((reel, index) => (
-          <ReelItem
-            key={reel.id}
-            reel={reel}
-            index={index}
-            slot={slotOf(index, activeIndex, canPreload)}
-            isAppVisible={isAppVisible && isFeedVisible}
-            onOpen={showDetail}
-          />
-        ))}
-        <div className={`snap-start ${centredClass}`} data-reel-index={reels.length}>
-          {isFetchNextPageError ? (
-            <InlineRetry message="Không tải thêm được video." onRetry={() => fetchNextPage()} />
-          ) : hasNextPage ? (
-            <span className={spinnerClass} />
-          ) : (
-            <p className="m-0 text-sm text-white/70">Bạn đã xem hết video.</p>
-          )}
-        </div>
-      </>
-    );
-  }
+  const content = (
+    <ReelFeed
+      isPending={reelsQuery.isPending}
+      isError={reelsQuery.isError}
+      hasData={Boolean(reelsQuery.data)}
+      reels={reels}
+      activeIndex={activeIndex}
+      isAppVisible={isAppVisible && isFeedVisible}
+      hasNextPage={hasNextPage}
+      isFetchNextPageError={isFetchNextPageError}
+      onRetry={() => reelsQuery.refetch()}
+      onRetryNext={() => fetchNextPage()}
+      onOpen={showDetail}
+    />
+  );
 
   return (
     <div
@@ -194,6 +145,85 @@ export default function ReelsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function ReelFeed({
+  isPending,
+  isError,
+  hasData,
+  reels,
+  activeIndex,
+  isAppVisible,
+  hasNextPage,
+  isFetchNextPageError,
+  onRetry,
+  onRetryNext,
+  onOpen,
+}: {
+  isPending: boolean;
+  isError: boolean;
+  hasData: boolean;
+  reels: Reel[];
+  activeIndex: number;
+  isAppVisible: boolean;
+  hasNextPage: boolean;
+  isFetchNextPageError: boolean;
+  onRetry: () => void;
+  onRetryNext: () => void;
+  onOpen: () => void;
+}) {
+  if (isPending) {
+    return <ReelSkeleton />;
+  }
+
+  if (isError && !hasData) {
+    return (
+      <div className={centredClass}>
+        <FeedbackState
+          type="error"
+          title="Không tải được video"
+          description="Vui lòng kiểm tra kết nối mạng và thử lại."
+          onAction={onRetry}
+        />
+      </div>
+    );
+  }
+
+  if (!reels.length) {
+    return (
+      <div className={centredClass}>
+        <FeedbackState
+          type="empty"
+          title="Chưa có video nào"
+          description="Vui lòng quay lại sau."
+        />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {reels.map((reel, index) => (
+        <ReelItem
+          key={reel.id}
+          reel={reel}
+          index={index}
+          slot={slotOf(index, activeIndex)}
+          isAppVisible={isAppVisible}
+          onOpen={onOpen}
+        />
+      ))}
+      <div className={`snap-start ${centredClass}`} data-reel-index={reels.length}>
+        {isFetchNextPageError ? (
+          <InlineRetry message="Không tải thêm được video." onRetry={onRetryNext} />
+        ) : hasNextPage ? (
+          <span className={spinnerClass} />
+        ) : (
+          <p className="m-0 text-sm text-white/70">Bạn đã xem hết video.</p>
+        )}
+      </div>
+    </>
   );
 }
 
