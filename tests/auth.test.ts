@@ -1,12 +1,7 @@
 import axios from 'axios';
-vi.mock('zmp-sdk', () => ({ getAccessToken: vi.fn(), getUserInfo: vi.fn() }));
+vi.mock('zmp-sdk', () => ({ getAccessToken: vi.fn() }));
 const session = { accessToken: 'jwt-new', user: { id: 'u1', name: null, avatarUrl: null } };
-let http: any,
-  apiClient: any,
-  restoreSession: any,
-  getSession: any,
-  getAccessToken: any,
-  getUserInfo: any;
+let http: any, apiClient: any, restoreSession: any, getSession: any, getAccessToken: any;
 const response = (config: any, status: number, data = {}) => {
   const result = { config, status, data, headers: {}, statusText: String(status) };
   if (status >= 400)
@@ -18,9 +13,8 @@ beforeEach(async () => {
   // Local .env files must not change test behavior.
   vi.stubEnv('VITE_DEV_ZALO_TOKEN', '');
   vi.stubGlobal('window', new EventTarget());
-  ({ getAccessToken, getUserInfo } = await import('zmp-sdk'));
+  ({ getAccessToken } = await import('zmp-sdk'));
   getAccessToken.mockReset().mockResolvedValue('zalo-token');
-  getUserInfo.mockReset().mockResolvedValue({ userInfo: { id: 'zalo', name: 'Loc' } });
   ({ apiClient } = await import('@/lib/api-client'));
   ({ restoreSession, getSession } = await import('@/features/auth/api/session'));
   ({ http } = await import('@/lib/http'));
@@ -28,27 +22,6 @@ beforeEach(async () => {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
-});
-it('asks Zalo for the name before exchanging the access token', async () => {
-  const order: string[] = [];
-  getUserInfo.mockImplementation(() => {
-    order.push('profile');
-    return Promise.resolve({ userInfo: {} });
-  });
-  getAccessToken.mockImplementation(() => {
-    order.push('token');
-    return Promise.resolve('zalo-token');
-  });
-  apiClient.defaults.adapter = async (c: any) => response(c, 200, { data: session });
-  await restoreSession();
-  expect(order).toEqual(['profile', 'token']);
-  expect(getUserInfo).toHaveBeenCalledWith({ autoRequestPermission: true });
-});
-it('still signs in when the user closes the name prompt', async () => {
-  getUserInfo.mockRejectedValueOnce(new Error('denied'));
-  apiClient.defaults.adapter = async (c: any) => response(c, 200, { data: session });
-  await restoreSession();
-  expect(getSession()).toEqual(session);
 });
 it('keeps the restored session in memory', async () => {
   apiClient.defaults.adapter = async (c: any) => response(c, 200, { data: session });
