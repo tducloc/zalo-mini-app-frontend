@@ -1,30 +1,22 @@
 import { slotOf } from '@/features/reels/utils/reel-slot';
 
-const slots = (count: number, activeIndex: number, canPreload: boolean) =>
-  Array.from({ length: count }, (_, index) => slotOf(index, activeIndex, canPreload));
+const slots = (count: number, activeIndex: number) =>
+  Array.from({ length: count }, (_, index) => slotOf(index, activeIndex));
 
 describe('slotOf', () => {
-  it('plays the reel on screen, keeps the one above and loads the one below', () => {
-    expect(slots(5, 2, true)).toEqual(['idle', 'previous', 'active', 'next', 'idle']);
+  it('gives the shared video only to the reel on screen', () => {
+    expect(slots(5, 2)).toEqual(['idle', 'idle', 'active', 'idle', 'idle']);
   });
 
-  it('keeps no reel two or more above the one on screen', () => {
-    expect(slotOf(0, 2, true)).toBe('idle');
+  it('gives it to the first reel', () => {
+    expect(slots(3, 0)).toEqual(['active', 'idle', 'idle']);
   });
 
-  it('keeps the reel above but loads nothing ahead on Save-Data or a slow network', () => {
-    expect(slots(4, 1, false)).toEqual(['previous', 'active', 'idle', 'idle']);
+  it('gives it to the last reel', () => {
+    expect(slots(3, 2)).toEqual(['idle', 'idle', 'active']);
   });
 
-  it('has no reel above the first one', () => {
-    expect(slots(3, 0, true)).toEqual(['active', 'next', 'idle']);
-  });
-
-  it('has no next reel after the last one', () => {
-    expect(slots(3, 2, true)).toEqual(['idle', 'previous', 'active']);
-  });
-
-  it('keeps only the last reel while the end of the list is on screen', () => {
-    expect(slots(3, 3, true)).toEqual(['idle', 'idle', 'previous']);
+  it('holds no video while the end of the list is on screen', () => {
+    expect(slots(3, 3)).toEqual(['idle', 'idle', 'idle']);
   });
 });

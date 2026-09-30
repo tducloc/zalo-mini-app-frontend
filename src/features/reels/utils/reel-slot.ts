@@ -1,14 +1,6 @@
-export type ReelSlot = 'previous' | 'active' | 'next' | 'idle';
+export type ReelSlot = 'active' | 'idle';
 
-export function slotOf(index: number, activeIndex: number, canPreload: boolean): ReelSlot {
-  if (index === activeIndex) {
-    return 'active';
-  }
-  if (index === activeIndex - 1) {
-    return 'previous';
-  }
-  if (canPreload && index === activeIndex + 1) {
-    return 'next';
-  }
-  return 'idle';
+/** Only the reel on screen holds the one shared video element. */
+export function slotOf(index: number, activeIndex: number): ReelSlot {
+  return index === activeIndex ? 'active' : 'idle';
 }

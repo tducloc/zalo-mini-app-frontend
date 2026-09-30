@@ -32,5 +32,5 @@ export function useActiveReel(
     return () => observer.disconnect();
   }, [scrollerRef, itemCount]);
 
-  return activeIndex;
+  return [activeIndex, setActiveIndex] as const;
 }

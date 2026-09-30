@@ -26,7 +26,9 @@ export function reelPlayer(status: PlayerStatus, event: PlayerEvent): PlayerStat
     case 'activated':
       return status === 'playing' ? status : 'loading';
     case 'deactivated':
-      return 'paused';
+      // Paused is only a viewer tap. An off-screen reel marked paused paints the
+      // play icon for one frame when it becomes active, then the icon goes away.
+      return 'loading';
     case 'tapped':
       return shouldPlay(status) ? 'paused' : 'loading';
     case 'playing':
