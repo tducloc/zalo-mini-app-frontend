@@ -97,3 +97,18 @@ export function restoreSession(manualRetry = false): Promise<Session> {
 
   return recoveryPromise;
 }
+
+/**
+ * Read the Zalo name again after the seller allows it. Unlike `restoreSession`, a failure
+ * leaves the signed-in session and does not show the sign-in error.
+ */
+export async function refreshSellerProfile() {
+  if (!getSession()) {
+    return;
+  }
+  try {
+    saveSession(await exchangeForSession());
+  } catch (error) {
+    warnInDev('auth', 'profile refresh failed', error);
+  }
+}
