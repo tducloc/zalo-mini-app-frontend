@@ -42,8 +42,8 @@ it('asks only for the scopes that are still off, and keeps a scope the seller tu
   });
 
   await expect(askMissingSellerPermissions({ name: false, phone: false })).resolves.toEqual({
-    name: true,
-    phone: false,
+    outcome: 'answered',
+    permissions: { name: true, phone: false },
   });
   expect(vi.mocked(authorize)).toHaveBeenCalledWith({
     scopes: ['scope.userInfo', 'scope.userPhonenumber'],
@@ -52,18 +52,23 @@ it('asks only for the scopes that are still off, and keeps a scope the seller tu
 
 it('does not open the sheet when both scopes are already on', async () => {
   await expect(askMissingSellerPermissions({ name: true, phone: true })).resolves.toEqual({
-    name: true,
-    phone: true,
+    outcome: 'ready',
+    permissions: { name: true, phone: true },
   });
   expect(vi.mocked(authorize)).not.toHaveBeenCalled();
 });
 
-it('keeps the earlier reading when the seller closes the sheet', async () => {
-  vi.mocked(authorize).mockRejectedValue(new Error('denied'));
-
+it('keeps the earlier reading when the seller refuses, and retries after any other error', async () => {
+  vi.mocked(authorize).mockRejectedValueOnce({ code: -201 });
   await expect(askMissingSellerPermissions({ name: false, phone: true })).resolves.toEqual({
-    name: false,
-    phone: true,
+    outcome: 'refused',
+    permissions: { name: false, phone: true },
+  });
+
+  vi.mocked(authorize).mockRejectedValueOnce(new Error('network'));
+  await expect(askMissingSellerPermissions({ name: false, phone: true })).resolves.toEqual({
+    outcome: 'failed',
+    permissions: { name: false, phone: true },
   });
 });
 

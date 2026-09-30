@@ -45,30 +45,55 @@ export async function readSellerPermissions(): Promise<SellerPermissions | null>
   }
 }
 
+export type PermissionAsk = {
+  /** `failed` is a Zalo error, not a choice, so the sell page may ask again. */
+  outcome: 'ready' | 'answered' | 'refused' | 'failed';
+  permissions: SellerPermissions;
+};
+
+const REFUSED_CODE = -201;
+
+function isRefusal(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code: unknown }).code === REFUSED_CODE
+  );
+}
+
 /**
  * One Zalo sheet for the scopes still off. Scopes already on are left out, as Zalo's guide
  * says to ask only for what is missing. A refusal keeps the earlier reading.
  */
 export async function askMissingSellerPermissions(
   current: SellerPermissions,
-): Promise<SellerPermissions> {
+): Promise<PermissionAsk> {
   const missing = SELLER_SCOPES.filter((scope) =>
     scope === 'scope.userInfo' ? !current.name : !current.phone,
   );
   if (missing.length === 0) {
-    return current;
+    return { outcome: 'ready', permissions: current };
   }
 
   try {
     const granted = await authorize({ scopes: [...missing] });
     return {
-      name: missing.includes('scope.userInfo') ? granted['scope.userInfo'] === true : current.name,
-      phone: missing.includes('scope.userPhonenumber')
-        ? granted['scope.userPhonenumber'] === true
-        : current.phone,
+      outcome: 'answered',
+      permissions: {
+        name: missing.includes('scope.userInfo')
+          ? granted['scope.userInfo'] === true
+          : current.name,
+        phone: missing.includes('scope.userPhonenumber')
+          ? granted['scope.userPhonenumber'] === true
+          : current.phone,
+      },
     };
-  } catch {
-    return current;
+  } catch (error) {
+    return {
+      outcome: isRefusal(error) ? 'refused' : 'failed',
+      permissions: current,
+    };
   }
 }
 
