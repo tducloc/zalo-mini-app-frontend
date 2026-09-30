@@ -4,6 +4,7 @@ import MobilePageHeader from '@/components/layout/mobile-page-header';
 import { cardClass, pageClass, pageContentClass, stateIconClass } from '@/components/layout/styles';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { getAuthStatusLabel } from '@/features/auth/utils/auth-status';
+import PhoneNumberCard from '@/features/contact/components/phone-number-card';
 
 // Dev-only entry to the media measurement page. Remove with src/pages/media-lab.tsx.
 const showMediaLab = import.meta.env.DEV || import.meta.env.VITE_MEDIA_LAB === 'true';
@@ -28,6 +29,8 @@ export default function ProfilePage() {
             </p>
           </div>
         </section>
+
+        {user && <PhoneNumberCard />}
 
         {showMediaLab && (
           <section className={`${cardClass} mt-3 p-4`}>
