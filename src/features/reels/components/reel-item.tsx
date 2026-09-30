@@ -41,8 +41,8 @@ export default function ReelItem({
   const isActive = slot === 'active' && isAppVisible;
   // A reel that mounts on screen plays in its first effects, which the Reels tab tap runs
   // inside the tap (flushSync): the one moment WebKit allows sound.
-  // Off-screen reels also start loading. Starting them paused paints the play icon for
-  // one frame when they become active, before the effect below can catch up.
+  // Including off screen. A paused start paints the play icon for one frame when the
+  // reel becomes active. Idle reels still have no source.
   const [status, dispatch] = useReducer(reelPlayer, 'loading');
   const isActiveRef = useRef(isActive);
   isActiveRef.current = isActive;
@@ -86,7 +86,16 @@ export default function ReelItem({
     const handleWaiting = () => {
       if (isActiveRef.current) dispatch({ type: 'waiting' });
     };
-    const handleError = () => dispatch({ type: 'errored' });
+    const handleError = () => {
+      // Changing src on the shared element aborts the previous load.
+      if (!isActiveRef.current || video.error?.code === MediaError.MEDIA_ERR_ABORTED) {
+        return;
+      }
+      if (video.getAttribute('src') !== src) {
+        return;
+      }
+      dispatch({ type: 'errored' });
+    };
     video.addEventListener('playing', handlePlaying);
     video.addEventListener('waiting', handleWaiting);
     video.addEventListener('error', handleError);
@@ -113,7 +122,7 @@ export default function ReelItem({
       return;
     }
     video.play().catch((error: unknown) => {
-      if (!isPlayRefused(error)) {
+      if (!isActiveRef.current || !isPlayRefused(error)) {
         return;
       }
       dispatch({ type: 'refused', wasMuted: video.muted });

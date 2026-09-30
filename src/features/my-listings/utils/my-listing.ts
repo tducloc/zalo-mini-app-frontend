@@ -101,16 +101,16 @@ export function includesListing(
   return data?.pages.some((page) => page.data.some((listing) => listing.id === listingId)) ?? false;
 }
 
-/** The pages without one listing, for a tab it has just left. */
-export function withoutListing(
-  data: InfiniteData<MyListingsPage, string | undefined>,
+/** The pages without one id. The next cursor stays, so the following page is unchanged. */
+export function withoutListing<Page extends { data: { id: string }[] }>(
+  data: InfiniteData<Page, string | undefined>,
   listingId: string,
-): InfiniteData<MyListingsPage, string | undefined> {
+): InfiniteData<Page, string | undefined> {
   return {
     ...data,
     pages: data.pages.map((page) => ({
       ...page,
-      data: page.data.filter((listing) => listing.id !== listingId),
+      data: page.data.filter((item) => item.id !== listingId),
     })),
   };
 }

@@ -6,27 +6,51 @@ import {
   useRef,
   useState,
 } from 'react';
+import { type InfiniteData, useQueryClient } from '@tanstack/react-query';
 import { Page, useLocation } from 'zmp-ui';
 import { useShallow } from 'zustand/react/shallow';
 
 import FeedbackState from '@/components/feedback/feedback-state';
 import InlineRetry from '@/components/feedback/inline-retry';
 import Skeleton from '@/components/feedback/skeleton';
-import { useReels } from '@/features/reels/api/get-reels';
+import { reelKeys, useReels } from '@/features/reels/api/get-reels';
 import ReelItem from '@/features/reels/components/reel-item';
 import { reelHeightClass, spinnerClass } from '@/features/reels/constants/styles';
 import { useActiveReel } from '@/features/reels/hooks/use-active-reel';
+import {
+  forgetReelRemovals,
+  indexAfterRemoval,
+  pendingReelIds,
+  setReelsMounted,
+} from '@/features/reels/utils/pending-removal';
 import { slotOf } from '@/features/reels/utils/reel-slot';
+import type { ReelsPage as ReelsPageData } from '@/features/reels/types/reel';
 import { useReelsStore } from '@/stores/reels';
 import ProductDetailPage from '@/pages/product-detail';
 
 const REELS_LEFT_TO_LOAD_MORE = 3;
+
+function dropReels(queryClient: ReturnType<typeof useQueryClient>, ids: readonly string[]) {
+  const removed = new Set(ids);
+  queryClient.setQueriesData<InfiniteData<ReelsPageData>>({ queryKey: reelKeys.all() }, (data) =>
+    data
+      ? {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            data: page.data.filter((item) => !removed.has(item.id)),
+          })),
+        }
+      : data,
+  );
+}
 
 const scrollerClass = 'snap-y snap-mandatory bg-black pb-[74px] text-white';
 const centredClass = `flex flex-col items-center justify-center ${reelHeightClass}`;
 
 export default function ReelsPage() {
   const isCurrentRoute = useLocation().pathname === '/reels';
+  const queryClient = useQueryClient();
   const reelsQuery = useReels();
   const { activeProductId, setActiveProductId, setTabbarHost, setPagerInteractive } = useReelsStore(
     useShallow((state) => ({
@@ -74,8 +98,49 @@ export default function ReelsPage() {
     0,
     reels.findIndex((reel) => reel.id === activeProductId),
   );
-  const activeIndex = useActiveReel(scrollerRef, reels.length + 1, restoredIndex);
+  const [activeIndex, setActiveIndex] = useActiveReel(scrollerRef, reels.length + 1, restoredIndex);
   const activeReelId = reels[activeIndex]?.id;
+  const reelsRef = useRef(reels);
+  reelsRef.current = reels;
+
+  useEffect(() => {
+    setReelsMounted(true);
+    return () => {
+      setReelsMounted(false);
+      const leaving = pendingReelIds();
+      if (!leaving.length) {
+        return;
+      }
+      const list = reelsRef.current;
+      const current = useReelsStore.getState().activeProductId;
+      if (current && leaving.includes(current)) {
+        const at = list.findIndex((reel) => reel.id === current);
+        const neighbor = list[at + 1] ?? list[at - 1];
+        if (neighbor) {
+          useReelsStore.getState().setActiveProductId(neighbor.id);
+        }
+      }
+      dropReels(queryClient, leaving);
+      forgetReelRemovals(leaving);
+    };
+  }, [queryClient]);
+
+  useEffect(() => {
+    const leaving = pendingReelIds().filter((id) => id !== activeReelId);
+    if (!leaving.length) {
+      return;
+    }
+    const nextIndex = indexAfterRemoval(
+      reelsRef.current.map((reel) => reel.id),
+      activeIndex,
+      new Set(leaving),
+    );
+    dropReels(queryClient, leaving);
+    forgetReelRemovals(leaving);
+    if (nextIndex !== activeIndex) {
+      setActiveIndex(nextIndex);
+    }
+  }, [activeReelId, activeIndex, queryClient, setActiveIndex]);
 
   const hasRestoredRef = useRef(false);
   useLayoutEffect(() => {

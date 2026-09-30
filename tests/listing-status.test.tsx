@@ -8,6 +8,7 @@ import { ListingAction } from '@/features/my-listings/types/my-listing';
 import { productKeys } from '@/features/products/api/keys';
 import type { ProductDetail } from '@/features/products/types/product';
 import { reelKeys } from '@/features/reels/api/get-reels';
+import { setReelsMounted } from '@/features/reels/utils/pending-removal';
 import { http } from '@/lib/http';
 
 vi.mock('@/lib/http', () => ({ http: { post: vi.fn() } }));
@@ -54,6 +55,8 @@ function renderStatus() {
 }
 
 describe('useChangeListingStatus', () => {
+  afterEach(() => setReelsMounted(false));
+
   it('takes a hidden listing out of every loaded feed and reels page', async () => {
     vi.mocked(http.post).mockResolvedValue({ data: { data: detail('ARCHIVED') } });
     const { result, queryClient } = renderStatus();
@@ -71,6 +74,49 @@ describe('useChangeListingStatus', () => {
     expect(
       queryClient.getQueryData<{ pageParams: unknown[] }>(productKeys.feed(feedParams))?.pageParams,
     ).toEqual([undefined, 'cursor-0']);
+  });
+
+  it('takes a sold listing out the same way', async () => {
+    vi.mocked(http.post).mockResolvedValue({ data: { data: detail('SOLD') } });
+    const { result, queryClient } = renderStatus();
+
+    await result.current.mutateAsync({ productId: GONE, change: ListingAction.MarkSold });
+
+    expect(idsOf(queryClient.getQueryData(productKeys.feed(feedParams)))).toEqual([
+      ['keep'],
+      ['later'],
+    ]);
+    expect(idsOf(queryClient.getQueryData(reelKeys.all()))).toEqual([['keep'], []]);
+  });
+
+  it('keeps the open reel until the viewer leaves it', async () => {
+    vi.mocked(http.post).mockResolvedValue({ data: { data: detail('ARCHIVED') } });
+    setReelsMounted(true);
+    const { result, queryClient } = renderStatus();
+
+    await result.current.mutateAsync({ productId: GONE, change: ListingAction.Archive });
+
+    expect(idsOf(queryClient.getQueryData(productKeys.feed(feedParams)))).toEqual([
+      ['keep'],
+      ['later'],
+    ]);
+    expect(idsOf(queryClient.getQueryData(reelKeys.all()))).toEqual([['keep'], [GONE]]);
+    expect(queryClient.getQueryState(reelKeys.all())?.isInvalidated).toBe(false);
+  });
+
+  it('refetches the public lists when the status change fails', async () => {
+    vi.mocked(http.post).mockRejectedValue(new Error('conflict'));
+    const { result, queryClient } = renderStatus();
+
+    await expect(
+      result.current.mutateAsync({ productId: GONE, change: ListingAction.Archive }),
+    ).rejects.toThrow('conflict');
+
+    await waitFor(() => {
+      expect(queryClient.getQueryState(productKeys.feed(feedParams))?.isInvalidated).toBe(true);
+    });
+    expect(queryClient.getQueryState(reelKeys.all())?.isInvalidated).toBe(true);
+    expect(idsOf(queryClient.getQueryData(reelKeys.all()))).toEqual([['keep'], [GONE]]);
   });
 
   it('refetches the feed and reels when a listing is shown again', async () => {

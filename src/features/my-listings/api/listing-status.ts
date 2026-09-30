@@ -14,6 +14,7 @@ import {
 } from '@/features/my-listings/types/my-listing';
 import { getTabForStatus, withoutListing } from '@/features/my-listings/utils/my-listing';
 import { reelKeys } from '@/features/reels/api/get-reels';
+import { areReelsMounted, markReelForRemoval } from '@/features/reels/utils/pending-removal';
 import type { ReelsPage } from '@/features/reels/types/reel';
 import { productKeys } from '@/features/products/api/keys';
 import type { ProductDetail, ProductFeedPage } from '@/features/products/types/product';
@@ -38,37 +39,39 @@ interface StatusChangeInput {
   change: StatusChange;
 }
 
-/** One id taken out of every loaded page. The next cursor stays, so the following page is unchanged. */
-function withoutProduct<Page extends { data: { id: string }[] }>(
-  data: InfiniteData<Page>,
+function dropPages<Page extends { data: { id: string }[] }>(
+  queryClient: QueryClient,
+  queryKey: readonly unknown[],
   productId: string,
-): InfiniteData<Page> {
-  return {
-    ...data,
-    pages: data.pages.map((page) => ({
-      ...page,
-      data: page.data.filter((item) => item.id !== productId),
-    })),
-  };
+) {
+  queryClient.setQueriesData<InfiniteData<Page>>({ queryKey }, (data) =>
+    data ? withoutListing(data, productId) : data,
+  );
 }
 
-/** Hide or sold: the listing leaves the feed and reels already on screen, without refetching them. */
+/**
+ * Hide or sold: the card leaves the feed at once.
+ * On the open Reels page it is only marked, and leaves when the viewer moves on.
+ */
 function dropFromPublicLists(queryClient: QueryClient, productId: string) {
-  const drop = <Page extends { data: { id: string }[] }>(data: InfiniteData<Page> | undefined) =>
-    data && withoutProduct(data, productId);
+  dropPages<ProductFeedPage>(queryClient, productKeys.feeds(), productId);
+  if (areReelsMounted()) {
+    markReelForRemoval(productId);
+    return;
+  }
+  dropPages<ReelsPage>(queryClient, reelKeys.all(), productId);
+}
 
-  queryClient.setQueriesData<InfiniteData<ProductFeedPage>>(
-    { queryKey: productKeys.feeds() },
-    drop,
-  );
-  queryClient.setQueriesData<InfiniteData<ReelsPage>>({ queryKey: reelKeys.all() }, drop);
+function invalidatePublicLists(queryClient: QueryClient) {
+  void queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
+  void queryClient.invalidateQueries({ queryKey: reelKeys.all() });
 }
 
 /**
  * Changes a listing's status, then brings every copy up to date: the owner's detail at once,
  * the card out of the tab it left, and the owner's lists refetched.
- * Hiding or selling takes the card out of the feed and reels in memory.
- * Showing it again refetches those lists, because it has to land in the active sort.
+ * Hiding or selling takes the card out of the feed at once, and out of reels once the
+ * viewer is no longer on that reel. Showing it again refetches those lists.
  */
 export function useChangeListingStatus(viewerId: string | null) {
   const queryClient = useQueryClient();
@@ -104,11 +107,11 @@ export function useChangeListingStatus(viewerId: string | null) {
     onSettled: (product, _error, { change }) => {
       void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
       if (!product) {
+        invalidatePublicLists(queryClient);
         return;
       }
       if (change === ListingAction.Unarchive) {
-        void queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
-        void queryClient.invalidateQueries({ queryKey: reelKeys.all() });
+        invalidatePublicLists(queryClient);
         return;
       }
       dropFromPublicLists(queryClient, product.id);
