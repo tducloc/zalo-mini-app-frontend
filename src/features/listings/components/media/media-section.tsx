@@ -17,14 +17,18 @@ import RequiredMark from '@/features/listings/components/form/required-mark';
 import MediaAddTile from '@/features/listings/components/media/media-add-tile';
 import MediaTile from '@/features/listings/components/media/media-tile';
 import MediaViewer from '@/features/listings/components/media/media-viewer';
-import { missingPhotoMessage, refusedFilesMessage } from '@/features/listings/constants/messages';
+import {
+  mediaRules,
+  missingPhotoMessage,
+  refusedFilesMessage,
+} from '@/features/listings/constants/messages';
 import { formNoteClass, formSectionTitleClass } from '@/features/listings/constants/styles';
 import type { MediaPipeline } from '@/features/listings/services/media-pipeline';
 import type { ListingMedia } from '@/features/listings/types/draft-media';
 import { isFailed } from '@/features/listings/utils/draft-media';
 import { tileView } from '@/features/listings/utils/tile-view';
 import { PHOTO_ACCEPT, VIDEO_ACCEPT } from '@/features/media/constants/formats';
-import { MAX_IMAGES_PER_LISTING, MAX_VIDEO_SECONDS } from '@/features/media/constants/limits';
+import { MAX_IMAGES_PER_LISTING } from '@/features/media/constants/limits';
 import { MediaKind } from '@/features/media/types/media';
 import { takePickedFiles } from '@/features/media/utils/media';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 const TILE_GRID_CLASS = 'm-0 grid list-none grid-cols-4 gap-2.5 p-0';
 const FIELD_HEADING_CLASS = 'mb-2.5 mt-5 flex justify-between gap-2';
 const FIELD_HINT_CLASS = 'text-xs leading-normal text-marketplace-muted';
+const RULE_CLASS = `${FIELD_HINT_CLASS} mb-0 mt-2`;
 const VIDEO_NAME = 'Video';
 /**
  * A drag starts after a still press, so a quick swipe over the grid still scrolls the
@@ -163,6 +168,7 @@ export default function MediaSection({
             )}
           </ul>
         </SortableContext>
+        <p className={RULE_CLASS}>{mediaRules.photo}</p>
 
         {isPhotoMissing && (
           <p className="my-1.5 text-xs leading-normal text-marketplace-danger" role="alert">
@@ -172,7 +178,7 @@ export default function MediaSection({
 
         <div className={FIELD_HEADING_CLASS}>
           <b>Video</b>
-          <span className={FIELD_HINT_CLASS}>Tuỳ chọn · tối đa {MAX_VIDEO_SECONDS} giây</span>
+          <span className={FIELD_HINT_CLASS}>Tuỳ chọn</span>
         </div>
         <ul className={TILE_GRID_CLASS}>
           {video ? (
@@ -195,6 +201,7 @@ export default function MediaSection({
             />
           )}
         </ul>
+        <p className={RULE_CLASS}>{mediaRules.video}</p>
       </DndContext>
 
       {failedCount > 0 && (
