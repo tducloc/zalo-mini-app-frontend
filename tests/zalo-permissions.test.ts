@@ -7,29 +7,24 @@ import {
   readSellerPermissions,
 } from '@/features/contact/services/zalo-permissions';
 
+const store = vi.hoisted(() => new Map<string, string>());
+
 vi.mock('zmp-sdk', () => ({
   authorize: vi.fn(),
   getSetting: vi.fn(),
   openPermissionSetting: vi.fn(),
-}));
-
-const store = new Map<string, string>();
-
-beforeEach(() => {
-  store.clear();
-  vi.stubGlobal('localStorage', {
+  nativeStorage: {
     getItem: (key: string) => store.get(key) ?? null,
     setItem: (key: string, value: string) => {
       store.set(key, value);
     },
-    clear: () => store.clear(),
-  });
+  },
+}));
+
+beforeEach(() => {
+  store.clear();
   vi.mocked(authorize).mockReset();
   vi.mocked(getSetting).mockReset();
-});
-
-afterEach(() => {
-  vi.unstubAllGlobals();
 });
 
 it('reads each scope Zalo has already stored', async () => {

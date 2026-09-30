@@ -1,4 +1,4 @@
-import { authorize, getSetting, openPermissionSetting } from 'zmp-sdk';
+import { authorize, getSetting, nativeStorage, openPermissionSetting } from 'zmp-sdk';
 
 /** What a seller can share with buyers. Zalo's sheet lets them turn each one on or off. */
 export const SELLER_SCOPES = ['scope.userInfo', 'scope.userPhonenumber'] as const;
@@ -15,7 +15,9 @@ const ASKED_KEY = 'zalo-seller-permissions-asked';
 /** True after the sell page has already shown Zalo's sheet, including when the seller closed it. */
 export function hasAskedSellerPermissions() {
   try {
-    return localStorage.getItem(ASKED_KEY) === '1';
+    // Zalo's WebView has no localStorage. nativeStorage is Zalo's store, and falls back to
+    // localStorage only in the browser dev tools.
+    return nativeStorage.getItem(ASKED_KEY) === '1';
   } catch {
     return false;
   }
@@ -24,9 +26,9 @@ export function hasAskedSellerPermissions() {
 /** Record the ask before the sheet returns, so closing the app does not ask again. */
 export function markSellerPermissionsAsked() {
   try {
-    localStorage.setItem(ASKED_KEY, '1');
+    nativeStorage.setItem(ASKED_KEY, '1');
   } catch {
-    // Private mode still gets the sheet this once.
+    // Outside Zalo the sheet cannot open anyway.
   }
 }
 
