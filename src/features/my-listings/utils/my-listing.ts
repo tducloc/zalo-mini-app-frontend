@@ -102,10 +102,10 @@ export function includesListing(
 }
 
 /** The pages without one id. The next cursor stays, so the following page is unchanged. */
-export function withoutListing<Page extends { data: { id: string }[] }>(
-  data: InfiniteData<Page, string | undefined>,
+export function withoutListing<Page extends { data: { id: string }[] }, Param>(
+  data: InfiniteData<Page, Param>,
   listingId: string,
-): InfiniteData<Page, string | undefined> {
+): InfiniteData<Page, Param> {
   return {
     ...data,
     pages: data.pages.map((page) => ({

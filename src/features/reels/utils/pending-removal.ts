@@ -27,6 +27,20 @@ export function forgetReelRemovals(ids: readonly string[]) {
   for (const id of ids) pending.delete(id);
 }
 
+/** The reel beside `current`, preferring the one below. */
+export function neighborId(ids: readonly string[], current: string) {
+  const at = ids.indexOf(current);
+  if (at < 0) {
+    return undefined;
+  }
+  return ids[at + 1] ?? ids[at - 1];
+}
+
+/** Ids that can leave the list now. The reel still on screen stays. */
+export function removalsAfterSwitch(activeId: string | undefined, removed: readonly string[]) {
+  return removed.filter((id) => id !== activeId);
+}
+
 /** How far the active index moves left after those ids leave the list. */
 export function indexAfterRemoval(
   ids: readonly string[],
