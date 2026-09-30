@@ -23,6 +23,7 @@ import type { CreateReportInput } from '@/features/reports/types/report';
 import { useGoBack } from '@/hooks/use-go-back';
 import { useSwipe } from '@/hooks/use-swipe';
 import { useToast } from '@/hooks/use-toast';
+import { useToastOffset } from '@/hooks/use-toast-offset';
 import { getApiErrorStatus, HttpStatus } from '@/utils/api-error';
 
 const reportErrorMessages: Partial<Record<number, string>> = {
@@ -49,6 +50,7 @@ export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
   const [reportOpen, setReportOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [barHeight, setBarHeight] = useState(0);
+  useToastOffset(barHeight);
 
   // Public detail loads immediately; once sign-in finishes the viewer changes
   // the key and the owner/report fields are fetched for that user.
@@ -136,7 +138,7 @@ export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
           onAction={(action) => ownerActions.selectAction(product.id, action)}
         />
       ) : (
-        <ProductContactAction key={product.id} product={product} onContactError={showError} />
+        <ProductContactAction product={product} onContactError={showError} />
       )}
     </DetailBottomBar>
   );

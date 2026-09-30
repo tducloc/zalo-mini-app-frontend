@@ -8,6 +8,7 @@ import DraftIndicator, {
   DRAFT_STATUS_ID,
 } from '@/features/listings/components/draft/draft-indicator';
 import { useHasDraft } from '@/stores/listing-draft';
+import { useToastOffset } from '@/hooks/use-toast-offset';
 import { useReelsStore } from '@/stores/reels';
 import { reelKeys, reelsQueryOptions } from '@/features/reels/api/get-reels';
 import { videoPool } from '@/features/reels/services/video-pool';
@@ -57,6 +58,9 @@ export default function AppShell({ children }: PropsWithChildren) {
   // On the sell page the draft is in front of the seller.
   const shouldShowDraft = currentPath !== '/sell';
   const isDraftBannerShown = useHasDraft() && shouldShowDraft;
+  // The tab bar (74px and its raised "+", 14px), or the draft banner above it (bottom 84px,
+  // 52px tall).
+  useToastOffset(shouldShowTabbar ? (isDraftBannerShown ? 136 : 88) : null);
   const setVideoParking = useCallback((element: HTMLDivElement | null) => {
     videoPool.setParking(element);
   }, []);

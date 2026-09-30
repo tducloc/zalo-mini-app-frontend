@@ -44,9 +44,9 @@ export default function MediaTile({
   });
 
   const isError = view.tone === TileTone.Error;
-  // A video shows its own first frame until the server's poster arrives. A photo shows
-  // its original only when it failed: decoding ten full-size photos for the grid is what
-  // the image worker exists to avoid.
+  // A video shows the still read from it, else the file in a <video>, which iOS leaves
+  // blank. A photo shows its original only when it failed: decoding ten full-size photos
+  // for the grid is what the image worker exists to avoid.
   const localUrl = useObjectUrl(!view.imageUrl && (isVideo || isError) ? file : null);
   // A picture that does not load (an unreadable file) falls back to the icon.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);

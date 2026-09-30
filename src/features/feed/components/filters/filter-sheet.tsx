@@ -169,7 +169,8 @@ function FilterForm({
         onChange={(sort) => updateDraft({ sort: sort ?? DEFAULT_FILTERS.sort })}
       />
 
-      <div className="mt-6 flex gap-3">
+      {/* Stays in reach while the sheet scrolls on a small phone. */}
+      <div className="sticky bottom-0 -mx-4 -mb-4 mt-2 flex gap-3 bg-white px-4 pb-4 pt-4">
         <Button fullWidth variant="tertiary" onClick={onReset}>
           Xoá lọc
         </Button>
