@@ -7,20 +7,19 @@ import { applyPriceEdit, caretAfterDigits, formatPriceDigits } from '@/utils/pri
  * caret on the same digit. Takes and gives the bare digits ("1000000").
  */
 export function usePriceInput(digits: string, onChange: (digits: string) => void) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  // digits-before-caret to restore once the reformatted value renders
-  const pendingCaretRef = useRef<number | null>(null);
+  // The edited input and its digits-before-caret, to restore once the reformatted value renders
+  const pendingCaretRef = useRef<{ input: HTMLInputElement; digits: number } | null>(null);
 
   const value = formatPriceDigits(digits);
 
   useLayoutEffect(() => {
-    const input = inputRef.current;
-    if (pendingCaretRef.current === null || !input || document.activeElement !== input) {
+    const pending = pendingCaretRef.current;
+    if (!pending || document.activeElement !== pending.input) {
       return;
     }
 
-    const caret = caretAfterDigits(value, pendingCaretRef.current);
-    input.setSelectionRange(caret, caret);
+    const caret = caretAfterDigits(value, pending.digits);
+    pending.input.setSelectionRange(caret, caret);
     pendingCaretRef.current = null;
   }, [value]);
 
@@ -35,9 +34,9 @@ export function usePriceInput(digits: string, onChange: (digits: string) => void
       inputType,
     });
 
-    pendingCaretRef.current = edit.digitsBeforeCaret;
+    pendingCaretRef.current = { input: event.target, digits: edit.digitsBeforeCaret };
     onChange(edit.digits);
   };
 
-  return { inputRef, value, onChange: handleChange };
+  return { value, onChange: handleChange };
 }

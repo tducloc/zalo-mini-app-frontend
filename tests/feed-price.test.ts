@@ -80,6 +80,10 @@ describe('formatPriceDigits and priceToInputDigits', () => {
     expect(formatPriceDigits('')).toBe('');
   });
 
+  it('keeps every digit of a number too long to be exact', () => {
+    expect(formatPriceDigits('12345678901234567')).toBe('12.345.678.901.234.567');
+  });
+
   it('turns an applied price back into input digits', () => {
     expect(priceToInputDigits(0)).toBe('0');
     expect(priceToInputDigits(undefined)).toBe('');

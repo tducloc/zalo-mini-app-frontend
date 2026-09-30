@@ -25,7 +25,6 @@ export default function PriceInput({
   return (
     <div className="min-w-0 flex-1">
       <input
-        ref={price.inputRef}
         aria-describedby={error ? errorId : undefined}
         aria-invalid={Boolean(error)}
         aria-label={label}

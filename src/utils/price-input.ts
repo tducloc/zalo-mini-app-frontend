@@ -1,5 +1,4 @@
 import { MAX_PRICE_VND } from '@/features/products/constants/product';
-import { formatNumber } from '@/utils/format';
 
 // Longer than any valid price so an oversized paste shows the "too large"
 // error instead of being silently cut down to a valid-looking number.
@@ -68,6 +67,7 @@ export function caretAfterDigits(formatted: string, digitCount: number) {
   return formatted.length;
 }
 
+/** "1000000" → "1.000.000", on the text: a number past 2^53 would come back rounded. */
 export function formatPriceDigits(digits: string) {
-  return digits ? formatNumber(Number(digits)) : '';
+  return digits.replace(/\B(?=(\d{3})+$)/g, '.');
 }

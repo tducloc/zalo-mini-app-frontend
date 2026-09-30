@@ -98,11 +98,11 @@ describe('isEditableStatus', () => {
 });
 
 describe('draftFromProduct', () => {
-  it('fills the fields as a seller types them, the price grouped', () => {
+  it('fills the fields as the form holds them, the price as digits', () => {
     expect(draftFromProduct(product()).fields).toEqual({
       title: 'iPhone 13 128GB',
       description: 'Máy dùng tốt, pin 90%.',
-      price: '6.990.000',
+      price: '6990000',
       categoryId: 'cat_phone',
       condition: 'LIKE_NEW',
       locationId: 'loc_hanoi',
