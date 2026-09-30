@@ -51,6 +51,7 @@ export default function ReelsPage() {
     if (!pager || !isCurrentRoute) {
       return;
     }
+
     setPagerInteractive(pager.scrollLeft > 0);
     setFeedVisible(pager.scrollLeft < 12);
     setDetailShowing(pager.scrollLeft >= pager.clientWidth / 2);
@@ -60,6 +61,7 @@ export default function ReelsPage() {
     setPagerInteractive(true);
     pagerRef.current?.scrollTo({ left: pagerRef.current.clientWidth, behavior: 'smooth' });
   };
+
   const showReels = () => pagerRef.current?.scrollTo({ left: 0, behavior: 'smooth' });
 
   const reels = reelsQuery.data?.pages.flatMap((page) => page.data) ?? [];

@@ -38,6 +38,7 @@ export default function ReelItem({
           aria-hidden
         />
       )}
+
       {playback.posterUrl && (
         <img
           className={`absolute inset-0 size-full ${playback.fitClass}`}
@@ -48,6 +49,7 @@ export default function ReelItem({
           decoding="async"
         />
       )}
+
       <div ref={playback.hostRef} className="absolute inset-0 z-0" />
 
       <button

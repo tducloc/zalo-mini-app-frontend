@@ -39,7 +39,9 @@ function useIsLate(isOn: boolean, delayMs: number) {
 export function useReelPlayback(reel: Reel, index: number, slot: ReelSlot, isAppVisible: boolean) {
   const hostRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
   const isActive = slot === 'active' && isAppVisible;
+
   // A reel that mounts on screen plays in its first effects, which the Reels tab tap runs
   // inside the tap (flushSync): the one moment WebKit allows sound.
   // Including off screen. A paused start paints the play icon for one frame when the
@@ -47,11 +49,13 @@ export function useReelPlayback(reel: Reel, index: number, slot: ReelSlot, isApp
   const [status, dispatch] = useReducer(reelPlayer, 'loading');
   const isActiveRef = useRef(isActive);
   isActiveRef.current = isActive;
+
   const isMuted = useReelsStore((state) => state.isMuted);
   const setMuted = useReelsStore((state) => state.setMuted);
 
   const isPlayWanted = isActive && shouldPlay(status);
   const src = slot !== 'idle' && status !== 'failed' ? reel.video.url : null;
+
   const { width, height, posterUrl } = reel.video;
   const fitClass = width && height && height < width ? 'object-contain' : 'object-cover';
   const placeholder = useMemo(
@@ -78,13 +82,18 @@ export function useReelPlayback(reel: Reel, index: number, slot: ReelSlot, isApp
     if (video.getAttribute('src') !== src) {
       video.src = src;
     }
+
     // A play() started just before the reel left can still fire. Applying it would
     // mark an off-screen reel as playing after deactivated put it back to loading.
     const handlePlaying = () => {
-      if (isActiveRef.current) dispatch({ type: 'playing' });
+      if (isActiveRef.current) {
+        dispatch({ type: 'playing' });
+      }
     };
     const handleWaiting = () => {
-      if (isActiveRef.current) dispatch({ type: 'waiting' });
+      if (isActiveRef.current) {
+        dispatch({ type: 'waiting' });
+      }
     };
     const handleError = () => {
       // Changing src on the shared element aborts the previous load.
@@ -95,6 +104,7 @@ export function useReelPlayback(reel: Reel, index: number, slot: ReelSlot, isApp
       }
       dispatch({ type: 'errored' });
     };
+
     video.addEventListener('playing', handlePlaying);
     video.addEventListener('waiting', handleWaiting);
     video.addEventListener('error', handleError);
@@ -120,6 +130,7 @@ export function useReelPlayback(reel: Reel, index: number, slot: ReelSlot, isApp
       video.pause();
       return;
     }
+
     video.play().catch((error: unknown) => {
       if (!isActiveRef.current || !isPlayRefused(error)) {
         return;
@@ -141,6 +152,7 @@ export function useReelPlayback(reel: Reel, index: number, slot: ReelSlot, isApp
 
   const handleToggleSound = () => {
     const video = videoRef.current;
+
     // Within the tap too: WebKit pauses an autoplaying video unmuted outside a user gesture.
     if (video) {
       video.muted = !isMuted;
@@ -153,6 +165,7 @@ export function useReelPlayback(reel: Reel, index: number, slot: ReelSlot, isApp
         });
       }
     }
+
     setMuted(!isMuted);
   };
 

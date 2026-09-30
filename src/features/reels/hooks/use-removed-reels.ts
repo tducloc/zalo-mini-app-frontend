@@ -50,12 +50,14 @@ export function useRemovedReels(
       if (!leaving.length) {
         return;
       }
+
       const ids = reelsRef.current.map((reel) => reel.id);
       const current = useReelsStore.getState().activeProductId;
       const neighbor = current && leaving.includes(current) ? neighborId(ids, current) : undefined;
       if (neighbor) {
         useReelsStore.getState().setActiveProductId(neighbor);
       }
+
       dropRemovedReels(queryClient, leaving);
       forgetReelRemovals(leaving);
     };
@@ -66,8 +68,10 @@ export function useRemovedReels(
     if (!leaving.length) {
       return;
     }
+
     const ids = reelsRef.current.map((reel) => reel.id);
     const nextIndex = indexAfterRemoval(ids, activeIndex, new Set(leaving));
+
     dropRemovedReels(queryClient, leaving);
     forgetReelRemovals(leaving);
     if (nextIndex !== activeIndex) {
