@@ -15,6 +15,7 @@ import {
 } from '@/features/listings/types/draft-media';
 import { newDraftMedia } from '@/features/listings/utils/draft-media';
 import { canConvertVideos, convertVideo } from '@/features/media/services/convert-video';
+import { readVideoPoster } from '@/features/media/services/video-poster';
 import { ImageQueue } from '@/features/media/services/image-queue';
 import { canOptimizeImages } from '@/features/media/services/image-worker';
 import { ImageFormat, type PhotoHeader } from '@/features/media/types/image';
@@ -88,17 +89,18 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
   const reject = (id: string, reason: RejectReason) =>
     update(id, { status: DraftMediaStatus.Rejected, reason });
 
+  /** Without `previewUrl`, keeps the one the tile has (a video's still, which may come first). */
   const markReady = (
     id: string,
     original: OriginalFile,
     upload: UploadSource,
-    previewUrl: string | null = null,
+    previewUrl?: string,
   ) =>
     update(id, {
       status: DraftMediaStatus.ReadyToUpload,
       original,
       upload,
-      previewUrl,
+      ...(previewUrl !== undefined && { previewUrl }),
       progress: null,
     });
 
@@ -167,8 +169,21 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
     }
   }
 
+  /** The video's first frame on its tile, while it is checked and converted. */
+  async function showVideoStill({ id, file, signal }: PickedFile) {
+    const still = await readVideoPoster(file).catch((error: unknown) => {
+      warn('could not read the video still', error);
+      return null;
+    });
+    if (!still || signal.aborted || !draft().media.some((media) => media.id === id)) {
+      return;
+    }
+    update(id, { previewUrl: URL.createObjectURL(still) });
+  }
+
   async function takeVideo(picked: PickedFile) {
     const { id, file, signal } = picked;
+    void showVideoStill(picked);
     const metadata = await readVideoMetadata(file).catch(() => null);
     if (signal.aborted) {
       return;

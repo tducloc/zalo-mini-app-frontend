@@ -11,10 +11,7 @@ export default function ProductSellerContact({ product }: { product: ProductDeta
       ) : (
         <span className={avatarClass}>{(product.seller.name ?? 'N')[0]}</span>
       )}
-      <div>
-        <h2 className="m-0 text-base leading-[22px]">{product.seller.name ?? 'Người bán Zalo'}</h2>
-        <p className="mb-0 mt-[3px] text-caption text-marketplace-muted">Người bán trên Chợ Zalo</p>
-      </div>
+      <h2 className="m-0 text-base leading-[22px]">{product.seller.name ?? 'Người bán Zalo'}</h2>
     </section>
   );
 }

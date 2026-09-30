@@ -4,7 +4,6 @@ import ActionButton from '@/components/action-button';
 import DiscardDraftButton from '@/features/listings/components/form/discard-draft-button';
 import ListingFields from '@/features/listings/components/form/listing-fields';
 import MediaSection from '@/features/listings/components/media/media-section';
-import { EMPTY_FIELDS } from '@/features/listings/constants/listing-fields';
 import { discardMessages, postMessages } from '@/features/listings/constants/messages';
 import { formNoteClass } from '@/features/listings/constants/styles';
 import { useListingForm } from '@/features/listings/hooks/use-listing-form';
@@ -55,7 +54,6 @@ export default function CreateListingForm() {
 
   const handleDiscard = () => {
     discardDraft();
-    form.reset(EMPTY_FIELDS);
     showSuccess(discardMessages.discarded);
   };
 
