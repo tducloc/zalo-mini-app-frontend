@@ -18,29 +18,22 @@ import { MAX_PRICE_VND } from '@/features/products/constants/product';
 import { productConditions } from '@/features/products/constants/product';
 
 /**
- * Whole đồng, grouped in threes by one kind of separator as a seller types it
- * ("6.990.000", "6,990,000", "6 990 000"), or not at all. "1.5" or "25,5" are refused, not
- * read as 15 đ or 255 đ, and so is "1.000,000".
+ * The field keeps only digits, grouped on screen as they are typed, so "1.5" shows as "15"
+ * before it is posted.
  */
-const PRICE_FORMAT = /^\d{1,3}([.,\s])\d{3}(\1\d{3})*$|^\d+$/;
-const PRICE_SEPARATORS = /[\s.,]/g;
+const PRICE_DIGITS = /^\d+$/;
 
 const text = (min: number, max: number, message: string) =>
   z.string().trim().min(min, message).max(max, message);
 
-const price = z
-  .string()
-  .trim()
-  .regex(PRICE_FORMAT, listingFormMessages.price)
-  .transform((typed) => Number(typed.replace(PRICE_SEPARATORS, '')))
-  .pipe(
-    z
-      .number()
-      // The regex lets only digits through, so a failed int is a number too big to be exact.
-      .int(listingFormMessages.priceTooHigh)
-      .min(1, listingFormMessages.price)
-      .max(MAX_PRICE_VND, listingFormMessages.priceTooHigh),
-  );
+const price = z.string().regex(PRICE_DIGITS, listingFormMessages.price).transform(Number).pipe(
+  z
+    .number()
+    // The regex lets only digits through, so a failed int is a number too big to be exact.
+    .int(listingFormMessages.priceTooHigh)
+    .min(1, listingFormMessages.price)
+    .max(MAX_PRICE_VND, listingFormMessages.priceTooHigh),
+);
 
 export const listingFieldsSchema = z.object({
   title: text(TITLE_MIN_LENGTH, TITLE_MAX_LENGTH, listingFormMessages.title),

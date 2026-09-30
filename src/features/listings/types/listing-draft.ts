@@ -4,7 +4,7 @@ import type { ProductCondition } from '@/features/products/types/product';
 export interface DraftFields {
   title: string;
   description: string;
-  /** As typed ("6.990.000"); a number only once the schema accepts it. */
+  /** Its digits ("6990000"), which the field shows grouped; a number once the schema accepts it. */
   price: string;
   categoryId: string;
   condition: ProductCondition | '';

@@ -4,6 +4,7 @@ import {
   type ControllerFieldState,
   type ControllerRenderProps,
   type UseFormReturn,
+  useController,
 } from 'react-hook-form';
 
 import InlineRetry from '@/components/feedback/inline-retry';
@@ -20,6 +21,7 @@ import type { ListingFieldValues } from '@/features/listings/schemas';
 import type { DraftFields } from '@/features/listings/types/listing-draft';
 import { useLocations } from '@/features/locations/api/get-locations';
 import { conditionLabels, productConditions } from '@/features/products/constants/product';
+import { usePriceInput } from '@/hooks/use-price-input';
 import type { ListQuery } from '@/lib/list-query';
 import { formatNumber } from '@/utils/format';
 
@@ -51,6 +53,8 @@ export default function ListingFields({
     control,
     formState: { errors },
   } = form;
+  const { field: priceField } = useController({ control, name: 'price' });
+  const price = usePriceInput(priceField.value, priceField.onChange);
 
   const categoryOptions: Option[] = categories.data ?? [];
   const locationOptions: Option[] = (locations.data ?? []).map(({ id, name }) => ({
@@ -115,10 +119,14 @@ export default function ListingFields({
 
       <FieldShell id="listing-price" label="Giá bán (VNĐ)" error={errors.price?.message}>
         <input
+          ref={priceField.ref}
           id="listing-price"
           className={controlClass}
-          {...register('price')}
-          // Text, not number: a number input drops the "6.990.000" a seller types.
+          name={priceField.name}
+          value={price.value}
+          onChange={price.onChange}
+          onBlur={priceField.onBlur}
+          // Text, not number: a number input cannot show the grouping dots.
           inputMode="numeric"
           autoComplete="off"
           placeholder="Ví dụ: 150.000"
