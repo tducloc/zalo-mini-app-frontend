@@ -6,8 +6,8 @@ import { Icon } from 'zmp-ui';
  * A black dialog over the whole screen for photos and video: a header row with a close
  * button, which takes focus on open, and `header` in the middle; then `children`.
  *
- * In `body`, not in the page: iOS WebKit paints a fixed element inside the page's scroller
- * under the tab bar, whatever its z-index. The close button is on the left, as Zalo's own
+ * In `body`, not in the page: on iOS, zmp-ui's `-webkit-overflow-scrolling: touch` makes
+ * each page a stacking context, so a z-index inside it cannot rise above the tab bar. The close button is on the left, as Zalo's own
  * "… ✕" sits on the right of this row.
  */
 export default function FullscreenDialog({
