@@ -32,7 +32,7 @@ function saveSession(session: Session) {
 }
 
 /** The SDK's Zalo access token, failing after a timeout instead of hanging. */
-function requestSdkToken() {
+export function requestSdkToken() {
   return new Promise<string>((resolve, reject) => {
     const timer = setTimeout(
       () => reject(new Error('Zalo phản hồi chậm. Vui lòng thử lại.')),

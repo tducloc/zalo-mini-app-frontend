@@ -57,7 +57,12 @@ const product: ProductDetail = {
       sortOrder: 1,
     },
   ],
-  seller: { id: 'seller_1', name: 'Quang Minh', avatarUrl: null, contact: null },
+  seller: {
+    id: 'seller_1',
+    name: 'Quang Minh',
+    avatarUrl: null,
+    contact: { zaloProfileId: 'zalo_seller', phoneNumber: null },
+  },
   viewer: { isOwner: false, hasReported: false },
   createdAt: '2026-09-21T00:00:00.000Z',
   publishedAt: '2026-09-21T00:00:00.000Z',

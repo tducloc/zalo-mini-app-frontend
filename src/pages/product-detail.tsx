@@ -138,7 +138,7 @@ export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
           onAction={(action) => ownerActions.selectAction(product.id, action)}
         />
       ) : (
-        <ProductContactAction key={product.id} product={product} onContactError={showError} />
+        <ProductContactAction product={product} onContactError={showError} />
       )}
     </DetailBottomBar>
   );

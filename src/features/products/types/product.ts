@@ -44,10 +44,11 @@ export type ProductDetail = {
     id: string;
     name: string | null;
     avatarUrl: string | null;
+    /** Every seller can be reached on Zalo; the number only once they share it. */
     contact: {
       zaloProfileId: string;
       phoneNumber: string | null;
-    } | null;
+    };
   };
   viewer: {
     isOwner: boolean;
