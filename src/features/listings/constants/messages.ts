@@ -70,7 +70,7 @@ const rejectSentences: Record<RejectReason, string> = {
 /** Under each grid: what the picker takes, before the seller picks something it refuses. */
 export const mediaRules = {
   photo: `JPG, PNG hoặc WebP, mỗi ảnh tối đa ${MAX_IMAGE_BYTES / MIB} MB.`,
-  video: `Tối đa ${MAX_VIDEO_SECONDS} giây, ${MAX_VIDEO_BYTES / MIB} MB, ${MAX_VIDEO_SHORT_EDGE}p. iPhone chọn được MOV. Android chỉ MP4.`,
+  video: `MP4 hoặc MOV, tối đa ${MAX_VIDEO_SECONDS} giây, ${MAX_VIDEO_BYTES / MIB} MB, ${MAX_VIDEO_SHORT_EDGE}p.`,
 };
 
 /** What the viewer says about a file refused after it joined the draft. */

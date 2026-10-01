@@ -27,7 +27,7 @@ import type { MediaPipeline } from '@/features/listings/services/media-pipeline'
 import type { ListingMedia } from '@/features/listings/types/draft-media';
 import { isFailed } from '@/features/listings/utils/draft-media';
 import { tileView } from '@/features/listings/utils/tile-view';
-import { PHOTO_ACCEPT, videoAccept } from '@/features/media/constants/formats';
+import { PHOTO_ACCEPT, VIDEO_ACCEPT } from '@/features/media/constants/formats';
 import { MAX_IMAGES_PER_LISTING } from '@/features/media/constants/limits';
 import { MediaKind } from '@/features/media/types/media';
 import { takePickedFiles } from '@/features/media/utils/media';
@@ -195,7 +195,7 @@ export default function MediaSection({
           ) : (
             <MediaAddTile
               label="Thêm video"
-              accept={videoAccept()}
+              accept={VIDEO_ACCEPT}
               isMultiple={false}
               onPick={handlePick}
             />
