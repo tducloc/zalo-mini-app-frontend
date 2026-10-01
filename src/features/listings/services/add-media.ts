@@ -14,7 +14,6 @@ import {
   type ListingMedia,
 } from '@/features/listings/types/draft-media';
 import { newDraftMedia } from '@/features/listings/utils/draft-media';
-import { canConvertVideos, convertVideo } from '@/features/media/services/convert-video';
 import { readVideoPoster } from '@/features/media/services/video-poster';
 import { ImageQueue } from '@/features/media/services/image-queue';
 import { canOptimizeImages } from '@/features/media/services/image-worker';
@@ -26,7 +25,6 @@ import { MediaDetector } from '@/features/media/utils/media-detector';
 import {
   originalVideoProblem,
   readVideoMetadata,
-  shouldConvertVideo,
   videoLengthProblem,
 } from '@/features/media/utils/video';
 import { type ListingDraftStore, useListingDraftStore } from '@/stores/listing-draft';
@@ -118,7 +116,7 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
       return;
     }
 
-    update(id, { status: DraftMediaStatus.Optimizing, original });
+    update(id, { status: DraftMediaStatus.Optimizing, original, progress: 0 });
     const outcome = await imageQueue.optimize(file, signal);
     if (signal.aborted) {
       return;
@@ -141,35 +139,7 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
     markReady(id, original, optimized, URL.createObjectURL(blob));
   }
 
-  /** Resolves with the converted clip, or null to fall back to the picked file. */
-  async function convertPickedVideo({ id, file, signal }: PickedFile, original: OriginalFile) {
-    if (!canConvertVideos) {
-      return null;
-    }
-
-    update(id, { status: DraftMediaStatus.Optimizing, original, progress: 0 });
-    let shownPercent = 0;
-    try {
-      return await convertVideo(file, {
-        signal,
-        onProgress: (progress) => {
-          // mediabunny reports every frame; the tile only needs whole percents.
-          const percent = Math.floor(progress * 100);
-          if (percent !== shownPercent) {
-            shownPercent = percent;
-            update(id, { progress: percent / 100 });
-          }
-        },
-      });
-    } catch (error) {
-      if (!signal.aborted) {
-        warn('video conversion failed, trying the original', error);
-      }
-      return null;
-    }
-  }
-
-  /** The video's first frame on its tile, while it is checked and converted. */
+  /** The video's first frame on its tile, while it is checked. */
   async function showVideoStill({ id, file, signal }: PickedFile) {
     const still = await readVideoPoster(file).catch((error: unknown) => {
       warn('could not read the video still', error);
@@ -189,8 +159,7 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
       return;
     }
 
-    if (!metadata) {
-      // Not an MP4 or MOV mediabunny can open: the one check of a video's format.
+    if (!metadata || metadata.format !== VideoFormat.Mp4) {
       reject(id, RejectReason.UnsupportedVideoFormat);
       return;
     }
@@ -204,24 +173,12 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
     const facts = { ...metadata, bytes: file.size };
     const original = { bytes: file.size, width: facts.width, height: facts.height };
     const problem = originalVideoProblem(facts);
-    if (shouldConvertVideo(facts)) {
-      const converted = await convertPickedVideo(picked, original);
-      if (signal.aborted) {
-        return;
-      }
-      // Same rule as photos: keep the picked file when converting did not make it smaller.
-      if (converted && (problem || converted.size < file.size)) {
-        markReady(id, original, { blob: converted, contentType: VideoFormat.Mp4, optimized: true });
-        return;
-      }
-    }
-
-    // Converting was not possible or not worth it: the file as picked, if the server takes it.
     if (problem) {
       reject(id, problem);
       return;
     }
-    markReady(id, original, { blob: file, contentType: facts.format, optimized: false });
+
+    markReady(id, original, { blob: file, contentType: VideoFormat.Mp4, optimized: false });
   }
 
   function startWork(id: string, file: File, kind: MediaKind, photo: PhotoHeader | null) {

@@ -56,7 +56,7 @@ const rejectSentences: Record<RejectReason, string> = {
   [RejectReason.TooManyImages]: `Vui lòng chọn tối đa ${MAX_IMAGES_PER_LISTING} ảnh cho mỗi tin`,
 
   // Videos
-  [RejectReason.UnsupportedVideoFormat]: 'Vui lòng chọn video MP4 hoặc MOV',
+  [RejectReason.UnsupportedVideoFormat]: 'Vui lòng chọn video MP4',
   [RejectReason.TooManyVideos]: `Vui lòng chọn tối đa ${MAX_VIDEOS_PER_LISTING} video cho mỗi tin`,
   [RejectReason.VideoTooLong]: `Vui lòng chọn video không quá ${MAX_VIDEO_SECONDS} giây`,
   [RejectReason.VideoTooLarge]: `Vui lòng chọn video nhỏ hơn ${MAX_VIDEO_BYTES / MIB} MB`,
@@ -70,7 +70,7 @@ const rejectSentences: Record<RejectReason, string> = {
 /** Under each grid: what the picker takes, before the seller picks something it refuses. */
 export const mediaRules = {
   photo: `JPG, PNG hoặc WebP, mỗi ảnh tối đa ${MAX_IMAGE_BYTES / MIB} MB.`,
-  video: `MP4 hoặc MOV, tối đa ${MAX_VIDEO_SECONDS} giây, ${MAX_VIDEO_BYTES / MIB} MB, ${MAX_VIDEO_SHORT_EDGE}p.`,
+  video: `MP4, tối đa ${MAX_VIDEO_SECONDS} giây, ${MAX_VIDEO_BYTES / MIB} MB, ${MAX_VIDEO_SHORT_EDGE}p.`,
 };
 
 /** What the viewer says about a file refused after it joined the draft. */
@@ -102,9 +102,6 @@ export const missingPhotoMessage = 'Vui lòng thêm ít nhất 1 ảnh: ảnh đ
 /** The short line on a tile; the viewer gives the full sentence. */
 export const tileLabels = {
   checking: 'Đang kiểm tra',
-  optimizingPhoto: 'Đang tối ưu',
-  convertingVideo: 'Đang chuyển 720p',
-  queued: 'Chờ tải lên',
   uploading: 'Đang tải lên',
   waitingNetwork: 'Chờ mạng',
   retrying: 'Đang thử lại',

@@ -7,7 +7,7 @@ import {
 } from '@/features/listings/constants/messages';
 import { DraftMediaStatus, type ListingMedia } from '@/features/listings/types/draft-media';
 import { TileTone, type TileView } from '@/features/listings/types/tile-view';
-import { MediaKind, RejectReason } from '@/features/media/types/media';
+import { RejectReason } from '@/features/media/types/media';
 import { ServerMediaStatus, UploadWait } from '@/features/media/types/upload';
 
 /** What a draft file's tile and viewer show; pure, so each state is tested. */
@@ -32,16 +32,19 @@ export function tileView(media: ListingMedia): TileView {
         detail: rejectMessage(media.reason ?? RejectReason.Unreadable),
       };
     case DraftMediaStatus.Optimizing:
-      return media.kind === MediaKind.Video
-        ? {
-            ...base,
-            tone: TileTone.Working,
-            label: tileLabels.convertingVideo,
-            progress: media.progress,
-          }
-        : { ...base, tone: TileTone.Working, label: tileLabels.optimizingPhoto };
+      return {
+        ...base,
+        tone: TileTone.Working,
+        label: tileLabels.uploading,
+        progress: media.progress ?? 0,
+      };
     case DraftMediaStatus.ReadyToUpload:
-      return { ...base, tone: TileTone.Working, label: tileLabels.queued };
+      return {
+        ...base,
+        tone: TileTone.Working,
+        label: tileLabels.uploading,
+        progress: media.progress ?? 0,
+      };
     case DraftMediaStatus.Uploading:
       return {
         ...base,

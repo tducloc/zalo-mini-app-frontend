@@ -127,14 +127,10 @@ describe('originalVideoProblem', () => {
 });
 
 describe('shouldConvertVideo', () => {
-  it('converts anything above 720p, and what the server would refuse', () => {
-    expect(shouldConvertVideo(IPHONE_1080P)).toBe(true);
-    expect(shouldConvertVideo({ ...IPHONE_1080P, videoCodec: 'hevc' })).toBe(true);
-  });
-
-  it('keeps a 720p clip unless its bitrate is high', () => {
-    const small = { ...IPHONE_1080P, width: 720, height: 1280, bytes: 20 * MB };
-    expect(shouldConvertVideo(small)).toBe(false);
-    expect(shouldConvertVideo({ ...small, bytes: 60 * MB })).toBe(true);
+  it('leaves every clip for the server to transcode', () => {
+    expect(shouldConvertVideo(IPHONE_1080P)).toBe(false);
+    expect(shouldConvertVideo({ ...IPHONE_1080P, videoCodec: 'hevc' })).toBe(false);
+    const heavy720 = { ...IPHONE_1080P, width: 720, height: 1280, bytes: 60 * MB };
+    expect(shouldConvertVideo(heavy720)).toBe(false);
   });
 });
