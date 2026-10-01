@@ -3,14 +3,16 @@ import { fileURLToPath, URL } from 'node:url';
 import zaloMiniApp from 'zmp-vite-plugin';
 import react from '@vitejs/plugin-react';
 
+import inlineCss from './vite-plugins/inline-css';
 import workerSource from './vite-plugins/worker-source';
+import zauiFontDisplay from './vite-plugins/zaui-font-display';
 
 // https://vitejs.dev/config/
 export default () => {
   return defineConfig({
     root: '.',
     base: '',
-    plugins: [workerSource(), zaloMiniApp(), react()],
+    plugins: [workerSource(), zauiFontDisplay(), zaloMiniApp(), react(), inlineCss()],
     build: {
       assetsInlineLimit: 0,
       // zmp-vite-plugin defaults to es2015, which cannot express BigInt literals

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from 'zmp-ui';
 
 import Price from '@/components/price';
@@ -9,6 +9,7 @@ import {
 } from '@/features/feed/constants/styles';
 import type { ProductCard } from '@/features/products/types/product';
 import { formatShortRelativeTime } from '@/utils/format';
+import { thumbHashUrl } from '@/utils/thumbhash';
 
 // Square 400×400 thumbnails; the attributes reserve space before the image loads.
 const THUMBNAIL_SIZE = 400;
@@ -43,7 +44,10 @@ export default function ListingCard({
   // Remember WHICH url failed, so a changed thumbnail (e.g. an edited listing)
   // is tried again instead of keeping the placeholder forever.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   const shouldShowImage = Boolean(product.thumbnailUrl) && product.thumbnailUrl !== failedUrl;
+  const placeholderUrl = useMemo(() => thumbHashUrl(product.placeholder), [product.placeholder]);
+  const photoReady = loadedUrl === product.thumbnailUrl;
 
   return (
     <button
@@ -54,15 +58,24 @@ export default function ListingCard({
       onClick={() => onOpen(product.id)}
     >
       <div className={listingImageClass}>
+        {placeholderUrl && shouldShowImage && (
+          <img
+            alt=""
+            aria-hidden
+            className="absolute inset-0 size-full object-cover"
+            src={placeholderUrl}
+          />
+        )}
         {shouldShowImage ? (
           <img
             alt=""
-            className="block size-full object-cover"
+            className={`relative block size-full object-cover ${placeholderUrl && !photoReady ? 'opacity-0' : ''}`}
             decoding="async"
             height={THUMBNAIL_SIZE}
             loading={isAboveFold ? 'eager' : 'lazy'}
             src={product.thumbnailUrl ?? undefined}
             width={THUMBNAIL_SIZE}
+            onLoad={() => setLoadedUrl(product.thumbnailUrl)}
             onError={() => setFailedUrl(product.thumbnailUrl)}
           />
         ) : (

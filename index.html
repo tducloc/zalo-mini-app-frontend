@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
   <head>
     <meta charset="utf-8" />
@@ -8,8 +8,33 @@
     />
     <meta name="theme-color" content="#0068ff" />
     <meta name="format-detection" content="telephone=no" />
-    <link rel="icon" type="image/png" href="/marketplace-icon.png" />
     <title>Chợ Zalo</title>
+    <script>
+      (function () {
+        var base = '%VITE_API_BASE_URL%';
+        if (!base || base.charAt(0) === '%') return;
+        var url = base.replace(/\/$/, '') + '/products?sortBy=publishedAt&order=desc&limit=20';
+        window.__feedPrefetch = fetch(url)
+          .then(function (response) {
+            if (!response.ok) throw new Error('feed');
+            return response.json();
+          })
+          .then(function (page) {
+            var cards = (page && page.data) || [];
+            for (var i = 0; i < cards.length && i < 2; i++) {
+              var src = cards[i] && cards[i].thumbnailUrl;
+              if (!src) continue;
+              var link = document.createElement('link');
+              link.rel = 'preload';
+              link.as = 'image';
+              link.href = src;
+              if (i === 0) link.fetchPriority = 'high';
+              document.head.appendChild(link);
+            }
+            return page;
+          });
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
