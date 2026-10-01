@@ -6,6 +6,8 @@
  * the file), an edit page makes its own.
  */
 
+import { getSystemInfo } from 'zmp-sdk';
+
 import { draftUploads, type UploadService } from '@/features/listings/services/upload-media';
 import {
   DraftMediaStatus,
@@ -14,15 +16,18 @@ import {
   type ListingMedia,
 } from '@/features/listings/types/draft-media';
 import { newDraftMedia } from '@/features/listings/utils/draft-media';
+import { canConvertVideos, convertVideo } from '@/features/media/services/convert-video';
 import { readVideoPoster } from '@/features/media/services/video-poster';
 import { ImageQueue } from '@/features/media/services/image-queue';
 import { canOptimizeImages } from '@/features/media/services/image-worker';
+import { MAX_VIDEO_BYTES } from '@/features/media/constants/limits';
 import { ImageFormat, type PhotoHeader } from '@/features/media/types/image';
 import { MediaKind, RejectReason, type RefusedFile } from '@/features/media/types/media';
 import { VideoFormat } from '@/features/media/types/video';
 import { refusePicked } from '@/features/media/utils/media';
 import { MediaDetector } from '@/features/media/utils/media-detector';
 import {
+  androidMustConvertVideo,
   originalVideoProblem,
   readVideoMetadata,
   videoLengthProblem,
@@ -139,6 +144,41 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
     markReady(id, original, optimized, URL.createObjectURL(blob));
   }
 
+  function isAndroidPhone() {
+    try {
+      return getSystemInfo().platform === 'android';
+    } catch {
+      return false;
+    }
+  }
+
+  /** The Android compatibility file, or null when this phone cannot encode it. */
+  async function convertPickedVideo({ id, file, signal }: PickedFile, original: OriginalFile) {
+    if (!canConvertVideos) {
+      return null;
+    }
+
+    update(id, { status: DraftMediaStatus.Optimizing, original, progress: 0 });
+    let shownPercent = 0;
+    try {
+      return await convertVideo(file, {
+        signal,
+        onProgress: (progress) => {
+          const percent = Math.floor(progress * 100);
+          if (percent !== shownPercent) {
+            shownPercent = percent;
+            update(id, { progress: percent / 100 });
+          }
+        },
+      });
+    } catch (error) {
+      if (!signal.aborted) {
+        warn('video conversion failed, trying the original', error);
+      }
+      return null;
+    }
+  }
+
   /** The video's first frame on its tile, while it is checked. */
   async function showVideoStill({ id, file, signal }: PickedFile) {
     const still = await readVideoPoster(file).catch((error: unknown) => {
@@ -175,6 +215,21 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
     const facts = { ...metadata, bytes: file.size };
     const original = { bytes: file.size, width: facts.width, height: facts.height };
     const problem = originalVideoProblem(facts);
+    if (problem && isAndroidPhone() && androidMustConvertVideo(facts)) {
+      const converted = await convertPickedVideo(picked, original);
+      if (signal.aborted) {
+        return;
+      }
+      if (converted && converted.size <= MAX_VIDEO_BYTES) {
+        markReady(id, original, {
+          blob: converted,
+          contentType: VideoFormat.Mp4,
+          optimized: true,
+        });
+        return;
+      }
+    }
+
     if (problem) {
       reject(id, problem);
       return;

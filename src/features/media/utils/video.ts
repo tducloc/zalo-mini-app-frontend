@@ -117,9 +117,19 @@ export function originalVideoProblem(video: VideoFacts) {
 }
 
 /**
- * The phone no longer re-encodes a clip. A file that passes the checks is uploaded as
- * picked, and the worker transcodes it to 720p when it is above 720p or 4 Mbit/s.
+ * The sell form no longer converts every clip to 720p. `androidMustConvertVideo` is the
+ * only client encode: Android files the server would refuse.
  */
 export function shouldConvertVideo(_video: VideoFacts) {
   return false;
+}
+
+/**
+ * Android re-encodes a clip the server would refuse (HEVC, a bad profile, over 1080p,
+ * or over 150 MB) into H.264 inside 1080p. A file that already passes is uploaded as
+ * picked, and the worker makes 720p. iOS does not use this: its picker already exports
+ * H.264.
+ */
+export function androidMustConvertVideo(video: VideoFacts) {
+  return originalVideoProblem(video) !== null;
 }

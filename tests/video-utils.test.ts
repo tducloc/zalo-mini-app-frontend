@@ -6,6 +6,7 @@ import { MAX_VIDEO_BYTES } from '@/features/media/constants/limits';
 import { RejectReason } from '@/features/media/types/media';
 import { VideoFormat, type VideoFacts } from '@/features/media/types/video';
 import {
+  androidMustConvertVideo,
   videoLengthProblem,
   originalVideoProblem,
   readVideoMetadata,
@@ -123,6 +124,14 @@ describe('originalVideoProblem', () => {
     expect(originalVideoProblem({ ...IPHONE_1080P, bytes: MAX_VIDEO_BYTES + 1 })).toBe(
       RejectReason.VideoTooLarge,
     );
+  });
+});
+
+describe('androidMustConvertVideo', () => {
+  it('converts only a clip the server would refuse', () => {
+    expect(androidMustConvertVideo(IPHONE_1080P)).toBe(false);
+    expect(androidMustConvertVideo({ ...IPHONE_1080P, videoCodec: 'hevc' })).toBe(true);
+    expect(androidMustConvertVideo({ ...IPHONE_1080P, width: 2160, height: 3840 })).toBe(true);
   });
 });
 

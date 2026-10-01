@@ -1,19 +1,23 @@
 /**
- * Converts a picked clip to 720p H.264 on the phone, so the seller uploads and buyers
- * stream about a fifth of a 1080p phone recording (plans/create-listing.md, "Video on the
- * client"). Needs WebCodecs: every supported Android WebView, iOS 16.4+.
+ * Converts a clip the server would refuse into H.264 inside 1080p. Android uses this
+ * because its picker keeps the camera file. iOS already exports H.264. The worker still
+ * makes the 720p file buyers watch. Needs WebCodecs.
  *
  * The encoder and decoder run on the phone's media hardware; mediabunny only moves frames
- * between them. Whether that stays smooth on the main thread is a device check (media lab).
+ * between them.
  */
 
 import type { Conversion, InputTrack } from 'mediabunny';
 
-import { CONVERTED_SHORT_EDGE } from '@/features/media/constants/limits';
+import {
+  CONVERTED_SHORT_EDGE,
+  MAX_VIDEO_LONG_EDGE,
+  MAX_VIDEO_SHORT_EDGE,
+} from '@/features/media/constants/limits';
 import { VideoFormat } from '@/features/media/types/video';
 
-/** About a fifth of a 1080p phone recording, and still sharp at 720p for a product clip. */
-const CONVERTED_BITRATE = 3_000_000;
+/** Bitrate for the Android compatibility file. The worker re-encodes it to about 3 Mbit/s. */
+const COMPAT_BITRATE = 8_000_000;
 
 /** Faster clips are converted at this rate: product clips do not need 60 fps, and it halves the work. */
 const MAX_FRAME_RATE = 30;
@@ -165,6 +169,15 @@ export function convertedVideoSize(width: number, height: number) {
   return { width: even(width), height: even(height) };
 }
 
+/** Fits inside the server's 1080p box. Even sides, never upscales. */
+export function fittedVideoSize(width: number, height: number) {
+  const longEdge = Math.max(width, height);
+  const shortEdge = Math.min(width, height);
+  const scale = Math.min(1, MAX_VIDEO_LONG_EDGE / longEdge, MAX_VIDEO_SHORT_EDGE / shortEdge);
+  const even = (side: number) => Math.max(2, Math.round((side * scale) / 2) * 2);
+  return { width: even(width), height: even(height) };
+}
+
 /**
  * Resolves with the converted MP4 (index first). Rejects when this phone cannot decode the
  * clip or encode H.264/AAC, and with a cancellation error when `signal` aborts; the caller
@@ -200,10 +213,10 @@ export async function convertVideo(file: Blob, options: ConvertVideoOptions): Pr
           track.getDisplayHeight(),
         ]);
         return {
-          ...convertedVideoSize(displayWidth, displayHeight),
+          ...fittedVideoSize(displayWidth, displayHeight),
           fit: 'fill',
           codec: 'avc',
-          quality: new Quality({ bitrate: CONVERTED_BITRATE }),
+          quality: new Quality({ bitrate: COMPAT_BITRATE }),
           frameRate: averagePacketRate > MAX_FRAME_RATE ? MAX_FRAME_RATE : undefined,
         };
       },

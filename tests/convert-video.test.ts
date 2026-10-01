@@ -3,9 +3,18 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   ConversionStalledError,
   convertedVideoSize,
+  fittedVideoSize,
   stallWatchPlan,
   watchForStall,
 } from '@/features/media/services/convert-video';
+
+describe('fittedVideoSize', () => {
+  it('fits a 4K frame inside 1080p and leaves a 1080p frame alone', () => {
+    expect(fittedVideoSize(3840, 2160)).toEqual({ width: 1920, height: 1080 });
+    expect(fittedVideoSize(2160, 3840)).toEqual({ width: 1080, height: 1920 });
+    expect(fittedVideoSize(1080, 1920)).toEqual({ width: 1080, height: 1920 });
+  });
+});
 
 describe('convertedVideoSize', () => {
   it('brings the short side to 720 and keeps the shape', () => {
