@@ -16,7 +16,7 @@ export enum RejectReason {
   ImageTooManyPixels = 'IMAGE_TOO_MANY_PIXELS',
   TooManyImages = 'TOO_MANY_IMAGES',
   // Videos
-  /** Not an MP4 mediabunny can open. MOV is refused here too. */
+  /** Not an MP4 or MOV mediabunny can open. */
   UnsupportedVideoFormat = 'UNSUPPORTED_VIDEO_FORMAT',
   TooManyVideos = 'TOO_MANY_VIDEOS',
   VideoTooLong = 'VIDEO_TOO_LONG',

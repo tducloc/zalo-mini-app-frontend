@@ -159,7 +159,9 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
       return;
     }
 
-    if (!metadata || metadata.format !== VideoFormat.Mp4) {
+    const isMp4 = metadata?.format === VideoFormat.Mp4;
+    const isMov = metadata?.format === VideoFormat.QuickTime;
+    if (!metadata || (!isMp4 && !isMov)) {
       reject(id, RejectReason.UnsupportedVideoFormat);
       return;
     }
@@ -178,7 +180,7 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
       return;
     }
 
-    markReady(id, original, { blob: file, contentType: VideoFormat.Mp4, optimized: false });
+    markReady(id, original, { blob: file, contentType: metadata.format, optimized: false });
   }
 
   function startWork(id: string, file: File, kind: MediaKind, photo: PhotoHeader | null) {
