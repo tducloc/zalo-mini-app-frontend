@@ -34,8 +34,6 @@ export const IMAGE_HEAD_BYTES = 256 * 1024;
 /** Long edge of the uploaded photo. The server scales anything larger to the same size. */
 export const PHOTO_MAX_EDGE = 1600;
 
-// ---- Videos ----
-
 export const MAX_VIDEO_BYTES = 150 * MIB;
 export const MAX_VIDEO_DURATION_MS = 60_000;
 export const MAX_VIDEO_SECONDS = MAX_VIDEO_DURATION_MS / 1000;
@@ -43,6 +41,3 @@ export const MAX_VIDEO_SECONDS = MAX_VIDEO_DURATION_MS / 1000;
 export const VIDEO_DURATION_TOLERANCE_MS = 500;
 export const MAX_VIDEO_LONG_EDGE = 1920;
 export const MAX_VIDEO_SHORT_EDGE = 1080;
-
-/** Conversion target (plans/create-listing.md, "Video on the client"): 720p. */
-export const CONVERTED_SHORT_EDGE = 720;

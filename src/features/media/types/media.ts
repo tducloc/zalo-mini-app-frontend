@@ -22,7 +22,7 @@ export enum RejectReason {
   VideoTooLong = 'VIDEO_TOO_LONG',
   VideoTooLarge = 'VIDEO_TOO_LARGE',
   VideoResolution = 'VIDEO_RESOLUTION',
-  /** Not H.264 with AAC (e.g. HEVC), and this phone could not convert it. */
+  /** Not H.264 with AAC (e.g. HEVC). The worker does not convert these. */
   VideoNotPlayable = 'VIDEO_NOT_PLAYABLE',
   // Any file
   /** The phone would not let the app read the file, e.g. an iCloud photo not downloaded. */

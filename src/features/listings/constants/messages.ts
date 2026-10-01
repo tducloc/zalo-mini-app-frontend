@@ -102,9 +102,6 @@ export const missingPhotoMessage = 'Vui lòng thêm ít nhất 1 ảnh: ảnh đ
 /** The short line on a tile; the viewer gives the full sentence. */
 export const tileLabels = {
   checking: 'Đang kiểm tra',
-  optimizingPhoto: 'Đang tối ưu',
-  convertingVideo: 'Đang chuyển 720p',
-  queued: 'Chờ tải lên',
   uploading: 'Đang tải lên',
   waitingNetwork: 'Chờ mạng',
   retrying: 'Đang thử lại',
