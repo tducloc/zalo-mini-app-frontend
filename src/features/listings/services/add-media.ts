@@ -6,6 +6,8 @@
  * the file), an edit page makes its own.
  */
 
+import { getSystemInfo } from 'zmp-sdk';
+
 import { draftUploads, type UploadService } from '@/features/listings/services/upload-media';
 import {
   DraftMediaStatus,
@@ -18,6 +20,7 @@ import { canConvertVideos, convertVideo } from '@/features/media/services/conver
 import { readVideoPoster } from '@/features/media/services/video-poster';
 import { ImageQueue } from '@/features/media/services/image-queue';
 import { canOptimizeImages } from '@/features/media/services/image-worker';
+import { MAX_VIDEO_BYTES } from '@/features/media/constants/limits';
 import { ImageFormat, type PhotoHeader } from '@/features/media/types/image';
 import { MediaKind, RejectReason, type RefusedFile } from '@/features/media/types/media';
 import { VideoFormat } from '@/features/media/types/video';
@@ -26,7 +29,6 @@ import { MediaDetector } from '@/features/media/utils/media-detector';
 import {
   originalVideoProblem,
   readVideoMetadata,
-  shouldConvertVideo,
   videoLengthProblem,
 } from '@/features/media/utils/video';
 import { type ListingDraftStore, useListingDraftStore } from '@/stores/listing-draft';
@@ -118,7 +120,7 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
       return;
     }
 
-    update(id, { status: DraftMediaStatus.Optimizing, original });
+    update(id, { status: DraftMediaStatus.Optimizing, original, progress: 0 });
     const outcome = await imageQueue.optimize(file, signal);
     if (signal.aborted) {
       return;
@@ -141,7 +143,15 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
     markReady(id, original, optimized, URL.createObjectURL(blob));
   }
 
-  /** Resolves with the converted clip, or null to fall back to the picked file. */
+  function isAndroidPhone() {
+    try {
+      return getSystemInfo().platform === 'android';
+    } catch {
+      return false;
+    }
+  }
+
+  /** The Android compatibility file, or null when this phone cannot encode it. */
   async function convertPickedVideo({ id, file, signal }: PickedFile, original: OriginalFile) {
     if (!canConvertVideos) {
       return null;
@@ -153,7 +163,6 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
       return await convertVideo(file, {
         signal,
         onProgress: (progress) => {
-          // mediabunny reports every frame; the tile only needs whole percents.
           const percent = Math.floor(progress * 100);
           if (percent !== shownPercent) {
             shownPercent = percent;
@@ -169,7 +178,7 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
     }
   }
 
-  /** The video's first frame on its tile, while it is checked and converted. */
+  /** The video's first frame on its tile, while it is checked. */
   async function showVideoStill({ id, file, signal }: PickedFile) {
     const still = await readVideoPoster(file).catch((error: unknown) => {
       warn('could not read the video still', error);
@@ -189,8 +198,9 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
       return;
     }
 
-    if (!metadata) {
-      // Not an MP4 or MOV mediabunny can open: the one check of a video's format.
+    const isMp4 = metadata?.format === VideoFormat.Mp4;
+    const isMov = metadata?.format === VideoFormat.QuickTime;
+    if (!metadata || (!isMp4 && !isMov)) {
       reject(id, RejectReason.UnsupportedVideoFormat);
       return;
     }
@@ -204,24 +214,27 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
     const facts = { ...metadata, bytes: file.size };
     const original = { bytes: file.size, width: facts.width, height: facts.height };
     const problem = originalVideoProblem(facts);
-    if (shouldConvertVideo(facts)) {
+    if (problem && isAndroidPhone()) {
       const converted = await convertPickedVideo(picked, original);
       if (signal.aborted) {
         return;
       }
-      // Same rule as photos: keep the picked file when converting did not make it smaller.
-      if (converted && (problem || converted.size < file.size)) {
-        markReady(id, original, { blob: converted, contentType: VideoFormat.Mp4, optimized: true });
+      if (converted && converted.size <= MAX_VIDEO_BYTES) {
+        markReady(id, original, {
+          blob: converted,
+          contentType: VideoFormat.Mp4,
+          optimized: true,
+        });
         return;
       }
     }
 
-    // Converting was not possible or not worth it: the file as picked, if the server takes it.
     if (problem) {
       reject(id, problem);
       return;
     }
-    markReady(id, original, { blob: file, contentType: facts.format, optimized: false });
+
+    markReady(id, original, { blob: file, contentType: metadata.format, optimized: false });
   }
 
   function startWork(id: string, file: File, kind: MediaKind, photo: PhotoHeader | null) {

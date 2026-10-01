@@ -2,21 +2,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   ConversionStalledError,
-  convertedVideoSize,
+  fittedVideoSize,
   stallWatchPlan,
   watchForStall,
 } from '@/features/media/services/convert-video';
 
-describe('convertedVideoSize', () => {
-  it('brings the short side to 720 and keeps the shape', () => {
-    expect(convertedVideoSize(1080, 1920)).toEqual({ width: 720, height: 1280 });
-    expect(convertedVideoSize(3840, 2160)).toEqual({ width: 1280, height: 720 });
-  });
-
-  it('rounds to even sides and never upscales', () => {
-    expect(convertedVideoSize(1080, 1350)).toEqual({ width: 720, height: 900 });
-    expect(convertedVideoSize(1440, 1080)).toEqual({ width: 960, height: 720 });
-    expect(convertedVideoSize(480, 853)).toEqual({ width: 480, height: 854 });
+describe('fittedVideoSize', () => {
+  it('fits a 4K frame inside 1080p and leaves a 1080p frame alone', () => {
+    expect(fittedVideoSize(3840, 2160)).toEqual({ width: 1920, height: 1080 });
+    expect(fittedVideoSize(2160, 3840)).toEqual({ width: 1080, height: 1920 });
+    expect(fittedVideoSize(1080, 1920)).toEqual({ width: 1080, height: 1920 });
   });
 });
 

@@ -1,7 +1,7 @@
 /**
  * What the app checks on a picked video: its metadata, read by mediabunny, and whether the
- * server would take the file as it is or it should be converted to 720p first (the
- * conversion itself is convert-video.ts).
+ * server would take the file as it is. The phone uploads that file. The worker transcodes
+ * it to 720p when the short edge is over 720 or the bitrate is over 4 Mbit/s.
  *
  * mediabunny reads only the boxes it needs (a few KB of a 150 MB file), so this is instant
  * and never loads the video into memory. A <video> element cannot do this on iPhone:
@@ -12,7 +12,6 @@
 import type { InputTrack } from 'mediabunny';
 
 import {
-  CONVERTED_SHORT_EDGE,
   MAX_VIDEO_BYTES,
   MAX_VIDEO_DURATION_MS,
   MAX_VIDEO_LONG_EDGE,
@@ -21,9 +20,6 @@ import {
 } from '@/features/media/constants/limits';
 import { RejectReason } from '@/features/media/types/media';
 import { VideoFormat, type VideoMetadata, type VideoFacts } from '@/features/media/types/video';
-
-/** A clip already at or below 720p is converted only when its bitrate is above this. */
-const CONVERT_ABOVE_BITRATE = 4_000_000;
 
 /** H.264 profiles phone decoders all play: Baseline, Main, Extended, High (8-bit 4:2:0). */
 const PLAYABLE_H264_PROFILES = new Set([66, 77, 88, 100]);
@@ -121,21 +117,9 @@ export function originalVideoProblem(video: VideoFacts) {
 }
 
 /**
- * Whether converting to 720p is worth it: larger than 720p, a format buyers' phones may not
- * play, or a 720p clip with a bitrate high enough that converting still saves a lot.
+ * Kept for the media lab probe, which still asks this. The sell form does not. Android
+ * encodes only when `originalVideoProblem` is set.
  */
-export function shouldConvertVideo(video: VideoFacts) {
-  if (originalVideoProblem(video) !== null) {
-    return true;
-  }
-
-  if (video.width !== null && video.height !== null) {
-    if (Math.min(video.width, video.height) > CONVERTED_SHORT_EDGE) {
-      return true;
-    }
-  }
-  if (video.durationMs) {
-    return (video.bytes * 8 * 1000) / video.durationMs > CONVERT_ABOVE_BITRATE;
-  }
+export function shouldConvertVideo(_video: VideoFacts) {
   return false;
 }

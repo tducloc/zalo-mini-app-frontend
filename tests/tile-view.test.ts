@@ -36,16 +36,15 @@ describe('tileView', () => {
       label: tileLabels.checking,
       progress: null,
     });
-    const converting: DraftMedia = {
+    const preparing: DraftMedia = {
       ...base,
-      kind: MediaKind.Video,
       status: DraftMediaStatus.Optimizing,
       original: prepared.original,
-      progress: 0.35,
+      progress: 0,
     };
-    expect(tileView(converting)).toMatchObject({
-      label: tileLabels.convertingVideo,
-      progress: 0.35,
+    expect(tileView(preparing)).toMatchObject({
+      label: tileLabels.uploading,
+      progress: 0,
     });
     expect(
       tileView({ ...prepared, status: DraftMediaStatus.Uploading, progress: 0.5 }),
