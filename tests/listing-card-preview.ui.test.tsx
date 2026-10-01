@@ -13,6 +13,7 @@ const product: ProductCard = {
   condition: 'USED',
   category: { id: 'cat_bike', name: 'Xe', slug: 'bike' },
   thumbnailUrl: 'https://example.com/thumb.webp',
+  placeholder: null,
   previewUrl: 'https://example.com/preview.mp4',
   hasVideo: true,
   location: { id: null, name: 'Quận 1' },

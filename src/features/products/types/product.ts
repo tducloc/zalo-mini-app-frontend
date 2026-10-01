@@ -68,6 +68,8 @@ export interface ProductCard {
   condition: ProductCondition;
   category: { id: string; name: string; slug: string };
   thumbnailUrl: string | null;
+  /** Base64 ThumbHash of the thumbnail. Null on rows processed before hashes existed. */
+  placeholder: string | null;
   /** A 3 s muted square clip of the listing's video, for the card; null without one. */
   previewUrl: string | null;
   hasVideo: boolean;

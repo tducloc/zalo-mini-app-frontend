@@ -1,24 +1,13 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { thumbHashToDataURL } from 'thumbhash';
 
 import { videoPool } from '@/features/reels/services/video-pool';
 import type { ReelItem as Reel } from '@/features/reels/types/reel';
 import { isPlayRefused, reelPlayer, shouldPlay } from '@/features/reels/utils/reel-player';
 import type { ReelSlot } from '@/features/reels/utils/reel-slot';
 import { useReelsStore } from '@/stores/reels';
+import { thumbHashUrl } from '@/utils/thumbhash';
 
 const SPINNER_DELAY_MS = 400;
-
-function placeholderUrl(hash: string | null) {
-  if (!hash) {
-    return null;
-  }
-  try {
-    return thumbHashToDataURL(Uint8Array.from(atob(hash), (char) => char.charCodeAt(0)));
-  } catch {
-    return null;
-  }
-}
 
 function useIsLate(isOn: boolean, delayMs: number) {
   const [isLate, setIsLate] = useState(false);
@@ -58,10 +47,7 @@ export function useReelPlayback(reel: Reel, index: number, slot: ReelSlot, isApp
 
   const { width, height, posterUrl } = reel.video;
   const fitClass = width && height && height < width ? 'object-contain' : 'object-cover';
-  const placeholder = useMemo(
-    () => placeholderUrl(reel.video.placeholder),
-    [reel.video.placeholder],
-  );
+  const placeholder = useMemo(() => thumbHashUrl(reel.video.placeholder), [reel.video.placeholder]);
   const isSlowToStart = useIsLate(isActive && status === 'loading', SPINNER_DELAY_MS);
   const label = `Video: ${reel.title}`;
 
