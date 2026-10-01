@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Page, useNavigate } from 'zmp-ui';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -6,7 +6,6 @@ import { pageClass } from '@/components/layout/styles';
 import { useCategories } from '@/features/categories/api/get-categories';
 import CategoryStrip from '@/features/categories/components/category-strip';
 import FilterChips from '@/features/feed/components/filters/filter-chips';
-import FilterSheet from '@/features/feed/components/filters/filter-sheet';
 import HomeHeader from '@/features/feed/components/home-header';
 import ProductFeed from '@/features/feed/components/grid/product-feed';
 import type { FeedFilters, FilterKey } from '@/features/feed/types/filters';
@@ -22,6 +21,9 @@ import { useProductFeed } from '@/features/products/api/get-product-feed';
 import { useHomeFeedStore } from '@/stores/home-feed';
 
 const SEARCH_DEBOUNCE_MS = 300;
+
+// The sheet pulls in zmp-ui Sheet. It stays out of the first script until the user opens filters.
+const FilterSheet = lazy(() => import('@/features/feed/components/filters/filter-sheet'));
 
 // Safe-area-aware fixed header (HomeHeader reads these); the content starts below it.
 const homePageVarsClass =
@@ -47,6 +49,7 @@ export default function HomePage() {
 
   // local UI state
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isFilterMounted, setIsFilterMounted] = useState(false);
   const pageRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
 
@@ -107,7 +110,10 @@ export default function HomePage() {
         headerRef={headerRef}
         activeFilterCount={chips.length}
         searchValue={searchInput}
-        onOpenFilters={() => setIsFilterOpen(true)}
+        onOpenFilters={() => {
+          setIsFilterMounted(true);
+          setIsFilterOpen(true);
+        }}
         onSearchChange={setSearchInput}
         onSearchClear={clearSearch}
         onSearchSubmit={commitSearch}
@@ -136,15 +142,19 @@ export default function HomePage() {
         />
       </main>
 
-      <FilterSheet
-        categories={categoriesQuery}
-        filters={filters}
-        locations={locationsQuery}
-        visible={isFilterOpen}
-        onApply={handleApplyFilters}
-        onClose={() => setIsFilterOpen(false)}
-        onReset={handleResetFilters}
-      />
+      {isFilterMounted && (
+        <Suspense fallback={null}>
+          <FilterSheet
+            categories={categoriesQuery}
+            filters={filters}
+            locations={locationsQuery}
+            visible={isFilterOpen}
+            onApply={handleApplyFilters}
+            onClose={() => setIsFilterOpen(false)}
+            onReset={handleResetFilters}
+          />
+        </Suspense>
+      )}
     </Page>
   );
 }
