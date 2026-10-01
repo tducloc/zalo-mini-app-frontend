@@ -27,7 +27,6 @@ import { VideoFormat } from '@/features/media/types/video';
 import { refusePicked } from '@/features/media/utils/media';
 import { MediaDetector } from '@/features/media/utils/media-detector';
 import {
-  androidMustConvertVideo,
   originalVideoProblem,
   readVideoMetadata,
   videoLengthProblem,
@@ -215,7 +214,7 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
     const facts = { ...metadata, bytes: file.size };
     const original = { bytes: file.size, width: facts.width, height: facts.height };
     const problem = originalVideoProblem(facts);
-    if (problem && isAndroidPhone() && androidMustConvertVideo(facts)) {
+    if (problem && isAndroidPhone()) {
       const converted = await convertPickedVideo(picked, original);
       if (signal.aborted) {
         return;

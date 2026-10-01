@@ -9,11 +9,7 @@
 
 import type { Conversion, InputTrack } from 'mediabunny';
 
-import {
-  CONVERTED_SHORT_EDGE,
-  MAX_VIDEO_LONG_EDGE,
-  MAX_VIDEO_SHORT_EDGE,
-} from '@/features/media/constants/limits';
+import { MAX_VIDEO_LONG_EDGE, MAX_VIDEO_SHORT_EDGE } from '@/features/media/constants/limits';
 import { VideoFormat } from '@/features/media/types/video';
 
 /** Bitrate for the Android compatibility file. The worker re-encodes it to about 3 Mbit/s. */
@@ -160,13 +156,6 @@ async function executeWatched(conversion: Conversion, { onProgress, signal }: Co
     document.removeEventListener('visibilitychange', handleVisibility);
     signal.removeEventListener('abort', cancel);
   }
-}
-
-/** 720p on the short side, same shape, even sides as H.264 needs. Never upscales. */
-export function convertedVideoSize(width: number, height: number) {
-  const scale = Math.min(1, CONVERTED_SHORT_EDGE / Math.min(width, height));
-  const even = (side: number) => Math.max(2, Math.round((side * scale) / 2) * 2);
-  return { width: even(width), height: even(height) };
 }
 
 /** Fits inside the server's 1080p box. Even sides, never upscales. */

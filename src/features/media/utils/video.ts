@@ -117,19 +117,9 @@ export function originalVideoProblem(video: VideoFacts) {
 }
 
 /**
- * The sell form no longer converts every clip to 720p. `androidMustConvertVideo` is the
- * only client encode: Android files the server would refuse.
+ * Kept for the media lab probe, which still asks this. The sell form does not. Android
+ * encodes only when `originalVideoProblem` is set.
  */
 export function shouldConvertVideo(_video: VideoFacts) {
   return false;
-}
-
-/**
- * Android re-encodes a clip the server would refuse (HEVC, a bad profile, over 1080p,
- * or over 150 MB) into H.264 inside 1080p. A file that already passes is uploaded as
- * picked, and the worker makes 720p. iOS does not use this: its picker already exports
- * H.264.
- */
-export function androidMustConvertVideo(video: VideoFacts) {
-  return originalVideoProblem(video) !== null;
 }

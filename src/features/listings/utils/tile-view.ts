@@ -32,12 +32,6 @@ export function tileView(media: ListingMedia): TileView {
         detail: rejectMessage(media.reason ?? RejectReason.Unreadable),
       };
     case DraftMediaStatus.Optimizing:
-      return {
-        ...base,
-        tone: TileTone.Working,
-        label: tileLabels.uploading,
-        progress: media.progress ?? 0,
-      };
     case DraftMediaStatus.ReadyToUpload:
       return {
         ...base,
