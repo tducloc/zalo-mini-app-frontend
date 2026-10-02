@@ -7,6 +7,7 @@ import {
   listingCopyClass,
   listingImageClass,
 } from '@/features/feed/constants/styles';
+import { previewVideoPool } from '@/features/feed/services/preview-video';
 import type { ProductCard } from '@/features/products/types/product';
 import { formatShortRelativeTime } from '@/utils/format';
 import { thumbHashUrl } from '@/utils/thumbhash';
@@ -17,6 +18,10 @@ const THUMBNAIL_SIZE = 400;
 const PREVIEW_PLAYS = 2;
 const FADE_MS = 200;
 const START_TIMEOUT_MS = 5000;
+const previewClass =
+  'pointer-events-none absolute inset-0 size-full object-cover transition-opacity duration-200';
+/** Each preview's claim on the pooled element, so a late release cannot take the next card's. */
+let previewTurns = 0;
 
 const videoBadgeClass =
   'absolute bottom-2 left-2 inline-flex items-center gap-[3px] rounded-[10px] bg-marketplace-ink/70 py-0.5 pl-1.5 pr-2 text-micro font-semibold leading-4 text-white';
@@ -120,7 +125,8 @@ export default function ListingCard({
 /**
  * The listing's short muted clip over its cover, played a couple of times and then back to
  * the cover, so nothing moves on and on. It shows once it really plays, so a slow start
- * or a refused autoplay leaves the cover as it was.
+ * or a refused autoplay leaves the cover as it was. Every card borrows the feed's one
+ * pooled element, because iOS refuses to play a newly made one.
  */
 function CardPreview({
   src,
@@ -131,16 +137,21 @@ function CardPreview({
   onRefused: () => void;
   onFinished: () => void;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const hostRef = useRef<HTMLDivElement>(null);
   const onFinishedRef = useRef(onFinished);
   onFinishedRef.current = onFinished;
 
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) {
+    const host = hostRef.current;
+    if (!host) {
       return;
     }
+
+    const owner = ++previewTurns;
+    const video = previewVideoPool.claim(owner, host);
+    const show = (isShown: boolean) => {
+      video.className = `${previewClass} ${isShown ? 'opacity-100' : 'opacity-0'}`;
+    };
 
     let plays = 0;
     let isOver = false;
@@ -151,7 +162,7 @@ function CardPreview({
       }
       isOver = true;
       clearTimeout(timer);
-      setIsPlaying(false);
+      show(false);
       onFinishedRef.current();
     };
     const play = () => {
@@ -160,7 +171,7 @@ function CardPreview({
       // Old WebViews return nothing from play().
       video.play()?.catch((error: unknown) => {
         const name = error instanceof DOMException ? error.name : '';
-        // NotAllowedError is the WebView saying no; AbortError is the cleanup's load().
+        // NotAllowedError is the WebView saying no; AbortError is a release or the next card.
         if (name === 'NotAllowedError') {
           clearTimeout(timer);
           onRefused();
@@ -171,7 +182,7 @@ function CardPreview({
     };
     const handlePlaying = () => {
       clearTimeout(timer);
-      setIsPlaying(true);
+      show(true);
     };
     const handleEnded = () => {
       plays += 1;
@@ -179,17 +190,17 @@ function CardPreview({
         play();
         return;
       }
-      setIsPlaying(false);
+      show(false);
       video.addEventListener('transitionend', finish);
       timer = setTimeout(finish, FADE_MS + 100);
     };
 
+    show(false);
+    // Counted plays, not a loop.
+    video.loop = false;
     video.addEventListener('playing', handlePlaying);
     video.addEventListener('ended', handleEnded);
     video.addEventListener('error', finish);
-    // Some WebViews judge autoplay by the muted attribute, which React does not write.
-    video.defaultMuted = true;
-    // Set here, not as a prop: the cleanup drops it, and a remount must set it again.
     video.src = src;
     play();
 
@@ -200,23 +211,10 @@ function CardPreview({
       video.removeEventListener('ended', handleEnded);
       video.removeEventListener('error', finish);
       video.removeEventListener('transitionend', finish);
-      // Removing the element alone may keep its buffer; dropping the source frees it.
-      video.removeAttribute('src');
-      video.load();
+      // Pauses, drops the source and parks it, unless the next card claims it first.
+      previewVideoPool.release(owner, video);
     };
   }, [src, onRefused]);
 
-  return (
-    <video
-      ref={videoRef}
-      aria-hidden="true"
-      className={`pointer-events-none absolute inset-0 size-full object-cover transition-opacity duration-200 ${
-        isPlaying ? 'opacity-100' : 'opacity-0'
-      }`}
-      muted
-      playsInline
-      // play() loads it; nothing is fetched for a preview the WebView will not play.
-      preload="none"
-    />
-  );
+  return <div ref={hostRef} aria-hidden="true" className="pointer-events-none absolute inset-0" />;
 }
