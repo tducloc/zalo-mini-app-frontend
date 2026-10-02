@@ -35,6 +35,9 @@ export default function ReelsPage() {
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const [isFeedVisible, setFeedVisible] = useState(true);
   const [isDetailShowing, setDetailShowing] = useState(false);
+  // Every active reel fetches its detail, but loads the detail's photos only once the
+  // viewer heads for it, and keeps them while that reel stays active.
+  const [detailMediaReelId, setDetailMediaReelId] = useState<string>();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const isAppVisible = useIsDocumentVisible();
 
@@ -53,6 +56,7 @@ export default function ReelsPage() {
     }
 
     setPagerInteractive(pager.scrollLeft > 0);
+    if (pager.scrollLeft > 0) setDetailMediaReelId(activeReelId);
     setFeedVisible(pager.scrollLeft < 12);
     setDetailShowing(pager.scrollLeft >= pager.clientWidth / 2);
   };
@@ -140,6 +144,7 @@ export default function ReelsPage() {
             key={activeReelId}
             mode="embedded"
             productId={activeReelId}
+            canLoadMedia={detailMediaReelId === activeReelId}
             onBack={showReels}
           />
         )}

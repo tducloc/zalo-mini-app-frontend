@@ -14,9 +14,11 @@ const contentClass = 'block aspect-square w-full object-contain';
 export default function ProductMediaGallery({
   media,
   productTitle,
+  canLoadMedia,
 }: {
   media: ProductMedia;
   productTitle: string;
+  canLoadMedia: boolean;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -33,7 +35,7 @@ export default function ProductMediaGallery({
     swiperRef.current?.goTo(index);
   };
 
-  if (media.length === 0) {
+  if (media.length === 0 || !canLoadMedia) {
     return <div className="aspect-square w-full bg-marketplace-skeleton" />;
   }
 
