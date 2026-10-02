@@ -4,7 +4,6 @@ import zaloMiniApp from 'zmp-vite-plugin';
 import react from '@vitejs/plugin-react';
 
 import workerSource from './vite-plugins/worker-source';
-import zauiCssSubset from './vite-plugins/zaui-css-subset';
 import zauiFontDisplay from './vite-plugins/zaui-font-display';
 
 // https://vitejs.dev/config/
@@ -12,19 +11,13 @@ export default () => {
   return defineConfig({
     root: '.',
     base: '',
-    plugins: [workerSource(), zauiCssSubset(), zauiFontDisplay(), zaloMiniApp(), react()],
+    plugins: [workerSource(), zauiFontDisplay(), zaloMiniApp(), react()],
     build: {
       assetsInlineLimit: 0,
       // zmp-vite-plugin defaults to es2015, which cannot express BigInt literals
       // (used by mediabunny). Zalo needs iOS 15.1+ and Android WebView 119+, which all
       // run ES2020 (plans/create-listing.md, R6).
       target: 'es2020',
-      rollupOptions: {
-        output: {
-          // src/boot.ts must stay a separate file; see the comment there.
-          manualChunks: (id) => (id.endsWith('/src/boot.ts') ? 'boot' : undefined),
-        },
-      },
     },
     resolve: {
       alias: {

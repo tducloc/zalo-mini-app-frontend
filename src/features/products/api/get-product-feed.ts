@@ -12,7 +12,7 @@ const FIRST_PAGE_CURSOR: string | undefined = undefined;
 
 declare global {
   interface Window {
-    /** Started by `src/boot.ts`, before the app script runs. Consumed once. */
+    /** Started from index.html, before the app script runs. Consumed once. */
     __feedPrefetch?: Promise<ProductFeedPage>;
   }
 }
