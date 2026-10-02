@@ -39,9 +39,11 @@ module.exports = {
       },
       keyframes: {
         shimmer: { to: { backgroundPosition: "-200% 0" } },
+        "reel-loading": { from: { transform: "translateX(-100%)" }, to: { transform: "translateX(300%)" } },
       },
       animation: {
         shimmer: "shimmer 1.4s linear infinite",
+        "reel-loading": "reel-loading 1.1s ease-in-out infinite",
       },
     },
   },

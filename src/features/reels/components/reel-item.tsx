@@ -1,7 +1,7 @@
 import { Icon } from 'zmp-ui';
 
 import ReelOverlay from '@/features/reels/components/reel-overlay';
-import { reelHeightClass, spinnerClass } from '@/features/reels/constants/styles';
+import { reelHeightClass } from '@/features/reels/constants/styles';
 import { useReelPlayback } from '@/features/reels/hooks/use-reel-playback';
 import type { ReelItem as Reel } from '@/features/reels/types/reel';
 import { shouldPlay } from '@/features/reels/utils/reel-player';
@@ -77,7 +77,6 @@ function ReelContent({
             <Icon icon="zi-play-solid" size={40} />
           </span>
         )}
-        {playback.isSlowToStart && <span className={spinnerClass} />}
         {playback.status === 'failed' && (
           <span className="rounded-lg bg-black/60 px-3 py-2 text-sm font-semibold">
             Không phát được video
@@ -89,6 +88,7 @@ function ReelContent({
         reel={reel}
         videoRef={playback.videoRef}
         isPlaying={playback.status === 'playing'}
+        isLoading={playback.isSlowToStart}
         isMuted={playback.isMuted}
         onToggleSound={playback.handleToggleSound}
         onOpen={onOpen}
