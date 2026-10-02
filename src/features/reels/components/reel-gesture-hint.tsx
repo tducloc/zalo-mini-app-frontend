@@ -32,11 +32,12 @@ function markHintSeen() {
 
 // Under the status bar and Zalo's 44px capsule row, above the 74px tab bar.
 const dialogClass =
-  'absolute inset-x-0 top-0 bottom-[74px] z-[901] flex transform-gpu flex-col items-center justify-center overflow-y-auto bg-black/70 px-6 pb-6 pt-[calc(max(24px,var(--zaui-safe-area-inset-top,env(safe-area-inset-top,0px)))_+_44px)] text-white backdrop-blur-sm transition-opacity duration-200 [.has-draft-banner_&]:pb-[70px]';
-const screenClass = 'relative h-11 w-7 overflow-hidden rounded-md ring-1 ring-white/30';
-const fingerClass =
-  'absolute bottom-0.5 right-1 text-white drop-shadow-[0_2px_3px_rgb(0_0_0/60%)] motion-reduce:animate-none';
-const arrowClass = 'absolute left-1 top-1 hidden text-white/80 motion-reduce:block';
+  'absolute inset-x-0 top-0 bottom-[74px] z-[901] flex transform-gpu flex-col items-center justify-center overflow-y-auto bg-black/65 px-4 pb-6 pt-[calc(max(24px,var(--zaui-safe-area-inset-top,env(safe-area-inset-top,0px)))_+_44px)] text-white transition-opacity duration-200 [.has-draft-banner_&]:pb-[70px]';
+// A white line hand with the direction beside it, like TikTok's own hints.
+const handClass = 'text-white motion-reduce:animate-none';
+const handProps = { size: 44, strokeWidth: 1.5, 'aria-hidden': true } as const;
+const arrowProps = { size: 22, strokeWidth: 2, 'aria-hidden': true } as const;
+const arrowClass = 'absolute text-white/60';
 
 export default function ReelGestureHint() {
   const [phase, setPhase] = useState<'shown' | 'leaving' | 'gone'>(() =>
@@ -90,118 +91,61 @@ export default function ReelGestureHint() {
     <div
       className={`${dialogClass} ${phase === 'leaving' ? 'pointer-events-none opacity-0' : 'animate-hint-fade'}`}
       role="dialog"
-      aria-labelledby="reel-gesture-hint-title"
-      aria-describedby="reel-gesture-hint-description"
+      aria-label="Hướng dẫn lướt video"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onKeyDown={(event) => event.key === 'Escape' && dismiss()}
     >
-      <div className="flex w-full max-w-[340px] animate-hint-pop flex-col items-center motion-reduce:animate-none">
-        <h2
-          id="reel-gesture-hint-title"
-          className="m-0 text-center text-[22px] font-bold leading-7"
-        >
-          Lướt video, săn đồ hay!
-        </h2>
-        <p
-          id="reel-gesture-hint-description"
-          className="m-0 mt-1 text-center text-sm leading-5 text-white/80"
-        >
-          Chỉ cần 3 cử chỉ đơn giản
-        </p>
-
-        <ul className="m-0 mt-6 flex w-full list-none flex-col gap-2.5 p-0">
-          <GestureRow title="Vuốt lên hoặc xuống" detail="Chuyển sang video khác">
-            <span className={screenClass}>
-              <span className="absolute inset-x-0 top-0 flex h-[200%] animate-hint-feed flex-col motion-reduce:animate-none">
-                <span className="h-1/2 bg-gradient-to-br from-sky-400 to-indigo-500" />
-                <span className="h-1/2 bg-gradient-to-br from-amber-300 to-rose-400" />
-              </span>
-            </span>
-            <ArrowUpDown className={arrowClass} size={16} aria-hidden />
-            <Pointer
-              className={`${fingerClass} animate-hint-finger-y`}
-              size={22}
-              strokeWidth={2.2}
-              aria-hidden
+      <div className="flex w-full max-w-[360px] animate-hint-pop flex-col items-center motion-reduce:animate-none">
+        <ul className="m-0 flex w-full max-w-[360px] list-none justify-between gap-3 p-0">
+          <Gesture label={'Vuốt lên xuống\nđể đổi video'}>
+            <ArrowUpDown
+              className={`${arrowClass} right-0 top-1/2 -translate-y-1/2`}
+              {...arrowProps}
             />
-          </GestureRow>
+            <Pointer className={`${handClass} animate-hint-finger-y`} {...handProps} />
+          </Gesture>
 
-          <GestureRow title="Vuốt sang trái" detail="Xem chi tiết món đồ">
-            <MiniDetail />
-            <ArrowLeft className={arrowClass} size={16} aria-hidden />
-            <Pointer
-              className={`${fingerClass} animate-hint-finger-x`}
-              size={22}
-              strokeWidth={2.2}
-              aria-hidden
+          <Gesture label={'Vuốt sang trái\nđể xem chi tiết'}>
+            <ArrowLeft
+              className={`${arrowClass} left-1/2 top-0 -translate-x-1/2`}
+              {...arrowProps}
             />
-          </GestureRow>
+            <Pointer className={`${handClass} animate-hint-finger-x`} {...handProps} />
+          </Gesture>
 
-          <GestureRow title="Vuốt sang phải" detail="Quay lại xem video">
-            <MiniDetail isReturning />
-            <ArrowRight className={arrowClass} size={16} aria-hidden />
-            <Pointer
-              className={`${fingerClass} animate-hint-finger-x [animation-direction:reverse]`}
-              size={22}
-              strokeWidth={2.2}
-              aria-hidden
+          <Gesture label={'Vuốt sang phải\nđể quay lại'}>
+            <ArrowRight
+              className={`${arrowClass} left-1/2 top-0 -translate-x-1/2`}
+              {...arrowProps}
             />
-          </GestureRow>
+            <Pointer
+              className={`${handClass} animate-hint-finger-x [animation-direction:reverse]`}
+              {...handProps}
+            />
+          </Gesture>
         </ul>
 
         <button
           ref={buttonRef}
-          className="mt-7 h-12 w-full rounded-full border-0 bg-marketplace-blue text-base font-semibold text-white shadow-[0_6px_20px_rgb(0_104_255/40%)] active:bg-marketplace-blue-dark"
+          className="mt-12 h-12 min-w-[180px] rounded-full border-0 bg-marketplace-blue px-8 text-base font-semibold text-white active:bg-marketplace-blue-dark"
           type="button"
           onClick={dismiss}
         >
           Bắt đầu xem
         </button>
-        <p className="m-0 mt-3 text-caption leading-4 text-white/70">
-          Hoặc vuốt màn hình để xem ngay
-        </p>
       </div>
     </div>
   );
 }
 
-function GestureRow({
-  title,
-  detail,
-  children,
-}: {
-  title: string;
-  detail: string;
-  children: ReactNode;
-}) {
+function Gesture({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <li className="flex items-center gap-3.5 rounded-2xl bg-white/10 p-2.5 pr-4 ring-1 ring-white/10">
-      <span
-        className="relative grid size-14 flex-none place-items-center rounded-xl bg-black/30"
-        aria-hidden
-      >
+    <li className="flex flex-1 flex-col items-center text-center">
+      <span className="relative grid size-20 place-items-center" aria-hidden>
         {children}
       </span>
-      <span className="flex min-w-0 flex-col">
-        <span className="text-[15px] font-semibold leading-5">{title}</span>
-        <span className="text-caption leading-4 text-white/75">{detail}</span>
-      </span>
+      <span className="mt-3 whitespace-pre text-[14px] font-semibold leading-5">{label}</span>
     </li>
-  );
-}
-
-/** A reel with a listing card sliding over it, or back off it when returning. */
-function MiniDetail({ isReturning = false }: { isReturning?: boolean }) {
-  return (
-    <span className={`${screenClass} bg-gradient-to-br from-sky-400 to-indigo-500`}>
-      <span
-        className={`absolute inset-0 flex translate-x-1/2 animate-hint-reveal flex-col gap-0.5 bg-white p-0.5 motion-reduce:animate-none ${isReturning ? '[animation-direction:reverse]' : ''}`}
-      >
-        <span className="h-3.5 rounded-sm bg-amber-200" />
-        <span className="h-1 w-5 rounded-full bg-marketplace-ink/60" />
-        <span className="h-1 w-3 rounded-full bg-marketplace-blue" />
-      </span>
-    </span>
   );
 }

@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const HINT = { name: 'Lướt video, săn đồ hay!' };
+const HINT = { name: 'Hướng dẫn lướt video' };
 
 /** A fresh app session: the hint module, and its session flag, load again. */
 async function openReels() {
@@ -47,7 +47,7 @@ describe('reel gesture hint', () => {
     await openReels();
 
     const dialog = screen.getByRole('dialog', HINT);
-    expect(dialog.textContent).toContain('Vuốt lên hoặc xuống');
+    expect(dialog.textContent).toContain('Vuốt lên xuống');
     expect(dialog.textContent).toContain('Vuốt sang trái');
     expect(dialog.textContent).toContain('Vuốt sang phải');
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Bắt đầu xem' }));

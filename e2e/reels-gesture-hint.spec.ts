@@ -2,7 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 
 import { expect, tab, test } from './support';
 
-const hint = (page: Page) => page.getByRole('dialog', { name: 'Lướt video, săn đồ hay!' });
+const hint = (page: Page) => page.getByRole('dialog', { name: 'Hướng dẫn lướt video' });
 const firstVideo = (page: Page) => page.locator('section[data-reel-index="0"] video');
 const scroller = (page: Page) => page.locator('section[data-reel-index="0"]').locator('..');
 
