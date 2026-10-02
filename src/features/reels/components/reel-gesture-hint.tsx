@@ -40,7 +40,7 @@ const arrowProps = { size: 22, strokeWidth: 2, 'aria-hidden': true } as const;
 const arrowClass = 'absolute text-white/60';
 
 /** One gesture moves at a time, so the eye follows them in order. */
-const TURN_MS = 3000;
+const TURN_MS = 1800;
 const GESTURES = [
   {
     label: 'Vuốt lên xuống\nđể đổi video',
