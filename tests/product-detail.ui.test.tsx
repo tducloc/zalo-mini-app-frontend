@@ -72,7 +72,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('product detail UI', () => {
   it('shows and updates the gallery position chip for image and video media', () => {
-    render(<ProductMediaGallery media={product.media} productTitle={product.title} />);
+    render(<ProductMediaGallery media={product.media} productTitle={product.title} canLoadMedia />);
 
     expect(screen.getByText('1 / 2')).toBeTruthy();
     vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined);
@@ -81,7 +81,7 @@ describe('product detail UI', () => {
   });
 
   it('opens every photo and video full screen, counted as the gallery counts them', () => {
-    render(<ProductMediaGallery media={product.media} productTitle={product.title} />);
+    render(<ProductMediaGallery media={product.media} productTitle={product.title} canLoadMedia />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Phóng to ảnh' }));
     const lightbox = screen.getByRole('dialog', { name: `Ảnh và video: ${product.title}` });
