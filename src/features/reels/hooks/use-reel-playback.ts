@@ -25,7 +25,12 @@ function useIsLate(isOn: boolean, delayMs: number) {
 }
 
 /** Attaches the shared video element and keeps its play, pause and sound in one place. */
-export function useReelPlayback(reel: Reel, index: number, slot: ReelSlot, isAppVisible: boolean) {
+export function useReelPlayback(
+  reel: Reel,
+  index: number,
+  slot: Exclude<ReelSlot, 'empty'>,
+  isAppVisible: boolean,
+) {
   const hostRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 

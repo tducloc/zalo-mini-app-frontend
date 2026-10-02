@@ -7,29 +7,40 @@ import type { ReelItem as Reel } from '@/features/reels/types/reel';
 import { shouldPlay } from '@/features/reels/utils/reel-player';
 import type { ReelSlot } from '@/features/reels/utils/reel-slot';
 
-export default function ReelItem({
-  reel,
-  index,
-  slot,
-  isAppVisible,
-  onOpen,
-}: {
+type ReelProps = {
   reel: Reel;
   index: number;
   slot: ReelSlot;
   isAppVisible: boolean;
   onOpen: () => void;
-}) {
+};
+
+/** Every reel keeps its section: the scroll snaps to it and the active-reel observer sees it. */
+export default function ReelItem({ slot, ...props }: ReelProps) {
+  return (
+    <section
+      className={`relative w-full snap-start snap-always overflow-hidden bg-black ${reelHeightClass}`}
+      data-reel-index={props.index}
+      aria-label={props.reel.title}
+    >
+      {slot !== 'empty' && <ReelContent slot={slot} {...props} />}
+    </section>
+  );
+}
+
+function ReelContent({
+  reel,
+  index,
+  slot,
+  isAppVisible,
+  onOpen,
+}: ReelProps & { slot: Exclude<ReelSlot, 'empty'> }) {
   const playback = useReelPlayback(reel, index, slot, isAppVisible);
   const showPlay =
     playback.isActive && (playback.status === 'paused' || playback.status === 'blocked');
 
   return (
-    <section
-      className={`relative w-full snap-start snap-always overflow-hidden bg-black ${reelHeightClass}`}
-      data-reel-index={index}
-      aria-label={reel.title}
-    >
+    <>
       {playback.placeholder && (
         <img
           className={`absolute inset-0 size-full ${playback.fitClass}`}
@@ -82,6 +93,6 @@ export default function ReelItem({
         onToggleSound={playback.handleToggleSound}
         onOpen={onOpen}
       />
-    </section>
+    </>
   );
 }
