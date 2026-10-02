@@ -10,28 +10,6 @@ const FEED_GC_TIME_MS = 10 * 60_000;
 // The first page has no cursor; typed so later pages can pass one.
 const FIRST_PAGE_CURSOR: string | undefined = undefined;
 
-declare global {
-  interface Window {
-    /** Started from boot.ts, or from index.html when that file is the document. Consumed once. */
-    __feedPrefetch?: Promise<ProductFeedPage>;
-  }
-}
-
-function isDefaultFirstPage(params: ProductFeedParams, cursor: string | undefined) {
-  return (
-    cursor === undefined &&
-    params.sortBy === 'publishedAt' &&
-    params.order === 'desc' &&
-    params.q === undefined &&
-    params.categoryId === undefined &&
-    params.locationId === undefined &&
-    params.condition === undefined &&
-    params.hasVideo === undefined &&
-    params.minPrice === undefined &&
-    params.maxPrice === undefined
-  );
-}
-
 // The feed is public; it uses the unauthenticated client so an expired token
 // never triggers a Zalo re-login just to browse.
 export async function getProductFeed(
@@ -39,18 +17,6 @@ export async function getProductFeed(
   cursor: string | undefined,
   signal?: AbortSignal,
 ) {
-  const prefetched = window.__feedPrefetch;
-
-  if (isDefaultFirstPage(params, cursor) && prefetched) {
-    window.__feedPrefetch = undefined;
-
-    try {
-      return await prefetched;
-    } catch {
-      // The early request failed. Ask again with the normal client.
-    }
-  }
-
   const response = await apiClient.get<ProductFeedPage>('/products', {
     params: { ...params, limit: FEED_PAGE_SIZE, cursor },
     signal,
