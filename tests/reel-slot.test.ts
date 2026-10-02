@@ -4,19 +4,19 @@ const slots = (count: number, activeIndex: number) =>
   Array.from({ length: count }, (_, index) => slotOf(index, activeIndex));
 
 describe('slotOf', () => {
-  it('gives the shared video only to the reel on screen', () => {
-    expect(slots(5, 2)).toEqual(['idle', 'idle', 'active', 'idle', 'idle']);
+  it('gives the shared video to the reel on screen and mounts only its neighbours', () => {
+    expect(slots(7, 3)).toEqual(['empty', 'empty', 'idle', 'active', 'idle', 'empty', 'empty']);
   });
 
   it('gives it to the first reel', () => {
-    expect(slots(3, 0)).toEqual(['active', 'idle', 'idle']);
+    expect(slots(4, 0)).toEqual(['active', 'idle', 'empty', 'empty']);
   });
 
   it('gives it to the last reel', () => {
-    expect(slots(3, 2)).toEqual(['idle', 'idle', 'active']);
+    expect(slots(4, 3)).toEqual(['empty', 'empty', 'idle', 'active']);
   });
 
-  it('holds no video while the end of the list is on screen', () => {
-    expect(slots(3, 3)).toEqual(['idle', 'idle', 'idle']);
+  it('holds no video while the end of the list is on screen, and keeps the last reel ready', () => {
+    expect(slots(4, 4)).toEqual(['empty', 'empty', 'empty', 'idle']);
   });
 });
