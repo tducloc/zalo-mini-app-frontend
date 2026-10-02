@@ -17,6 +17,7 @@ export default function ReelOverlay({
   reel,
   videoRef,
   isPlaying,
+  isLoading,
   isMuted,
   onToggleSound,
   onOpen,
@@ -24,6 +25,8 @@ export default function ReelOverlay({
   reel: ReelItem;
   videoRef: RefObject<HTMLVideoElement>;
   isPlaying: boolean;
+  /** The video has been slow to start: the bar shows it is still loading. */
+  isLoading: boolean;
   isMuted: boolean;
   onToggleSound: () => void;
   onOpen: () => void;
@@ -75,7 +78,7 @@ export default function ReelOverlay({
         </div>
       </div>
 
-      <ProgressBar videoRef={videoRef} isPlaying={isPlaying} />
+      <ProgressBar videoRef={videoRef} isPlaying={isPlaying} isLoading={isLoading} />
     </div>
   );
 }
@@ -83,9 +86,11 @@ export default function ReelOverlay({
 function ProgressBar({
   videoRef,
   isPlaying,
+  isLoading,
 }: {
   videoRef: RefObject<HTMLVideoElement>;
   isPlaying: boolean;
+  isLoading: boolean;
 }) {
   const barRef = useRef<HTMLDivElement>(null);
 
@@ -110,8 +115,11 @@ function ProgressBar({
   }, [videoRef, isPlaying]);
 
   return (
-    <div className="absolute inset-x-0 bottom-0 h-0.5 bg-white/25" aria-hidden>
+    <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-white/25" aria-hidden>
       <div ref={barRef} className="h-full origin-left scale-x-0 bg-white" />
+      {isLoading && (
+        <div className="absolute inset-y-0 left-0 w-1/3 animate-reel-loading bg-white motion-reduce:animate-none" />
+      )}
     </div>
   );
 }
