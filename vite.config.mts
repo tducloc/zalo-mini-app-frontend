@@ -18,6 +18,12 @@ export default () => {
       // (used by mediabunny). Zalo needs iOS 15.1+ and Android WebView 119+, which all
       // run ES2020 (plans/create-listing.md, R6).
       target: 'es2020',
+      rollupOptions: {
+        output: {
+          // src/boot.ts must stay a separate file; see the comment there.
+          manualChunks: (id) => (id.endsWith('/src/boot.ts') ? 'boot' : undefined),
+        },
+      },
     },
     resolve: {
       alias: {

@@ -1,5 +1,7 @@
 // Missing built-ins on iOS 15.1–15.3; must run before anything else.
 import '@/polyfills';
+// Starts the feed request; on Zalo it has already run from its own chunk.
+import '@/boot';
 
 // ZaUI stylesheet
 import 'zmp-ui/zaui.css';
