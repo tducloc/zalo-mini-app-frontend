@@ -44,10 +44,8 @@ export default function ListingCard({
   // Remember WHICH url failed, so a changed thumbnail (e.g. an edited listing)
   // is tried again instead of keeping the placeholder forever.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   const shouldShowImage = Boolean(product.thumbnailUrl) && product.thumbnailUrl !== failedUrl;
   const placeholderUrl = useMemo(() => thumbHashUrl(product.placeholder), [product.placeholder]);
-  const photoReady = loadedUrl === product.thumbnailUrl;
 
   return (
     <button
@@ -69,13 +67,12 @@ export default function ListingCard({
         {shouldShowImage ? (
           <img
             alt=""
-            className={`relative block size-full object-cover ${placeholderUrl && !photoReady ? 'opacity-0' : ''}`}
+            className="relative block size-full object-cover"
             decoding="async"
             height={THUMBNAIL_SIZE}
             loading={isAboveFold ? 'eager' : 'lazy'}
             src={product.thumbnailUrl ?? undefined}
             width={THUMBNAIL_SIZE}
-            onLoad={() => setLoadedUrl(product.thumbnailUrl)}
             onError={() => setFailedUrl(product.thumbnailUrl)}
           />
         ) : (
