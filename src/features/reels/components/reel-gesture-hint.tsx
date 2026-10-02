@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, ArrowUpDown, Pointer } from 'lucide-react';
-import { type ReactNode, type TouchEvent, useEffect, useRef, useState } from 'react';
+import { type TouchEvent, useEffect, useRef, useState } from 'react';
 
 const SEEN_KEY = 'reels-gesture-hint-seen';
 const SWIPE_PX = 16;
@@ -39,12 +39,55 @@ const handProps = { size: 44, strokeWidth: 1.5, 'aria-hidden': true } as const;
 const arrowProps = { size: 22, strokeWidth: 2, 'aria-hidden': true } as const;
 const arrowClass = 'absolute text-white/60';
 
+/** One gesture moves at a time, so the eye follows them in order. */
+const TURN_MS = 3000;
+const GESTURES = [
+  {
+    label: 'Vuốt lên xuống\nđể đổi video',
+    arrow: ArrowUpDown,
+    arrowPlace: 'right-0 top-1/2 -translate-y-1/2',
+    motion: 'animate-hint-finger-y',
+  },
+  {
+    label: 'Vuốt sang trái\nđể xem chi tiết',
+    arrow: ArrowLeft,
+    arrowPlace: 'left-1/2 top-0 -translate-x-1/2',
+    motion: 'animate-hint-finger-x',
+  },
+  {
+    label: 'Vuốt sang phải\nđể quay lại',
+    arrow: ArrowRight,
+    arrowPlace: 'left-1/2 top-0 -translate-x-1/2',
+    motion: 'animate-hint-finger-back',
+  },
+];
+
+function prefersReducedMotion() {
+  return typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false;
+}
+
 export default function ReelGestureHint() {
   const [phase, setPhase] = useState<'shown' | 'leaving' | 'gone'>(() =>
     hasSeenHint() ? 'gone' : 'shown',
   );
   const buttonRef = useRef<HTMLButtonElement>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isReducedMotion] = useState(prefersReducedMotion);
+
+  useEffect(() => {
+    if (isReducedMotion || phase !== 'shown') {
+      return;
+    }
+
+    const timer = setInterval(
+      () => setActiveIndex((index) => (index + 1) % GESTURES.length),
+      TURN_MS,
+    );
+    return () => clearInterval(timer);
+  }, [isReducedMotion, phase]);
 
   useEffect(() => {
     buttonRef.current?.focus({ preventScroll: true });
@@ -94,55 +137,40 @@ export default function ReelGestureHint() {
       aria-label="Hướng dẫn lướt video"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
+      onClick={dismiss}
       onKeyDown={(event) => event.key === 'Escape' && dismiss()}
     >
       <div className="flex w-full max-w-[360px] animate-hint-pop flex-col items-center motion-reduce:animate-none">
         <ul className="m-0 flex list-none flex-col gap-8 p-0">
-          <Gesture label={'Vuốt lên xuống\nđể đổi video'}>
-            <ArrowUpDown
-              className={`${arrowClass} right-0 top-1/2 -translate-y-1/2`}
-              {...arrowProps}
-            />
-            <Pointer className={`${handClass} animate-hint-finger-y`} {...handProps} />
-          </Gesture>
+          {GESTURES.map((gesture, index) => {
+            const isActive = isReducedMotion || index === activeIndex;
+            const Arrow = gesture.arrow;
 
-          <Gesture label={'Vuốt sang trái\nđể xem chi tiết'}>
-            <ArrowLeft
-              className={`${arrowClass} left-1/2 top-0 -translate-x-1/2`}
-              {...arrowProps}
-            />
-            <Pointer className={`${handClass} animate-hint-finger-x`} {...handProps} />
-          </Gesture>
-
-          <Gesture label={'Vuốt sang phải\nđể quay lại'}>
-            <ArrowRight
-              className={`${arrowClass} left-1/2 top-0 -translate-x-1/2`}
-              {...arrowProps}
-            />
-            <Pointer className={`${handClass} animate-hint-finger-back`} {...handProps} />
-          </Gesture>
+            return (
+              <li
+                key={gesture.label}
+                className={`flex items-center gap-5 transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-35'}`}
+              >
+                <span className="relative grid size-20 flex-none place-items-center" aria-hidden>
+                  <Arrow className={`${arrowClass} ${gesture.arrowPlace}`} {...arrowProps} />
+                  <Pointer
+                    className={`${handClass} ${isActive && !isReducedMotion ? gesture.motion : ''}`}
+                    {...handProps}
+                  />
+                </span>
+                <span className="whitespace-pre text-base font-semibold leading-6">
+                  {gesture.label}
+                </span>
+              </li>
+            );
+          })}
         </ul>
 
-        <button
-          ref={buttonRef}
-          className="mt-12 h-12 min-w-[180px] rounded-full border-0 bg-marketplace-blue px-8 text-base font-semibold text-white active:bg-marketplace-blue-dark"
-          type="button"
-          onClick={dismiss}
-        >
-          Bắt đầu xem
+        {/* A tap anywhere closes it; this is the same for keyboards and screen readers. */}
+        <button ref={buttonRef} className="sr-only" type="button" onClick={dismiss}>
+          Đóng hướng dẫn
         </button>
       </div>
     </div>
-  );
-}
-
-function Gesture({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <li className="flex items-center gap-5">
-      <span className="relative grid size-20 flex-none place-items-center" aria-hidden>
-        {children}
-      </span>
-      <span className="whitespace-pre text-base font-semibold leading-6">{label}</span>
-    </li>
   );
 }

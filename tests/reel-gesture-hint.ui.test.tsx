@@ -50,13 +50,13 @@ describe('reel gesture hint', () => {
     expect(dialog.textContent).toContain('Vuốt lên xuống');
     expect(dialog.textContent).toContain('Vuốt sang trái');
     expect(dialog.textContent).toContain('Vuốt sang phải');
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Bắt đầu xem' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Đóng hướng dẫn' }));
   });
 
-  it('closes on the button and stays closed on the next app session', async () => {
+  it('closes on a tap and stays closed on the next app session', async () => {
     await openReels();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu xem' }));
+    fireEvent.click(screen.getByRole('dialog', HINT));
     finishLeaving();
     expect(screen.queryByRole('dialog')).toBeNull();
 
@@ -86,11 +86,13 @@ describe('reel gesture hint', () => {
     }
   });
 
-  it('stays open on a tap that does not move', async () => {
+  it('does not take a small move for a swipe', async () => {
     await openReels();
 
     swipe(screen.getByRole('dialog', HINT), 3, 2);
-    finishLeaving();
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
     expect(screen.queryByRole('dialog', HINT)).not.toBeNull();
   });
 
@@ -103,7 +105,7 @@ describe('reel gesture hint', () => {
     });
 
     await openReels();
-    fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu xem' }));
+    fireEvent.click(screen.getByRole('dialog', HINT));
     finishLeaving();
     expect(screen.queryByRole('dialog')).toBeNull();
 

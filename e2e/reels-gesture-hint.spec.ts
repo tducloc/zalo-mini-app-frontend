@@ -52,16 +52,13 @@ test('teaches the gestures once, over a reel that keeps playing with sound', asy
   await openReels(page);
 
   await expect(hint(page)).toBeVisible();
-  await expect(hint(page).getByRole('button', { name: 'Bắt đầu xem' })).toBeFocused();
+  await expect(hint(page).getByRole('button', { name: 'Đóng hướng dẫn' })).toBeFocused();
   await expectPlaying(firstVideo(page));
   expect(await firstVideo(page).evaluate((element: HTMLVideoElement) => element.muted)).toBe(false);
 
+  // A tap anywhere closes it, and the tap does not reach the reel's play/pause button.
   const { width } = page.viewportSize() ?? { width: 375, height: 812 };
   await page.mouse.click(width / 2, 120);
-  await expect(hint(page)).toBeVisible();
-  await expectPlaying(firstVideo(page));
-
-  await hint(page).getByRole('button', { name: 'Bắt đầu xem' }).click();
   await expect(hint(page)).toHaveCount(0);
   await expectPlaying(firstVideo(page));
   expect(await firstVideo(page).evaluate((element: HTMLVideoElement) => element.muted)).toBe(false);
