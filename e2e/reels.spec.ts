@@ -201,13 +201,12 @@ test('plays each reel past the first page with the same video element', async ({
   await page.goto('/');
   await tab(page, 'Reels').click();
   await expectPlaying(video(page, 0));
+  const first = await video(page, 0).elementHandle();
 
   for (let index = 1; index <= 12; index += 1) {
     await reel(page, index).evaluate((element) => element.scrollIntoView({ block: 'start' }));
     await expectPlaying(video(page, index));
   }
   await expectOnlyActiveVideo(page, 12);
-  await expect(
-    page.locator('[data-reels-pager] > div:first-child video, [data-reel-video-parking] video'),
-  ).toHaveCount(1);
+  expect(await video(page, 12).evaluate((element, start) => element === start, first)).toBe(true);
 });

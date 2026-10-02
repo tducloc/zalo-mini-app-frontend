@@ -3,6 +3,7 @@ import { createPortal, flushSync } from 'react-dom';
 import { type InfiniteData, useQueryClient } from '@tanstack/react-query';
 import { Icon, useLocation, useNavigate } from 'zmp-ui';
 
+import { previewVideoPool } from '@/features/feed/services/preview-video';
 import DraftBanner from '@/features/listings/components/draft/draft-banner';
 import DraftIndicator, {
   DRAFT_STATUS_ID,
@@ -63,6 +64,7 @@ export default function AppShell({ children }: PropsWithChildren) {
   useToastOffset(shouldShowTabbar ? (isDraftBannerShown ? 136 : 88) : null);
   const setVideoParking = useCallback((element: HTMLDivElement | null) => {
     videoPool.setParking(element);
+    previewVideoPool.setParking(element);
   }, []);
 
   useEffect(() => {
@@ -155,7 +157,7 @@ export default function AppShell({ children }: PropsWithChildren) {
     <>
       <div
         ref={setVideoParking}
-        data-reel-video-parking
+        data-video-parking
         aria-hidden="true"
         className="pointer-events-none fixed -left-px -top-px size-px overflow-hidden opacity-0"
       />

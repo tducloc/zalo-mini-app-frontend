@@ -1,7 +1,9 @@
+import { StrictMode } from 'react';
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ListingCard from '@/features/feed/components/grid/listing-card';
+import { previewVideoPool } from '@/features/feed/services/preview-video';
 import type { ProductCard } from '@/features/products/types/product';
 
 vi.mock('zmp-ui', () => ({ Icon: () => null }));
@@ -49,10 +51,13 @@ describe('the card preview ends its own turn', () => {
     vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(() =>
       (plays.shift() ?? never)(),
     );
+    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
     vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => {});
   });
-  afterEach(() => {
+  afterEach(async () => {
     cleanup();
+    // The pool parks the released element one microtask later.
+    await Promise.resolve();
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
@@ -130,5 +135,94 @@ describe('the card preview ends its own turn', () => {
     await act(async () => {});
     act(() => vi.advanceTimersByTime(10_000));
     expect(onFinished).not.toHaveBeenCalled();
+  });
+});
+
+describe('every card preview plays in the one pooled element', () => {
+  const second: ProductCard = { ...product, id: 'prd_2', previewUrl: 'https://example.com/2.mp4' };
+  let parking: HTMLElement;
+
+  beforeEach(() => {
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(never);
+    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
+    vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => {});
+    parking = document.createElement('div');
+    document.body.append(parking);
+    previewVideoPool.setParking(parking);
+  });
+  afterEach(async () => {
+    cleanup();
+    await Promise.resolve();
+    previewVideoPool.setParking(null);
+    parking.remove();
+    vi.restoreAllMocks();
+  });
+
+  function Feed({ activeId }: { activeId: string | null }) {
+    return (
+      <>
+        {[product, second].map((card) => (
+          <ListingCard
+            key={card.id}
+            isAboveFold
+            isPreviewActive={card.id === activeId}
+            product={card}
+            onOpen={() => {}}
+            onPreviewFinished={() => {}}
+            onPreviewRefused={() => {}}
+          />
+        ))}
+      </>
+    );
+  }
+
+  const lastPlayed = () => {
+    const { contexts } = vi.mocked(HTMLMediaElement.prototype.play).mock;
+    return contexts[contexts.length - 1];
+  };
+
+  it('hands it from card to card under StrictMode, then parks it without a source', async () => {
+    const view = render(<Feed activeId="prd_1" />, { wrapper: StrictMode });
+    const [firstCard, secondCard] = Array.from(view.container.querySelectorAll('button'));
+    await act(async () => {});
+    const video = firstCard.querySelector('video')!;
+
+    expect(video.getAttribute('src')).toBe(product.previewUrl);
+    expect(lastPlayed()).toBe(video);
+    expect(document.querySelectorAll('video')).toHaveLength(1);
+
+    view.rerender(<Feed activeId="prd_2" />);
+    await act(async () => {});
+    expect(secondCard.querySelector('video')).toBe(video);
+    expect(firstCard.querySelector('video')).toBeNull();
+    expect(video.getAttribute('src')).toBe(second.previewUrl);
+    expect(lastPlayed()).toBe(video);
+    expect(document.querySelectorAll('video')).toHaveLength(1);
+
+    view.rerender(<Feed activeId={null} />);
+    await act(async () => {});
+    expect(video.parentElement).toBe(parking);
+    expect(video.hasAttribute('src')).toBe(false);
+  });
+
+  it('stays with the card playing when an earlier card lets go late', async () => {
+    const card = (item: ProductCard) => (
+      <ListingCard
+        isAboveFold
+        isPreviewActive
+        product={item}
+        onOpen={() => {}}
+        onPreviewFinished={() => {}}
+        onPreviewRefused={() => {}}
+      />
+    );
+    const earlier = render(card(product));
+    const now = render(card(second));
+    const video = now.container.querySelector('video')!;
+
+    earlier.unmount();
+    await act(async () => {});
+    expect(now.container.querySelector('video')).toBe(video);
+    expect(video.getAttribute('src')).toBe(second.previewUrl);
   });
 });
