@@ -97,7 +97,7 @@ export default function ReelGestureHint() {
       onKeyDown={(event) => event.key === 'Escape' && dismiss()}
     >
       <div className="flex w-full max-w-[360px] animate-hint-pop flex-col items-center motion-reduce:animate-none">
-        <ul className="m-0 flex w-full max-w-[360px] list-none justify-between gap-3 p-0">
+        <ul className="m-0 flex list-none flex-col gap-8 p-0">
           <Gesture label={'Vuốt lên xuống\nđể đổi video'}>
             <ArrowUpDown
               className={`${arrowClass} right-0 top-1/2 -translate-y-1/2`}
@@ -119,10 +119,7 @@ export default function ReelGestureHint() {
               className={`${arrowClass} left-1/2 top-0 -translate-x-1/2`}
               {...arrowProps}
             />
-            <Pointer
-              className={`${handClass} animate-hint-finger-x [animation-direction:reverse]`}
-              {...handProps}
-            />
+            <Pointer className={`${handClass} animate-hint-finger-back`} {...handProps} />
           </Gesture>
         </ul>
 
@@ -141,11 +138,11 @@ export default function ReelGestureHint() {
 
 function Gesture({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <li className="flex flex-1 flex-col items-center text-center">
-      <span className="relative grid size-20 place-items-center" aria-hidden>
+    <li className="flex items-center gap-5">
+      <span className="relative grid size-20 flex-none place-items-center" aria-hidden>
         {children}
       </span>
-      <span className="mt-3 whitespace-pre text-[14px] font-semibold leading-5">{label}</span>
+      <span className="whitespace-pre text-base font-semibold leading-6">{label}</span>
     </li>
   );
 }

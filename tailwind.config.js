@@ -53,9 +53,15 @@ module.exports = {
         },
         "hint-finger-x": {
           "0%": { transform: "translateX(4px)", opacity: "0" },
-          "12%": { transform: "translateX(4px)", opacity: "1" },
-          "50%": { transform: "translateX(-26px)", opacity: "1" },
-          "62%, 100%": { transform: "translateX(-26px)", opacity: "0" },
+          "10%": { transform: "translateX(4px)", opacity: "1" },
+          "55%, 70%": { transform: "translateX(-26px)", opacity: "1" },
+          "80%, 100%": { transform: "translateX(-26px)", opacity: "0" },
+        },
+        "hint-finger-back": {
+          "0%": { transform: "translateX(-26px)", opacity: "0" },
+          "10%": { transform: "translateX(-26px)", opacity: "1" },
+          "55%, 70%": { transform: "translateX(4px)", opacity: "1" },
+          "80%, 100%": { transform: "translateX(4px)", opacity: "0" },
         },
       },
       animation: {
@@ -65,6 +71,7 @@ module.exports = {
         "hint-pop": "hint-pop 360ms cubic-bezier(0.2, 0.9, 0.3, 1.2)",
         "hint-finger-y": "hint-finger-y 3.2s ease-in-out infinite",
         "hint-finger-x": "hint-finger-x 2.8s ease-in-out infinite",
+        "hint-finger-back": "hint-finger-back 2.8s ease-in-out infinite",
       },
     },
   },
