@@ -35,13 +35,15 @@ const reportErrorMessages: Partial<Record<number, string>> = {
 const BAR_GAP_PX = 8;
 
 type ProductDetailPageProps =
-  { mode?: 'route' } | { mode: 'embedded'; productId: string; onBack: () => void };
+  | { mode?: 'route' }
+  | { mode: 'embedded'; productId: string; canLoadMedia: boolean; onBack: () => void };
 
 export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
   const { productId: routeProductId = '' } = useParams<{ productId: string }>();
   const isEmbedded = props.mode === 'embedded';
   const productId = isEmbedded ? props.productId : routeProductId;
   const onEmbeddedBack = isEmbedded ? props.onBack : undefined;
+  const canLoadMedia = isEmbedded ? props.canLoadMedia : true;
   const navigate = useNavigate();
   const { showError, showInfo, showSuccess } = useToast();
   const { session, isBootstrapping } = useSession();
@@ -148,7 +150,11 @@ export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
       <Page className="bg-white" style={{ paddingBottom: barHeight + BAR_GAP_PX }}>
         <ProductDetailHeader onBack={onEmbeddedBack} />
         <main className="bg-white">
-          <ProductMediaGallery media={product.media} productTitle={product.title} />
+          <ProductMediaGallery
+            media={product.media}
+            productTitle={product.title}
+            canLoadMedia={canLoadMedia}
+          />
           <section className={`${backSwipeClass} px-4`} {...backSwipeHandlers}>
             <ProductInformation
               product={product}
