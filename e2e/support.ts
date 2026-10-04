@@ -10,6 +10,15 @@ export const API_URL = process.env.E2E_API_URL ?? 'http://localhost:3002/api/v1'
 // Playwright loads specs as CommonJS here (no "type": "module" in package.json).
 export const fixture = (name: string) => join(__dirname, 'fixtures', name);
 
+/**
+ * Taps the Reels gesture hint away whenever it covers the page. The hint stores "seen" in
+ * Zalo's nativeStorage, which a plain browser does not have, so it shows on every page load here.
+ */
+export const skipReelsGestureHint = (page: Page) =>
+  page.addLocatorHandler(page.getByRole('dialog', { name: 'Hướng dẫn lướt video' }), (hint) =>
+    hint.click(),
+  );
+
 /** The tab bar's button; the form has its own "Đăng tin" to post. */
 export const tab = (page: Page, name: string) =>
   page.getByRole('navigation').getByRole('button', { name });

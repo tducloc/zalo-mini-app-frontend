@@ -1,11 +1,13 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { expect, tab, test } from './support';
+import { expect, skipReelsGestureHint, tab, test } from './support';
 
 const reel = (page: Page, index: number) => page.locator(`section[data-reel-index="${index}"]`);
 const video = (page: Page, index: number) => reel(page, index).locator('video');
 const pager = (page: Page) => page.locator('[data-reels-pager]');
 const FRAME_MS = 16;
+
+test.beforeEach(({ page }) => skipReelsGestureHint(page));
 
 const waitForRouteSlideIn = (page: Page) =>
   expect
