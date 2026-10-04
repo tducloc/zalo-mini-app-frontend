@@ -5,12 +5,12 @@ import { AppProps } from 'zmp-ui/app';
 import AppShell from '@/components/layout/app-shell';
 import { AuthBootstrap } from '@/features/auth/components/bootstrap';
 import HomePage from '@/pages/home';
+import { LazyReelsPage } from '@/pages/lazy-reels-page';
 import { warnInDev } from '@/utils/dev-log';
 
 // Home stays in the first script. The other screens load when the route opens.
 const MyListingsPage = lazy(() => import('@/pages/my-listings'));
 const SellPage = lazy(() => import('@/pages/sell'));
-const ReelsPage = lazy(() => import('@/pages/reels'));
 const ProfilePage = lazy(() => import('@/pages/profile'));
 const ProductDetailPage = lazy(() => import('@/pages/product-detail'));
 const EditListingPage = lazy(() => import('@/pages/edit-listing'));
@@ -40,7 +40,7 @@ export default function MyApp() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/my-listings" element={<MyListingsPage />} />
                   <Route path="/sell" element={<SellPage />} />
-                  <Route path="/reels" element={<ReelsPage />} />
+                  <Route path="/reels" element={<LazyReelsPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   {MediaLabPage && (
                     <Route
