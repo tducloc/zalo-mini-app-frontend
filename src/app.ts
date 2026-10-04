@@ -1,5 +1,7 @@
 // Missing built-ins on iOS 15.1–15.3; must run before anything else.
 import '@/polyfills';
+// Crash reporting: catches errors from here on, loads Sentry after the first paint.
+import '@/lib/crash-reporting/start';
 
 // ZaUI stylesheet
 import 'zmp-ui/zaui.css';
@@ -15,6 +17,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mount the app
 import MyApp from '@/components/app';
+import ErrorBoundary from '@/components/feedback/error-boundary';
 
 import type { ProductFeedPage } from '@/features/products/types/product';
 
@@ -70,6 +73,14 @@ root.render(
   React.createElement(
     React.StrictMode,
     null,
-    React.createElement(QueryClientProvider, { client: queryClient }, React.createElement(MyApp)),
+    React.createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      React.createElement(
+        ErrorBoundary,
+        { scope: 'app', onRetry: () => window.location.reload() },
+        React.createElement(MyApp),
+      ),
+    ),
   ),
 );
