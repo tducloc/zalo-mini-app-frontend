@@ -8,7 +8,6 @@ import DraftBanner from '@/features/listings/components/draft/draft-banner';
 import DraftIndicator, {
   DRAFT_STATUS_ID,
 } from '@/features/listings/components/draft/draft-indicator';
-import { LazyReelsPage } from '@/pages/lazy-reels-page';
 import { useHasDraft } from '@/stores/listing-draft';
 import { useToastOffset } from '@/hooks/use-toast-offset';
 import { useReelsStore } from '@/stores/reels';
@@ -70,7 +69,6 @@ export default function AppShell({ children }: PropsWithChildren) {
 
   useEffect(() => {
     void queryClient.prefetchInfiniteQuery(reelsQueryOptions);
-    LazyReelsPage.preload().catch(() => undefined);
   }, [queryClient]);
 
   const navigateFromTab = (path: string) => {
@@ -82,7 +80,7 @@ export default function AppShell({ children }: PropsWithChildren) {
       const hasFirstReel = Boolean(
         queryClient.getQueryData<InfiniteData<ReelsPage>>(reelKeys.all())?.pages[0]?.data.length,
       );
-      if (hasFirstReel && LazyReelsPage.isLoaded()) {
+      if (hasFirstReel) {
         flushSync(() => {
           useReelsStore.getState().setMuted(false);
           navigate(path);
