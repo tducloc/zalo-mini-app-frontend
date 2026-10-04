@@ -6,7 +6,12 @@
 
 import { imageSize } from 'image-size';
 
-import { MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS } from '@/features/media/constants/limits';
+import {
+  MAX_IMAGE_BYTES,
+  MAX_IMAGE_PIXELS,
+  MIN_IMAGE_EDGE,
+  PHOTO_MAX_EDGE,
+} from '@/features/media/constants/limits';
 import { ImageFormat, type PhotoHeader } from '@/features/media/types/image';
 import { RejectReason } from '@/features/media/types/media';
 
@@ -31,7 +36,17 @@ export function readPhotoHeader(head: Uint8Array): PhotoHeader | null {
   }
 }
 
-/** Why a picked photo is refused at once, or null: its format, or too big to work on. */
+/**
+ * The short edge of the photo as uploaded: image-worker-thread scales the long edge down to
+ * PHOTO_MAX_EDGE, rounding as it does. EXIF orientation only swaps width and height, so
+ * the stored size gives the same answer.
+ */
+function uploadedShortEdge({ width, height }: PhotoHeader) {
+  const scale = Math.min(1, PHOTO_MAX_EDGE / Math.max(width, height));
+  return Math.round(Math.min(width, height) * scale);
+}
+
+/** Why a picked photo is refused at once, or null: format, size, pixels or short edge. */
 export function photoProblem(photo: PhotoHeader, bytes: number) {
   if (!photo.format) {
     return RejectReason.UnsupportedImageFormat;
@@ -41,5 +56,9 @@ export function photoProblem(photo: PhotoHeader, bytes: number) {
     return RejectReason.ImageTooLarge;
   }
 
-  return photo.width * photo.height > MAX_IMAGE_PIXELS ? RejectReason.ImageTooManyPixels : null;
+  if (photo.width * photo.height > MAX_IMAGE_PIXELS) {
+    return RejectReason.ImageTooManyPixels;
+  }
+
+  return uploadedShortEdge(photo) < MIN_IMAGE_EDGE ? RejectReason.ImageTooSmall : null;
 }
