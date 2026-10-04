@@ -37,7 +37,7 @@ export default function MyApp() {
     <App theme={getSystemInfo().zaloTheme as AppProps['theme']}>
       <SnackbarProvider>
         <AuthBootstrap>
-          <ZMPRouter memoryRouter>
+          <ZMPRouter>
             <AppShell>
               <Suspense fallback={null}>
                 <AnimationRoutes>

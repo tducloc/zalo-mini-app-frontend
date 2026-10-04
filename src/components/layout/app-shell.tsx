@@ -10,7 +10,6 @@ import DraftIndicator, {
 } from '@/features/listings/components/draft/draft-indicator';
 import { useHasDraft } from '@/stores/listing-draft';
 import { useToastOffset } from '@/hooks/use-toast-offset';
-import { reportRoute } from '@/lib/crash-reporting';
 import { useReelsStore } from '@/stores/reels';
 import { reelKeys, reelsQueryOptions } from '@/features/reels/api/get-reels';
 import { videoPool } from '@/features/reels/services/video-pool';
@@ -71,10 +70,6 @@ export default function AppShell({ children }: PropsWithChildren) {
   useEffect(() => {
     void queryClient.prefetchInfiniteQuery(reelsQueryOptions);
   }, [queryClient]);
-
-  useEffect(() => {
-    reportRoute(currentPath);
-  }, [currentPath]);
 
   const navigateFromTab = (path: string) => {
     if (
