@@ -30,11 +30,11 @@ const MEGAPIXEL = 1_000_000;
 /** The same words whether the phone or the server finds the clip unplayable. */
 const NOT_PLAYABLE = 'Vui lòng chọn video khác: video này không phát được trên mọi điện thoại';
 
-/**
- * The same words whether the phone or the server finds the photo too small. A long
- * panorama fails too, so the sentence names both.
- */
-const TOO_SMALL = `Vui lòng chọn ảnh khác: ảnh quá nhỏ hoặc quá dài, cạnh ngắn cần từ ${MIN_IMAGE_EDGE} px`;
+/** Both sides, as the seller sees the photo: true of it once scaled to 1600 px. */
+const MIN_IMAGE_SIZE = `${MIN_IMAGE_EDGE} × ${MIN_IMAGE_EDGE} px`;
+
+/** The same words whether the phone or the server finds the photo too small. */
+const TOO_SMALL = `Vui lòng chọn ảnh từ ${MIN_IMAGE_SIZE} trở lên`;
 
 // ---- Fields ----
 
@@ -77,7 +77,7 @@ const rejectSentences: Record<RejectReason, string> = {
 
 /** Under each grid: what the picker takes, before the seller picks something it refuses. */
 export const mediaRules = {
-  photo: `JPG, PNG hoặc WebP, cạnh ngắn từ ${MIN_IMAGE_EDGE} px, mỗi ảnh tối đa ${MAX_IMAGE_BYTES / MIB} MB.`,
+  photo: `JPG, PNG hoặc WebP, từ ${MIN_IMAGE_SIZE}, mỗi ảnh tối đa ${MAX_IMAGE_BYTES / MIB} MB.`,
   video: `MP4 hoặc MOV, tối đa ${MAX_VIDEO_SECONDS} giây, ${MAX_VIDEO_BYTES / MIB} MB, ${MAX_VIDEO_SHORT_EDGE}p.`,
 };
 

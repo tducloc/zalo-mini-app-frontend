@@ -290,7 +290,9 @@ test('repairs a failed listing by replacing the blank photo', async ({ page, req
 
   // The edit form refuses a photo too small, as the sell form does.
   await addPhotos(page, ['small.jpg']);
-  await expect(page.getByText(/ảnh quá nhỏ hoặc quá dài.*\(small\.jpg\)\./)).toBeVisible();
+  await expect(
+    page.getByText(/^Vui lòng chọn ảnh từ 600 × 600 px trở lên \(small\.jpg\)\.$/),
+  ).toBeVisible();
   await expect(page.getByRole('listitem', { name: /^Ảnh \d+$/ })).toHaveCount(0);
 
   await addPhotos(page, ['photo-a.jpg']);

@@ -68,9 +68,7 @@ test('refuses a photo too small for a sharp feed card, keeping the others', asyn
     .setInputFiles([fixture('small.jpg'), fixture('photo-a.jpg')]);
 
   await expect(
-    page.getByText(
-      'Vui lòng chọn ảnh khác: ảnh quá nhỏ hoặc quá dài, cạnh ngắn cần từ 600 px (small.jpg).',
-    ),
+    page.getByText('Vui lòng chọn ảnh từ 600 × 600 px trở lên (small.jpg).'),
   ).toBeVisible();
   const tiles = page.getByRole('listitem', { name: /^Ảnh \d+$/ });
   await expect(tiles).toHaveCount(1);
