@@ -15,6 +15,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mount the app
 import MyApp from '@/components/app';
+import ErrorBoundary from '@/components/feedback/error-boundary';
 
 import type { ProductFeedPage } from '@/features/products/types/product';
 
@@ -51,6 +52,9 @@ if (feedBase && !window.__feedPrefetch) {
     });
 }
 
+// Its own chunk, so Sentry does not slow down the first render.
+void import('@/lib/sentry').then(({ initSentry }) => initSentry());
+
 if (!window.APP_CONFIG) {
   window.APP_CONFIG = appConfig as any;
 }
@@ -70,6 +74,10 @@ root.render(
   React.createElement(
     React.StrictMode,
     null,
-    React.createElement(QueryClientProvider, { client: queryClient }, React.createElement(MyApp)),
+    React.createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      React.createElement(ErrorBoundary, { scope: 'app' }, React.createElement(MyApp)),
+    ),
   ),
 );

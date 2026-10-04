@@ -1,7 +1,8 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, type ReactNode, Suspense, useEffect } from 'react';
 import { configAppView, getSystemInfo } from 'zmp-sdk';
 import { AnimationRoutes, App, Route, SnackbarProvider, ZMPRouter } from 'zmp-ui';
 import { AppProps } from 'zmp-ui/app';
+import ErrorBoundary from '@/components/feedback/error-boundary';
 import AppShell from '@/components/layout/app-shell';
 import { AuthBootstrap } from '@/features/auth/components/bootstrap';
 import HomePage from '@/pages/home';
@@ -22,6 +23,9 @@ const EditListingPage = lazy(() => import('@/pages/edit-listing'));
 const showMediaLab = import.meta.env.DEV || import.meta.env.VITE_MEDIA_LAB === 'true';
 const MediaLabPage = showMediaLab ? lazy(() => import('@/pages/media-lab')) : null;
 
+// One broken page shows its own error screen; the tab bar and the other pages keep working.
+const guarded = (page: ReactNode) => <ErrorBoundary scope="page">{page}</ErrorBoundary>;
+
 export default function MyApp() {
   useEffect(() => {
     // Match app-config.json, including when HMR retains an older native view configuration.
@@ -35,27 +39,27 @@ export default function MyApp() {
     <App theme={getSystemInfo().zaloTheme as AppProps['theme']}>
       <SnackbarProvider>
         <AuthBootstrap>
-          <ZMPRouter memoryRouter>
+          <ZMPRouter>
             <AppShell>
               <Suspense fallback={null}>
                 <AnimationRoutes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/my-listings" element={<MyListingsPage />} />
-                  <Route path="/sell" element={<SellPage />} />
-                  <Route path="/reels" element={<ReelsPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/" element={guarded(<HomePage />)} />
+                  <Route path="/my-listings" element={guarded(<MyListingsPage />)} />
+                  <Route path="/sell" element={guarded(<SellPage />)} />
+                  <Route path="/reels" element={guarded(<ReelsPage />)} />
+                  <Route path="/profile" element={guarded(<ProfilePage />)} />
                   {MediaLabPage && (
                     <Route
                       path="/media-lab"
-                      element={
+                      element={guarded(
                         <Suspense fallback={null}>
                           <MediaLabPage />
-                        </Suspense>
-                      }
+                        </Suspense>,
+                      )}
                     />
                   )}
-                  <Route path="/products/:productId" element={<ProductDetailPage />} />
-                  <Route path="/products/:productId/edit" element={<EditListingPage />} />
+                  <Route path="/products/:productId" element={guarded(<ProductDetailPage />)} />
+                  <Route path="/products/:productId/edit" element={guarded(<EditListingPage />)} />
                 </AnimationRoutes>
               </Suspense>
             </AppShell>
