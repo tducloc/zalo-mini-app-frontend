@@ -1,11 +1,13 @@
 import { ArrowLeft, ArrowRight, ArrowUpDown, Pointer } from 'lucide-react';
 import { type TouchEvent, useEffect, useRef, useState } from 'react';
+import { nativeStorage } from 'zmp-sdk';
 
 const SEEN_KEY = 'reels-gesture-hint-seen';
 const SWIPE_PX = 16;
 const LEAVE_MS = 200;
 
-// Kept when storage throws, so the hint still shows only once per app session.
+// Kept when storage fails (an old Zalo without nativeStorage), so the hint still shows only once
+// per app session.
 let isSeenThisSession = false;
 
 function hasSeenHint() {
@@ -14,7 +16,9 @@ function hasSeenHint() {
   }
 
   try {
-    return localStorage.getItem(SEEN_KEY) === '1';
+    // Zalo's WebView has no localStorage. nativeStorage is Zalo's store, and falls back to
+    // localStorage only on localhost.
+    return nativeStorage.getItem(SEEN_KEY) === '1';
   } catch {
     return false;
   }
@@ -24,9 +28,9 @@ function markHintSeen() {
   isSeenThisSession = true;
 
   try {
-    localStorage.setItem(SEEN_KEY, '1');
+    nativeStorage.setItem(SEEN_KEY, '1');
   } catch {
-    // Private mode or blocked storage: the session flag above still holds.
+    // The session flag above still holds.
   }
 }
 

@@ -63,7 +63,9 @@ test('teaches the gestures once, over a reel that keeps playing with sound', asy
   await expectPlaying(firstVideo(page));
   expect(await firstVideo(page).evaluate((element: HTMLVideoElement) => element.muted)).toBe(false);
 
-  await page.reload();
+  // A plain browser has no Zalo nativeStorage, so "seen" lasts for this page load only; the unit
+  // test covers the next app session.
+  await tab(page, 'Trang chủ').click();
   await tab(page, 'Reels').click();
   await expectPlaying(firstVideo(page));
   await expect(hint(page)).toHaveCount(0);

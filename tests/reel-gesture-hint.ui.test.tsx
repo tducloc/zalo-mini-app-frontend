@@ -3,6 +3,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const HINT = { name: 'Hướng dẫn lướt video' };
 
+const store = vi.hoisted(() => new Map<string, string>());
+
+const nativeStorage = vi.hoisted(() => ({
+  getItem: (key: string) => store.get(key) ?? null,
+  setItem: (key: string, value: string) => {
+    store.set(key, value);
+  },
+}));
+
+vi.mock('zmp-sdk', () => ({ nativeStorage }));
+
 /** A fresh app session: the hint module, and its session flag, load again. */
 async function openReels() {
   vi.resetModules();
@@ -33,7 +44,7 @@ function swipe(target: HTMLElement, dx: number, dy: number) {
 
 beforeEach(() => {
   vi.useFakeTimers();
-  localStorage.clear();
+  store.clear();
 });
 
 afterEach(() => {
@@ -72,7 +83,7 @@ describe('reel gesture hint', () => {
       [-80, 0],
       [80, 0],
     ]) {
-      localStorage.clear();
+      store.clear();
       await openReels();
 
       swipe(screen.getByRole('dialog', HINT), dx, dy);
@@ -97,11 +108,11 @@ describe('reel gesture hint', () => {
   });
 
   it('shows once per app session when storage throws', async () => {
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new DOMException('blocked', 'SecurityError');
+    vi.spyOn(nativeStorage, 'getItem').mockImplementation(() => {
+      throw new Error('getItem is not supported');
     });
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new DOMException('blocked', 'SecurityError');
+    vi.spyOn(nativeStorage, 'setItem').mockImplementation(() => {
+      throw new Error('setItem is not supported');
     });
 
     await openReels();
