@@ -14,6 +14,8 @@ export enum RejectReason {
   ImageTooLarge = 'IMAGE_TOO_LARGE',
   /** Over MAX_IMAGE_PIXELS, e.g. a phone's 108 MP mode. */
   ImageTooManyPixels = 'IMAGE_TOO_MANY_PIXELS',
+  /** Short edge under MIN_IMAGE_EDGE once scaled to PHOTO_MAX_EDGE: too small or too long. */
+  ImageTooSmall = 'IMAGE_TOO_SMALL',
   TooManyImages = 'TOO_MANY_IMAGES',
   // Videos
   /** Not an MP4 or MOV mediabunny can open. */

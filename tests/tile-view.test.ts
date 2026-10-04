@@ -182,4 +182,12 @@ describe('refusedFilesMessage', () => {
         'Vui lòng chọn ảnh JPG, PNG hoặc WebP (doc.pdf).',
     );
   });
+
+  it('says the same about a photo too small, whether the phone or the server refuses it', () => {
+    const sentence = 'Vui lòng chọn ảnh khác: ảnh quá nhỏ hoặc quá dài, cạnh ngắn cần từ 600 px';
+    expect(refusedFilesMessage([{ name: 'nho.jpg', reason: RejectReason.ImageTooSmall }])).toBe(
+      `${sentence} (nho.jpg).`,
+    );
+    expect(mediaErrorMessage(MediaError.ImageTooSmall)).toBe(`${sentence}.`);
+  });
 });
