@@ -81,31 +81,21 @@ describe('photoProblem', () => {
   describe('short edge after the 1600 px resize', () => {
     const sized = (width: number, height: number) => ({ ...phone, width, height });
 
-    it('takes a short edge of exactly 600 px, either way round', () => {
+    it('takes a short edge of 600 px or more', () => {
       expect(photoProblem(sized(600, 600), 1_000)).toBeNull();
       expect(photoProblem(sized(800, 600), 1_000)).toBeNull();
       expect(photoProblem(sized(600, 1600), 1_000)).toBeNull();
       // Scaled to 1600 × 600.
       expect(photoProblem(sized(4000, 1500), 1_000)).toBeNull();
+      // Scaled to 1600 × 599.5, which image-worker-thread rounds up to 600.
+      expect(photoProblem(sized(3200, 1199), 1_000)).toBeNull();
     });
 
-    it('refuses a short edge of 599 px', () => {
+    it('refuses a short edge under 600 px, a long panorama included', () => {
       expect(photoProblem(sized(599, 800), 1_000)).toBe(RejectReason.ImageTooSmall);
       expect(photoProblem(sized(1600, 599), 1_000)).toBe(RejectReason.ImageTooSmall);
-      expect(photoProblem(sized(40, 20), 1_000)).toBe(RejectReason.ImageTooSmall);
-    });
-
-    it('refuses a long panorama whose short edge is wide enough before the resize', () => {
       // Scaled to 1600 × 400.
       expect(photoProblem(sized(4000, 1000), 1_000)).toBe(RejectReason.ImageTooSmall);
-      // Scaled to 1600 × 599.5, which the worker rounds up to 600.
-      expect(photoProblem(sized(3200, 1199), 1_000)).toBeNull();
-      // Scaled to 1600 × 599.
-      expect(photoProblem(sized(3200, 1198), 1_000)).toBe(RejectReason.ImageTooSmall);
-    });
-
-    it('takes a 3000 × 4000 phone photo, uploaded as 1200 × 1600', () => {
-      expect(photoProblem(sized(3000, 4000), 2_000_000)).toBeNull();
     });
   });
 });

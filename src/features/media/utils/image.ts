@@ -37,7 +37,7 @@ export function readPhotoHeader(head: Uint8Array): PhotoHeader | null {
 }
 
 /**
- * The short edge of the photo as uploaded: the worker scales the long edge down to
+ * The short edge of the photo as uploaded: image-worker-thread scales the long edge down to
  * PHOTO_MAX_EDGE, rounding as it does. EXIF orientation only swaps width and height, so
  * the stored size gives the same answer.
  */
@@ -46,10 +46,7 @@ function uploadedShortEdge({ width, height }: PhotoHeader) {
   return Math.round(Math.min(width, height) * scale);
 }
 
-/**
- * Why a picked photo is refused at once, or null: its format, too big to work on, or too
- * small or too long for a sharp feed card.
- */
+/** Why a picked photo is refused at once, or null: format, size, pixels or short edge. */
 export function photoProblem(photo: PhotoHeader, bytes: number) {
   if (!photo.format) {
     return RejectReason.UnsupportedImageFormat;

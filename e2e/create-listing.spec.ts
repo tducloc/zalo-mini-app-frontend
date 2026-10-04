@@ -62,7 +62,7 @@ test('posts a listing with two photos and a video', async ({ page }) => {
 test('refuses a photo too small for a sharp feed card, keeping the others', async ({ page }) => {
   await openSellPage(page);
 
-  // 400 × 300: under the 600 px short edge the feed's square card is cut to.
+  // 400 × 300.
   await page
     .getByLabel('Thêm ảnh', { exact: true })
     .setInputFiles([fixture('small.jpg'), fixture('photo-a.jpg')]);

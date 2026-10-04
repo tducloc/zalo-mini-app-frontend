@@ -19,7 +19,7 @@ import {
  * L7 "Sửa tin" (plans/create-listing.md, L7): the owner edits a listing in the sell form,
  * from My listings, against the local stack. `blank.jpg` is a flat-colour photo the media
  * worker fails with BLANK_IMAGE, which makes a FAILED listing to repair. It is 800 × 600,
- * so it is not refused as too small first.
+ * above MIN_IMAGE_EDGE.
  */
 
 const title = (what: string) => `E2E sửa ${what} ${Date.now()}`;
@@ -288,7 +288,7 @@ test('repairs a failed listing by replacing the blank photo', async ({ page, req
   await expect(viewer.getByRole('alert')).toContainText('Vui lòng chọn ảnh khác: ảnh bị trống.');
   await viewer.getByRole('button', { name: /Xoá$/ }).click();
 
-  // The edit form refuses a photo too small, as the sell form does.
+  // The edit form uses the sell form's picker.
   await addPhotos(page, ['small.jpg']);
   await expect(
     page.getByText(/^Vui lòng chọn ảnh từ 600 × 600 px trở lên \(small\.jpg\)\.$/),
