@@ -59,6 +59,22 @@ test('posts a listing with two photos and a video', async ({ page }) => {
   await expect(tab(page, 'Quản lý tin')).toHaveAttribute('aria-current', 'page');
 });
 
+test('refuses a photo too small for a sharp feed card, keeping the others', async ({ page }) => {
+  await openSellPage(page);
+
+  // 400 × 300.
+  await page
+    .getByLabel('Thêm ảnh', { exact: true })
+    .setInputFiles([fixture('small.jpg'), fixture('photo-a.jpg')]);
+
+  await expect(
+    page.getByText('Vui lòng chọn ảnh từ 600 × 600 px trở lên (small.jpg).'),
+  ).toBeVisible();
+  const tiles = page.getByRole('listitem', { name: /^Ảnh \d+$/ });
+  await expect(tiles).toHaveCount(1);
+  await expect(tiles.first()).toContainText('Ảnh bìa');
+});
+
 test('keeps the draft when the seller leaves the page and comes back', async ({ page }) => {
   await openSellPage(page);
   await page.getByLabel('Thêm ảnh', { exact: true }).setInputFiles(fixture('photo-a.jpg'));

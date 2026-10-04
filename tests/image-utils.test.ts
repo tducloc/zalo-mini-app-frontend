@@ -55,9 +55,8 @@ describe('readPhotoHeader', () => {
 describe('photoProblem', () => {
   const phone = { format: ImageFormat.Jpeg, width: 4032, height: 3024 };
 
-  it('takes a photo up to 15 MB and 50 MP, however small', () => {
+  it('takes a photo up to 15 MB and 50 MP', () => {
     expect(photoProblem(phone, MAX_IMAGE_BYTES)).toBeNull();
-    expect(photoProblem({ ...phone, width: 40, height: 20 }, 1_000)).toBeNull();
     // A 50 MP phone mode.
     expect(photoProblem({ ...phone, width: 8160, height: 6120 }, 1_000)).toBeNull();
   });
@@ -77,5 +76,26 @@ describe('photoProblem', () => {
       RejectReason.UnsupportedImageFormat,
     );
     expect(photoProblem(phone, MAX_IMAGE_BYTES + 1)).toBe(RejectReason.ImageTooLarge);
+  });
+
+  describe('short edge after the 1600 px resize', () => {
+    const sized = (width: number, height: number) => ({ ...phone, width, height });
+
+    it('takes a short edge of 600 px or more', () => {
+      expect(photoProblem(sized(600, 600), 1_000)).toBeNull();
+      expect(photoProblem(sized(800, 600), 1_000)).toBeNull();
+      expect(photoProblem(sized(600, 1600), 1_000)).toBeNull();
+      // Scaled to 1600 × 600.
+      expect(photoProblem(sized(4000, 1500), 1_000)).toBeNull();
+      // Scaled to 1600 × 599.5, which image-worker-thread rounds up to 600.
+      expect(photoProblem(sized(3200, 1199), 1_000)).toBeNull();
+    });
+
+    it('refuses a short edge under 600 px, a long panorama included', () => {
+      expect(photoProblem(sized(599, 800), 1_000)).toBe(RejectReason.ImageTooSmall);
+      expect(photoProblem(sized(1600, 599), 1_000)).toBe(RejectReason.ImageTooSmall);
+      // Scaled to 1600 × 400.
+      expect(photoProblem(sized(4000, 1000), 1_000)).toBe(RejectReason.ImageTooSmall);
+    });
   });
 });

@@ -46,6 +46,8 @@ describe('readPostError', () => {
       { mediaId: 'm3', reason: 'UPLOADING' },
       { mediaId: 'm4', reason: 'FAILED', errorCode: 'VIDEO_TOO_LONG' },
       { mediaId: 'm5', reason: 'FAILED', errorCode: 'BLANK_IMAGE' },
+      // Pins the code string the backend sends.
+      { mediaId: 'm6', reason: 'FAILED', errorCode: 'IMAGE_TOO_SMALL' },
     ]);
     expect(readPostError(error)).toEqual({
       kind: PostErrorKind.MediaConflict,
@@ -55,6 +57,7 @@ describe('readPostError', () => {
         { mediaId: 'm3', error: MediaError.Missing },
         { mediaId: 'm4', error: MediaError.VideoTooLong },
         { mediaId: 'm5', error: MediaError.BlankImage },
+        { mediaId: 'm6', error: MediaError.ImageTooSmall },
       ],
     });
   });

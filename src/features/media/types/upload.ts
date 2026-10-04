@@ -52,6 +52,7 @@ export enum MediaError {
   VideoTooLong = 'VIDEO_TOO_LONG',
   VideoNotPlayable = 'VIDEO_NOT_PLAYABLE',
   BlankImage = 'BLANK_IMAGE',
+  ImageTooSmall = 'IMAGE_TOO_SMALL',
   ProcessingFailed = 'PROCESSING_FAILED',
   Missing = 'MEDIA_MISSING',
 }
