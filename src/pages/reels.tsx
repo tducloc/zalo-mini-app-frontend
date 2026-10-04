@@ -6,6 +6,7 @@ import FeedbackState from '@/components/feedback/feedback-state';
 import InlineRetry from '@/components/feedback/inline-retry';
 import Skeleton from '@/components/feedback/skeleton';
 import { useReels } from '@/features/reels/api/get-reels';
+import ReelGestureHint from '@/features/reels/components/reel-gesture-hint';
 import ReelItem from '@/features/reels/components/reel-item';
 import { reelHeightClass, spinnerClass } from '@/features/reels/constants/styles';
 import { useActiveReel } from '@/features/reels/hooks/use-active-reel';
@@ -134,6 +135,7 @@ export default function ReelsPage() {
           ref={setTabbarHost}
           className="pointer-events-none absolute inset-0 z-[900] transform-gpu"
         />
+        {isCurrentRoute && reels.length > 0 && <ReelGestureHint />}
       </div>
       <div
         ref={detailPanelRef}

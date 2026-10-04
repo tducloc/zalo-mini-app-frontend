@@ -40,10 +40,30 @@ module.exports = {
       keyframes: {
         shimmer: { to: { backgroundPosition: "-200% 0" } },
         "reel-loading": { from: { transform: "translateX(-100%)" }, to: { transform: "translateX(300%)" } },
+        "hint-fade": { from: { opacity: "0" } },
+        "hint-pop": { from: { opacity: "0", transform: "translateY(12px) scale(0.96)" } },
+        "hint-finger-y": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "25%, 35%": { transform: "translateY(-14px)" },
+          "65%, 75%": { transform: "translateY(14px)" },
+        },
+        "hint-finger-x": {
+          "0%, 15%, 100%": { transform: "translateX(0)" },
+          "50%, 65%": { transform: "translateX(-24px)" },
+        },
+        "hint-finger-back": {
+          "0%, 15%, 100%": { transform: "translateX(0)" },
+          "50%, 65%": { transform: "translateX(24px)" },
+        },
       },
       animation: {
         shimmer: "shimmer 1.4s linear infinite",
         "reel-loading": "reel-loading 1.1s ease-in-out infinite",
+        "hint-fade": "hint-fade 240ms ease-out",
+        "hint-pop": "hint-pop 360ms cubic-bezier(0.2, 0.9, 0.3, 1.2)",
+        "hint-finger-y": "hint-finger-y 1.8s ease-in-out infinite",
+        "hint-finger-x": "hint-finger-x 1.8s ease-in-out infinite",
+        "hint-finger-back": "hint-finger-back 1.8s ease-in-out infinite",
       },
     },
   },
