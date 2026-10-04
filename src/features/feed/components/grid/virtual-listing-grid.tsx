@@ -14,14 +14,8 @@ import {
 } from '@/features/feed/utils/feed-grid';
 import type { ProductCard } from '@/features/products/types/product';
 
-/** Rows stay mounted this far past each edge of the screen, so a fast fling meets no empty row. */
 const OVERSCAN_PX = 1000;
 
-/**
- * The feed's cards, one row of `columns` at a time, with only the rows near the screen in the
- * DOM. Rows are absolutely placed inside a box as tall as the whole list, so the page keeps its
- * real scroll height (scroll restore, the next-page sentinel after it).
- */
 export default function VirtualListingGrid({
   products,
   columns,
@@ -36,39 +30,36 @@ export default function VirtualListingGrid({
 }: {
   products: ProductCard[];
   columns: number;
-  /** The feed's width; with `columns` it sets the card height. */
   width: number;
-  /** Every page is loaded, so the list size is known. */
   isComplete: boolean;
   activeId: string | null;
   cardRef: (productId: string) => (element: HTMLElement | null) => void;
-  /** The page the feed scrolls in. */
   scrollerRef: RefObject<HTMLElement>;
   onOpen: (productId: string) => void;
   onPreviewRefused: () => void;
   onPreviewFinished: (productId: string) => void;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
-  // Where the list starts in the page: the header, categories and chips come first.
   const [scrollMargin, setScrollMargin] = useState(0);
 
   const rowHeight = cardHeight(width, columns);
   const virtualizer = useVirtualizer({
     count: rowCount(products.length, columns),
-    // Found from the list: the Page sets `scrollerRef` only after this mounts.
+    // zmp-ui's Page fills its ref in useImperativeHandle, after this list's layout effects.
     getScrollElement: () => listRef.current?.closest<HTMLElement>('.zaui-page') ?? null,
     estimateSize: () => rowHeight,
     gap: CARD_GAP_PX,
     overscan: overscanRows(rowHeight + CARD_GAP_PX, OVERSCAN_PX),
     scrollMargin,
-    // The screen before the page is laid out: the first render already holds the first rows
-    // and their eager images, with no empty frame while the virtualizer measures.
+    // TanStack Virtual assumes a 0x0 scroller until it measures one, so the first frame would
+    // hold no rows and no eager LCP images.
     initialRect: { width: window.innerWidth, height: window.innerHeight },
-    // Mounting into a page that is already scrolled (a new search) must not scroll it to 0.
+    // TanStack Virtual scrolls the page to this offset when it attaches, and a new search mounts
+    // the list into a page that is already scrolled.
     initialOffset: () => scrollerRef.current?.scrollTop ?? 0,
   });
 
-  // The virtualizer caches row offsets; a new width (rotation) changes every row's height.
+  // TanStack Virtual does not re-read estimateSize until measure().
   const measuredRowHeight = useRef(rowHeight);
   useLayoutEffect(() => {
     if (measuredRowHeight.current !== rowHeight) {
@@ -77,7 +68,7 @@ export default function VirtualListingGrid({
     }
   }, [virtualizer, rowHeight]);
 
-  // Content above the list changes height (filter chips), so look again after each render.
+  // Runs after every render because the filter chips above the list can change its offset.
   useLayoutEffect(() => {
     const list = listRef.current;
     const scroller = virtualizer.scrollElement;
@@ -93,7 +84,7 @@ export default function VirtualListingGrid({
   });
 
   const firstLazyCard = aboveFoldCards(columns);
-  // -1: more pages may come, the size is not known yet.
+  // WAI-ARIA reads aria-setsize -1 as an unknown size.
   const setSize = isComplete ? products.length : -1;
 
   return (

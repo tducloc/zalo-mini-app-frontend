@@ -2,7 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 
 import { expect, tab, test } from './support';
 
-/** The home page's scroller; the page stays in the DOM behind a page sliding in. */
+/** zmp-ui keeps the home page in the DOM behind a page sliding in. */
 const homePage = (page: Page) =>
   page.locator('.zaui-page').filter({ has: page.getByRole('heading', { name: 'Danh mục' }) });
 const feedList = (page: Page) => page.getByRole('list', { name: 'Tin đăng' });
@@ -11,14 +11,12 @@ const cardAt = (page: Page, position: number) =>
   feedList(page).locator(`[aria-posinset="${position}"]`);
 
 const PAGE_SIZE = 20;
-/** About one phone screen of rows past each edge, two cards a row: far below the 200 loaded. */
 const MAX_MOUNTED_CARDS = 40;
 
 const scrollBy = (page: Page, pixels: number) =>
   homePage(page).evaluate((element, by) => element.scrollBy(0, by), pixels);
 const scrollTopOf = (page: Page) => homePage(page).evaluate((element) => element.scrollTop);
 
-/** The `top` of each card in the first row on screen, left to right. */
 async function firstRowTops(page: Page) {
   return feedCards(page).evaluateAll((items) => {
     const tops = items.map((item) => Math.round(item.getBoundingClientRect().top));
@@ -26,7 +24,6 @@ async function firstRowTops(page: Page) {
   });
 }
 
-/** Distance from one row to the next, and a card's own height. */
 async function rowGeometry(page: Page) {
   return feedCards(page).evaluateAll((items) => {
     const rects = items.map((item) => item.getBoundingClientRect());
@@ -68,7 +65,6 @@ test('keeps only the rows near the screen while ten pages load', async ({ page }
   await page.goto('/');
   await expect(cardAt(page, 1)).toBeVisible();
 
-  // Two columns on a phone, and rows exactly one card and one gap apart.
   expect(await firstRowTops(page)).toHaveLength(2);
   const { pitch, cardHeight } = await rowGeometry(page);
   expect(Math.abs(pitch - (cardHeight + 10))).toBeLessThan(1);
@@ -92,14 +88,13 @@ test('comes back from a listing to the same place, with no empty frame', async (
   await page.goto('/');
   await expect(cardAt(page, 1)).toBeVisible();
 
-  // About three pages down: the first cards are long gone from the DOM.
   const target = cardAt(page, 3 * PAGE_SIZE);
   for (let step = 0; step < 100 && (await target.count()) === 0; step += 1) {
     await scrollBy(page, 700);
     await page.waitForTimeout(40);
   }
   await target.evaluate((element) => element.scrollIntoView({ block: 'center' }));
-  // The page saves its position 150 ms after scrolling stops.
+  // zmp-ui's Page saves its scroll position 150 ms after scrolling stops.
   await page.waitForTimeout(400);
   const savedTop = await scrollTopOf(page);
   const card = target.getByRole('button');
@@ -111,7 +106,6 @@ test('comes back from a listing to the same place, with no empty frame', async (
     page.getByRole('heading', { level: 1, name: label.replace('Xem chi tiết ', '') }),
   ).toBeVisible();
 
-  // Every frame of the slide back that shows the home page at its old place shows cards too.
   await page.evaluate(() => {
     const frames: { top: number; cards: number }[] = [];
     (window as unknown as { feedFrames: typeof frames }).feedFrames = frames;
@@ -162,14 +156,12 @@ test('plays a preview on screen and hands the video on when its card unmounts', 
       '',
   );
 
-  // Far enough that the playing card's row leaves the DOM.
   for (let step = 0; step < 8; step += 1) {
     await scrollBy(page, 700);
     await page.waitForTimeout(40);
   }
   await expect(cardAt(page, Number(first))).toHaveCount(0);
   await expectPlayingInView(list);
-  // One pooled element, borrowed by the card on screen now.
   await expect(page.locator('video[src]')).toHaveCount(1);
 });
 

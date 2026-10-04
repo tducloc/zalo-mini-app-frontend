@@ -30,7 +30,6 @@ interface ProductFeedProps {
 }
 
 export default function ProductFeed(props: ProductFeedProps) {
-  // Measured around every state, so the skeleton has the columns the cards will have.
   const { ref, width } = useFeedWidth();
 
   return (

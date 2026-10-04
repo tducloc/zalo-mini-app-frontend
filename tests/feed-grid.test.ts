@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import { listingCopyClass, listingGridClass } from '@/features/feed/constants/styles';
 import {
   aboveFoldCards,
+  CARD_EXTRA_HEIGHT_PX,
+  CARD_GAP_PX,
   cardHeight,
   cardsInRow,
   columnsForWidth,
@@ -9,7 +12,6 @@ import {
   rowCount,
 } from '@/features/feed/utils/feed-grid';
 
-// The feed is the screen minus 16px on each side.
 const feedWidth = (screen: number) => screen - 32;
 
 describe('columnsForWidth', () => {
@@ -36,13 +38,17 @@ describe('columnsForWidth', () => {
 });
 
 describe('cardHeight', () => {
-  it('is the column width and the 91px under the image', () => {
-    // 412pt Pixel 7: 380px feed, two 185px columns, measured card 276px in the app.
-    expect(cardHeight(380, 2)).toBe(276);
-    // 375pt: 343px feed, 166.5px columns.
-    expect(cardHeight(343, 2)).toBe(257.5);
-    // 1180pt iPad landscape: 1148px feed, four 279.5px columns.
-    expect(cardHeight(1148, 4)).toBe(370.5);
+  it.each([
+    ['Pixel 7, as measured in the app', 412, 2, 276],
+    ['iPhone SE', 375, 2, 257.5],
+    ['iPad landscape', 1180, 4, 370.5],
+  ])('%s (%ipt): %i columns, %fpx cards', (_, screen, columns, height) => {
+    expect(cardHeight(feedWidth(screen), columns)).toBe(height);
+  });
+
+  it('uses the gap and copy height the card styles render', () => {
+    expect(listingGridClass).toContain(`gap-${CARD_GAP_PX / 4}`);
+    expect(listingCopyClass).toContain(`h-[${CARD_EXTRA_HEIGHT_PX}px]`);
   });
 });
 
