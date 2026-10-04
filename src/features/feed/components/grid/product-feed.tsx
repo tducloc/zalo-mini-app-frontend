@@ -2,31 +2,22 @@ import { type RefObject, useEffect, useRef } from 'react';
 
 import FeedbackState from '@/components/feedback/feedback-state';
 import InlineRetry from '@/components/feedback/inline-retry';
-import ListingCard from '@/features/feed/components/grid/listing-card';
 import ListingGridSkeleton from '@/features/feed/components/grid/listing-grid-skeleton';
-import { listingGridClass, surfaceClass } from '@/features/feed/constants/styles';
+import VirtualListingGrid from '@/features/feed/components/grid/virtual-listing-grid';
+import { surfaceClass } from '@/features/feed/constants/styles';
 import { useFeedAutoplay } from '@/features/feed/hooks/use-feed-autoplay';
+import { useFeedWidth } from '@/features/feed/hooks/use-feed-width';
+import { columnsForWidth } from '@/features/feed/utils/feed-grid';
 import type { useProductFeed } from '@/features/products/api/get-product-feed';
 
 type FeedQuery = ReturnType<typeof useProductFeed>;
 
-// Two rows of two cards fill the first viewport on a 390×844 phone.
-const ABOVE_FOLD_CARDS = 4;
-const INITIAL_SKELETON_CARDS = 6;
-const NEXT_PAGE_SKELETON_CARDS = 2;
+const INITIAL_SKELETON_ROWS = 3;
 const loadMoreButtonClass = `block min-h-11 w-full rounded-[10px] font-semibold text-marketplace-blue ${surfaceClass}`;
 // Start the next request about one screen before the user reaches the end.
 const PREFETCH_MARGIN = '0px 0px 800px 0px';
 
-export default function ProductFeed({
-  feed,
-  hasActiveCriteria,
-  isAutoplayPaused,
-  scrollerRef,
-  headerRef,
-  onClearCriteria,
-  onOpenProduct,
-}: {
+interface ProductFeedProps {
   feed: FeedQuery;
   hasActiveCriteria: boolean;
   /** Something covers the feed (the filter sheet): no preview plays. */
@@ -36,7 +27,31 @@ export default function ProductFeed({
   headerRef: RefObject<HTMLElement>;
   onClearCriteria: () => void;
   onOpenProduct: (productId: string) => void;
-}) {
+}
+
+export default function ProductFeed(props: ProductFeedProps) {
+  // Measured around every state, so the skeleton has the columns the cards will have.
+  const { ref, width } = useFeedWidth();
+
+  return (
+    <div ref={ref}>
+      <FeedContent {...props} width={width} />
+    </div>
+  );
+}
+
+function FeedContent({
+  feed,
+  hasActiveCriteria,
+  isAutoplayPaused,
+  scrollerRef,
+  headerRef,
+  onClearCriteria,
+  onOpenProduct,
+  width,
+}: ProductFeedProps & { width: number }) {
+  const columns = columnsForWidth(width);
+
   const products = feed.data?.pages.flatMap((page) => page.data) ?? [];
   const previewIds = products.flatMap((product) => (product.previewUrl ? [product.id] : []));
   const { activeId, cardRef, onRefused, onFinished } = useFeedAutoplay({
@@ -47,7 +62,7 @@ export default function ProductFeed({
   });
 
   if (feed.isPending) {
-    return <ListingGridSkeleton count={INITIAL_SKELETON_CARDS} />;
+    return <ListingGridSkeleton columns={columns} count={INITIAL_SKELETON_ROWS * columns} />;
   }
 
   if (feed.isError && !feed.data) {
@@ -77,29 +92,29 @@ export default function ProductFeed({
 
   return (
     <>
-      <div className={listingGridClass}>
-        {products.map((product, index) => (
-          <ListingCard
-            isAboveFold={index < ABOVE_FOLD_CARDS}
-            isPreviewActive={product.id === activeId}
-            cardRef={product.previewUrl ? cardRef(product.id) : undefined}
-            key={product.id}
-            product={product}
-            onOpen={onOpenProduct}
-            onPreviewRefused={onRefused}
-            onPreviewFinished={onFinished}
-          />
-        ))}
-      </div>
-      <FeedFooter feed={feed} scrollerRef={scrollerRef} />
+      <VirtualListingGrid
+        products={products}
+        columns={columns}
+        width={width}
+        isComplete={!feed.hasNextPage}
+        activeId={activeId}
+        cardRef={cardRef}
+        scrollerRef={scrollerRef}
+        onOpen={onOpenProduct}
+        onPreviewRefused={onRefused}
+        onPreviewFinished={onFinished}
+      />
+      <FeedFooter columns={columns} feed={feed} scrollerRef={scrollerRef} />
     </>
   );
 }
 
 function FeedFooter({
+  columns,
   feed,
   scrollerRef,
 }: {
+  columns: number;
   feed: FeedQuery;
   scrollerRef: RefObject<HTMLElement>;
 }) {
@@ -136,7 +151,7 @@ function FeedFooter({
   if (isFetchingNextPage) {
     return (
       <div className="mt-2.5">
-        <ListingGridSkeleton count={NEXT_PAGE_SKELETON_CARDS} />
+        <ListingGridSkeleton columns={columns} count={columns} />
       </div>
     );
   }

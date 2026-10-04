@@ -4,10 +4,11 @@
 export const surfaceClass = 'border border-solid border-marketplace-line bg-white';
 
 // Listing card and its skeleton share geometry so loading never shifts layout.
-export const listingGridClass = 'grid grid-cols-2 gap-2.5';
+// Columns come from the feed's width (utils/feed-grid.ts); the gap is CARD_GAP_PX there.
+export const listingGridClass = 'grid gap-2.5';
 export const listingCardClass = `block w-full overflow-hidden rounded-[10px] p-0 text-left text-inherit ${surfaceClass}`;
 export const listingImageClass = 'relative aspect-square bg-marketplace-skeleton';
-// padding + 34px title + 25px price + 15px meta
+// padding + 34px title + 25px price + 15px meta; the virtual grid's row height counts on 91px.
 export const listingCopyClass = 'h-[91px] px-[9px] pb-[9px] pt-2';
 
 // Filter sheet
