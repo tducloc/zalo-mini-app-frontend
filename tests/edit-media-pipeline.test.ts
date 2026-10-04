@@ -15,6 +15,7 @@ const api = vi.hoisted(() => ({
   putBlob: vi.fn(),
 }));
 vi.mock('@/features/media/api/media-uploads', () => api);
+vi.mock('zmp-sdk', () => ({ getSystemInfo: vi.fn() }));
 
 const LATER = '2099-01-01T00:00:00Z';
 const file = new File(['0123456789'], 'photo.jpg');
