@@ -5,12 +5,25 @@ import {
   listingGridClass,
   listingImageClass,
 } from '@/features/feed/constants/styles';
+import { gridColumnsStyle } from '@/features/feed/utils/feed-grid';
 
 const lineClass = 'h-2.5 rounded-lg';
 
-export default function ListingGridSkeleton({ count }: { count: number }) {
+export default function ListingGridSkeleton({
+  columns,
+  count,
+}: {
+  columns: number;
+  count: number;
+}) {
   return (
-    <div className={listingGridClass} role="status" aria-label="Đang tải tin đăng" aria-busy="true">
+    <div
+      className={listingGridClass}
+      role="status"
+      style={gridColumnsStyle(columns)}
+      aria-label="Đang tải tin đăng"
+      aria-busy="true"
+    >
       {Array.from({ length: count }, (_, index) => (
         <div className={listingCardClass} key={index} aria-hidden="true">
           <Skeleton className={listingImageClass} />

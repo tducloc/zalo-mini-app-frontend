@@ -4,7 +4,7 @@
 export const surfaceClass = 'border border-solid border-marketplace-line bg-white';
 
 // Listing card and its skeleton share geometry so loading never shifts layout.
-export const listingGridClass = 'grid grid-cols-2 gap-2.5';
+export const listingGridClass = 'grid gap-2.5';
 export const listingCardClass = `block w-full overflow-hidden rounded-[10px] p-0 text-left text-inherit ${surfaceClass}`;
 export const listingImageClass = 'relative aspect-square bg-marketplace-skeleton';
 // padding + 34px title + 25px price + 15px meta
