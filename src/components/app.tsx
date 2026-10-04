@@ -5,12 +5,14 @@ import { AppProps } from 'zmp-ui/app';
 import AppShell from '@/components/layout/app-shell';
 import { AuthBootstrap } from '@/features/auth/components/bootstrap';
 import HomePage from '@/pages/home';
+import ReelsPage from '@/pages/reels';
 import { warnInDev } from '@/utils/dev-log';
 
-// Home stays in the first script. The other screens load when the route opens.
+// Home and Reels stay in the first script. The Reels tab tap renders the page inside the tap
+// (flushSync), the one moment WebKit allows sound, and a lazy page would suspend there.
+// The other screens load when the route opens.
 const MyListingsPage = lazy(() => import('@/pages/my-listings'));
 const SellPage = lazy(() => import('@/pages/sell'));
-const ReelsPage = lazy(() => import('@/pages/reels'));
 const ProfilePage = lazy(() => import('@/pages/profile'));
 const ProductDetailPage = lazy(() => import('@/pages/product-detail'));
 const EditListingPage = lazy(() => import('@/pages/edit-listing'));
