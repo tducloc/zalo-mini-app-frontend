@@ -117,12 +117,13 @@ export function useShareSellerPermissions() {
     const sharePhone = async () => savePhone.mutateAsync(await requestPhoneShare());
     try {
       const asked = await askSellerPermissions(phone.data, sharePhone);
-      if (asked?.outcome === 'refused') {
-        showInfo(`Bạn chưa cho phép Zalo chia sẻ ${missing}.`);
-        return;
-      }
       if (asked?.outcome === 'failed') {
         showError(`Chưa chia sẻ được ${missing}. Vui lòng thử lại sau.`);
+        return;
+      }
+      // A refusal, or the phone turned off in the sheet: something is still not shared.
+      if (asked && !(asked.permissions.name && asked.permissions.phone)) {
+        showInfo('Bạn chưa cho phép Zalo chia sẻ đủ tên và số điện thoại.');
         return;
       }
 
