@@ -8,7 +8,7 @@ import DraftBanner from '@/features/listings/components/draft/draft-banner';
 import DraftIndicator, {
   DRAFT_STATUS_ID,
 } from '@/features/listings/components/draft/draft-indicator';
-import { isReelsPageLoaded, preloadReelsPage } from '@/pages/lazy-reels-page';
+import { isReelsPageLoaded, preloadPages } from '@/pages/lazy-pages';
 import { useHasDraft } from '@/stores/listing-draft';
 import { useToastOffset } from '@/hooks/use-toast-offset';
 import { useReelsStore } from '@/stores/reels';
@@ -72,16 +72,15 @@ export default function AppShell({ children }: PropsWithChildren) {
     void queryClient.prefetchInfiniteQuery(reelsQueryOptions);
   }, [queryClient]);
 
-  // The Reels tab tap needs the page's code already here (see navigateFromTab). Load it after
-  // the window's load event, which waits for the first card images, so it stays off LCP.
+  // The screens' code loads after the window's load event, which waits for the first card
+  // images, so it stays off LCP.
   useEffect(() => {
-    const preload = () => void preloadReelsPage().catch(() => undefined);
     if (document.readyState === 'complete') {
-      preload();
+      preloadPages();
       return;
     }
 
-    window.addEventListener('load', preload, { once: true });
+    window.addEventListener('load', preloadPages, { once: true });
   }, []);
 
   const navigateFromTab = (path: string) => {

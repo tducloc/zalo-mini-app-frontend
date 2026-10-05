@@ -6,16 +6,17 @@ import ErrorBoundary from '@/components/feedback/error-boundary';
 import AppShell from '@/components/layout/app-shell';
 import { AuthBootstrap } from '@/features/auth/components/bootstrap';
 import HomePage from '@/pages/home';
-import { LazyReelsPage } from '@/pages/lazy-reels-page';
+import {
+  EditListingPage,
+  MyListingsPage,
+  ProductDetailPage,
+  ProfilePage,
+  ReelsPage,
+  SellPage,
+} from '@/pages/lazy-pages';
 import { warnInDev } from '@/utils/dev-log';
 
-// Home stays in the first script. Reels loads after the first paint (see AppShell). The
-// other screens load when the route opens.
-const MyListingsPage = lazy(() => import('@/pages/my-listings'));
-const SellPage = lazy(() => import('@/pages/sell'));
-const ProfilePage = lazy(() => import('@/pages/profile'));
-const ProductDetailPage = lazy(() => import('@/pages/product-detail'));
-const EditListingPage = lazy(() => import('@/pages/edit-listing'));
+// Home stays in the first script; the other screens are preloaded after load (lazy-pages.ts).
 
 // Dev-only measurement page. Remove once the media numbers are recorded. Loaded lazily so
 // none of its code reaches a build without the flag.
@@ -45,7 +46,7 @@ export default function MyApp() {
                   <Route path="/" element={guarded(<HomePage />)} />
                   <Route path="/my-listings" element={guarded(<MyListingsPage />)} />
                   <Route path="/sell" element={guarded(<SellPage />)} />
-                  <Route path="/reels" element={guarded(<LazyReelsPage />)} />
+                  <Route path="/reels" element={guarded(<ReelsPage />)} />
                   <Route path="/profile" element={guarded(<ProfilePage />)} />
                   {MediaLabPage && (
                     <Route

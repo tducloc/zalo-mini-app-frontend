@@ -19,7 +19,7 @@ const isReelsPageLoaded = (page: Page) =>
   page.evaluate(async (path) => {
     const module = await import(path);
     return module.isReelsPageLoaded() as boolean;
-  }, '/src/pages/lazy-reels-page.ts');
+  }, '/src/pages/lazy-pages.ts');
 
 const reelsLoaded = (page: Page) =>
   page.waitForResponse(
