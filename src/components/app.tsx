@@ -6,17 +6,17 @@ import ErrorBoundary from '@/components/feedback/error-boundary';
 import AppShell from '@/components/layout/app-shell';
 import { AuthBootstrap } from '@/features/auth/components/bootstrap';
 import HomePage from '@/pages/home';
-import ReelsPage from '@/pages/reels';
+import {
+  EditListingPage,
+  MyListingsPage,
+  ProductDetailPage,
+  ProfilePage,
+  ReelsPage,
+  SellPage,
+} from '@/pages/lazy-pages';
 import { warnInDev } from '@/utils/dev-log';
 
-// Home and Reels stay in the first script. The Reels tab tap renders the page inside the tap
-// (flushSync), the one moment WebKit allows sound, and a lazy page would suspend there.
-// The other screens load when the route opens.
-const MyListingsPage = lazy(() => import('@/pages/my-listings'));
-const SellPage = lazy(() => import('@/pages/sell'));
-const ProfilePage = lazy(() => import('@/pages/profile'));
-const ProductDetailPage = lazy(() => import('@/pages/product-detail'));
-const EditListingPage = lazy(() => import('@/pages/edit-listing'));
+// Home stays in the first script; the other screens are preloaded after load (lazy-pages.ts).
 
 // Dev-only measurement page. Remove once the media numbers are recorded. Loaded lazily so
 // none of its code reaches a build without the flag.

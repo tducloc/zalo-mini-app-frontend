@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Page, useNavigate } from 'zmp-ui';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -18,12 +18,12 @@ import {
 } from '@/features/feed/utils/filters';
 import { useLocations } from '@/features/locations/api/get-locations';
 import { useProductFeed } from '@/features/products/api/get-product-feed';
+import { FilterSheet } from '@/pages/lazy-pages';
 import { useHomeFeedStore } from '@/stores/home-feed';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
 // The sheet pulls in zmp-ui Sheet. It stays out of the first script until the user opens filters.
-const FilterSheet = lazy(() => import('@/features/feed/components/filters/filter-sheet'));
 
 // Safe-area-aware fixed header (HomeHeader reads these); the content starts below it.
 const homePageVarsClass =
