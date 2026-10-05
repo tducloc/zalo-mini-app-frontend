@@ -8,9 +8,9 @@
  * other's, so a feed preview never gets the element Reels plays with sound.
  */
 
-export type VideoFeature = 'feed' | 'detail' | 'reels';
+export type VideoFeature = 'feed' | 'detail' | 'reels' | 'form';
 
-const VIDEO_FEATURES: readonly VideoFeature[] = ['feed', 'detail', 'reels'];
+const VIDEO_FEATURES: readonly VideoFeature[] = ['feed', 'detail', 'reels', 'form'];
 
 function createVideo() {
   const video = document.createElement('video');
@@ -29,6 +29,7 @@ export class VideoPool {
     feed: createVideo(),
     detail: createVideo(),
     reels: createVideo(),
+    form: createVideo(),
   };
 
   /** The claim holding each feature's element, so a late release cannot take the next one's. */

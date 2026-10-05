@@ -21,7 +21,7 @@ describe('VideoPool', () => {
     const { parking } = setUp();
 
     const videos = Array.from(parking.querySelectorAll('video'));
-    expect(videos).toHaveLength(3);
+    expect(videos).toHaveLength(4);
     expect(
       videos.every((video) => video.muted && video.hasAttribute('playsinline') && video.loop),
     ).toBe(true);
@@ -42,8 +42,9 @@ describe('VideoPool', () => {
     const reel = pool.claim('reels', hosts[0]).video;
     const preview = pool.claim('feed', hosts[1]).video;
     const detail = pool.claim('detail', hosts[2]).video;
+    const form = pool.claim('form', hosts[3]).video;
 
-    expect(new Set([reel, preview, detail]).size).toBe(3);
+    expect(new Set([reel, preview, detail, form]).size).toBe(4);
     expect(hosts[0].contains(reel)).toBe(true);
   });
 
