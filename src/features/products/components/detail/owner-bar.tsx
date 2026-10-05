@@ -34,6 +34,11 @@ const ownerBarContent: Record<ProductStatus, OwnerBarContent> = {
   },
 };
 
+// Two buttons share the bar's width; the sheet's "Đánh dấu đã bán" does not fit a small phone.
+const barLabels: Partial<Record<ListingAction, string>> = {
+  [ListingAction.MarkSold]: 'Đã bán',
+};
+
 /**
  * What the owner sees in place of "Liên hệ người bán" on their own listing: how buyers see
  * it, and what to do next.
@@ -65,7 +70,7 @@ export default function ProductOwnerBar({
               disabled={isPending}
               onClick={() => onAction(action)}
             >
-              {actionLabels[action]}
+              {barLabels[action] ?? actionLabels[action]}
             </Button>
           ))}
         </div>
