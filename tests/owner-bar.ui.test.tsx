@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 
-import { actionLabels } from '@/features/my-listings/constants/messages';
 import { ListingAction } from '@/features/my-listings/types/my-listing';
 import { getListingActions } from '@/features/my-listings/utils/my-listing';
 import ProductOwnerBar from '@/features/products/components/detail/owner-bar';
@@ -24,12 +23,13 @@ function renderBar(status: ProductStatus, isPending = false) {
 describe('ProductOwnerBar', () => {
   it('offers only what the "•••" sheet allows for the status', () => {
     for (const status of statuses) {
+      const onAction = vi.fn();
       const { unmount } = render(
-        <ProductOwnerBar status={status} isPending={false} onAction={() => {}} />,
+        <ProductOwnerBar status={status} isPending={false} onAction={onAction} />,
       );
-      const allowed = getListingActions(status).map((action) => actionLabels[action]);
-      for (const button of screen.queryAllByRole('button')) {
-        expect(allowed).toContain(button.textContent);
+      screen.queryAllByRole('button').forEach((button) => fireEvent.click(button));
+      for (const [action] of onAction.mock.calls) {
+        expect(getListingActions(status)).toContain(action);
       }
       unmount();
     }
@@ -40,7 +40,7 @@ describe('ProductOwnerBar', () => {
 
     expect(screen.getByRole('status').textContent).toBe('Tin của bạn đang hiển thị với người mua.');
     expect(screen.queryByText('Liên hệ người bán')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Đánh dấu đã bán' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Đã bán' }));
     fireEvent.click(screen.getByRole('button', { name: 'Sửa tin' }));
     expect(onAction.mock.calls).toEqual([[ListingAction.MarkSold], [ListingAction.Edit]]);
   });
@@ -63,7 +63,7 @@ describe('ProductOwnerBar', () => {
   it('waits while a status change is on its way', () => {
     const onAction = renderBar('PUBLISHED', true);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Đánh dấu đã bán' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Đã bán' }));
     expect(onAction).not.toHaveBeenCalled();
   });
 });
