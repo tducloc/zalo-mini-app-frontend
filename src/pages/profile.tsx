@@ -29,7 +29,8 @@ export default function ProfilePage() {
               <div className="min-w-0 flex-1">
                 <p className="m-0 font-semibold">Kích hoạt tài khoản</p>
                 <p className="m-0 mt-1 text-sm text-slate-500">
-                  Chia sẻ tên và số điện thoại Zalo để người mua biết bạn là ai và gọi được cho bạn.
+                  Tên và số điện thoại Zalo của bạn sẽ được dùng để người mua có thể liên hệ khi
+                  quan tâm đến sản phẩm.
                 </p>
               </div>
               <button
