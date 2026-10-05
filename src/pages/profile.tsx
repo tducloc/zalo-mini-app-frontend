@@ -4,6 +4,7 @@ import MobilePageHeader from '@/components/layout/mobile-page-header';
 import { cardClass, pageClass, pageContentClass, stateIconClass } from '@/components/layout/styles';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { getAuthStatusLabel } from '@/features/auth/utils/auth-status';
+import { useMyPhoneNumber } from '@/features/contact/api/phone-number';
 import PhoneNumberCard from '@/features/contact/components/phone-number-card';
 import { useOpenZaloPermissionSettings } from '@/features/contact/hooks/use-open-zalo-permission-settings';
 import { useShareSellerPermissions } from '@/features/contact/hooks/use-seller-permissions';
@@ -17,6 +18,8 @@ export default function ProfilePage() {
   const navigate = useNavigate();
   const activation = useShareSellerPermissions();
   const openPermissionSettings = useOpenZaloPermissionSettings();
+  const phone = useMyPhoneNumber();
+  const hasShared = Boolean(user?.name || phone.data);
 
   return (
     <Page className={pageClass}>
@@ -54,8 +57,8 @@ export default function ProfilePage() {
               </div>
             </>
           )}
-          {/* In both states: a seller who withdrew only the phone still shares the name. */}
-          {user && (
+          {/* Once anything is shared, in both states: withdrawing only the phone keeps the name. */}
+          {hasShared && (
             <button
               type="button"
               onClick={openPermissionSettings}
