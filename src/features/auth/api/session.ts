@@ -1,7 +1,7 @@
 import { getAccessToken } from 'zmp-sdk';
 
 import { AUTH_ERROR_MESSAGE } from '@/features/auth/constants/auth';
-import type { Session } from '@/features/auth/types/session';
+import type { Session, SessionUser } from '@/features/auth/types/session';
 import { resolveExchangeToken } from '@/features/auth/utils/exchange-token';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/stores/auth';
@@ -29,6 +29,15 @@ function saveSession(session: Session) {
     throw new Error('Phản hồi xác thực không hợp lệ.');
   }
   useAuthStore.getState().setSession(session);
+}
+
+/** The same session, with the name and avatar the server stores now. */
+export function updateSessionUser(profile: Pick<SessionUser, 'name' | 'avatarUrl'>) {
+  const session = getSession();
+  if (!session) {
+    return;
+  }
+  saveSession({ ...session, user: { ...session.user, ...profile } });
 }
 
 /** The SDK's Zalo access token, failing after a timeout instead of hanging. */

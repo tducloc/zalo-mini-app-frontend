@@ -5,6 +5,7 @@ import { cardClass, pageClass, pageContentClass, stateIconClass } from '@/compon
 import { useSession } from '@/features/auth/hooks/use-session';
 import { getAuthStatusLabel } from '@/features/auth/utils/auth-status';
 import PhoneNumberCard from '@/features/contact/components/phone-number-card';
+import { useOpenZaloPermissionSettings } from '@/features/contact/hooks/use-open-zalo-permission-settings';
 import { useShareSellerPermissions } from '@/features/contact/hooks/use-seller-permissions';
 
 // Dev-only entry to the media measurement page. Remove with src/pages/media-lab.tsx.
@@ -15,6 +16,7 @@ export default function ProfilePage() {
   const user = session?.user;
   const navigate = useNavigate();
   const activation = useShareSellerPermissions();
+  const openPermissionSettings = useOpenZaloPermissionSettings();
 
   return (
     <Page className={pageClass}>
@@ -43,12 +45,24 @@ export default function ProfilePage() {
               </button>
             </>
           ) : (
-            <div>
-              <p className="m-0 font-semibold">{user?.name ?? 'Người dùng Zalo'}</p>
-              <p className="m-0 mt-1 text-sm text-slate-500">
-                {getAuthStatusLabel({ isSignedIn: Boolean(user), isBootstrapping })}
-              </p>
-            </div>
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="m-0 font-semibold">{user?.name ?? 'Người dùng Zalo'}</p>
+                <p className="m-0 mt-1 text-sm text-slate-500">
+                  {getAuthStatusLabel({ isSignedIn: Boolean(user), isBootstrapping })}
+                </p>
+              </div>
+            </>
+          )}
+          {/* In both states: a seller who withdrew only the phone still shares the name. */}
+          {user && (
+            <button
+              type="button"
+              onClick={openPermissionSettings}
+              className="min-h-11 w-full rounded-full border-0 bg-marketplace-tint-soft font-semibold text-marketplace-blue"
+            >
+              Quản lý quyền
+            </button>
           )}
         </section>
 
