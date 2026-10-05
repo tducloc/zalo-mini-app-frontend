@@ -111,7 +111,10 @@ export default function AppShell({ children }: PropsWithChildren) {
     window.addEventListener('load', preloadPages, { once: true });
   }, []);
 
+  // A tab replaces the page instead of stacking on it, so only a page with a back button
+  // has a page to swipe back to. Tabs switch in place, without the slide.
   const navigateFromTab = (path: string) => {
+    const navigateToTab = () => navigate(path, { replace: true, animate: false });
     if (
       path === '/reels' &&
       currentPath !== '/reels' &&
@@ -124,12 +127,12 @@ export default function AppShell({ children }: PropsWithChildren) {
       if (hasFirstReel && isReelsPageLoaded()) {
         flushSync(() => {
           useReelsStore.getState().setMuted(false);
-          navigate(path);
+          navigateToTab();
         });
         return;
       }
     }
-    navigate(path);
+    navigateToTab();
   };
 
   const chrome = (

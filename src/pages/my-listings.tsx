@@ -84,7 +84,7 @@ export default function MyListingsPage() {
           empty={{
             ...tab.empty,
             actionLabel: isPublishedTab ? 'Đăng tin ngay' : undefined,
-            onAction: isPublishedTab ? () => navigate('/sell') : undefined,
+            onAction: isPublishedTab ? () => navigate('/sell', { replace: true }) : undefined,
           }}
           isWaitingForSession={!session && isBootstrapping}
           query={listingsQuery}
