@@ -1,34 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useSession } from '@/features/auth/hooks/use-session';
-import type { SessionUser } from '@/features/auth/types/session';
 import type { ZaloPhoneShare } from '@/features/contact/services/zalo-phone';
 import { http } from '@/lib/http';
 
 /** The number buyers call, verified by Zalo; null until the seller shares it. */
 type PhoneNumber = string | null;
 
-export const phoneNumberKey = (userId: string | null) => ['phone-number', userId] as const;
-
-interface Me extends Pick<SessionUser, 'name' | 'avatarUrl'> {
-  phoneNumber: PhoneNumber;
-}
-
-/** `GET /me`: what the server stores for the signed-in user. */
-export async function fetchMe() {
-  const response = await http.get<{ data: Me }>('/me');
-  return response.data.data;
-}
-
-/** The seller turned phone sharing off in Zalo; buyers no longer see the number. */
-export function withdrawPhoneNumber() {
-  return http.delete('/me/phone-number');
-}
-
-/** The seller turned name sharing off in Zalo; listings no longer show the name or avatar. */
-export function withdrawProfile() {
-  return http.delete('/me/profile');
-}
+const phoneNumberKey = (userId: string | null) => ['phone-number', userId] as const;
 
 /** The signed-in seller's shared phone number (`GET /me`); idle until the session exists. */
 export function useMyPhoneNumber() {
@@ -37,7 +16,10 @@ export function useMyPhoneNumber() {
   return useQuery({
     queryKey: phoneNumberKey(userId),
     enabled: userId !== null,
-    queryFn: async () => (await fetchMe()).phoneNumber,
+    queryFn: async () => {
+      const response = await http.get<{ data: { phoneNumber: PhoneNumber } }>('/me');
+      return response.data.data.phoneNumber;
+    },
   });
 }
 

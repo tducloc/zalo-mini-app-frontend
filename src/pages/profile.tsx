@@ -4,9 +4,7 @@ import MobilePageHeader from '@/components/layout/mobile-page-header';
 import { cardClass, pageClass, pageContentClass, stateIconClass } from '@/components/layout/styles';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { getAuthStatusLabel } from '@/features/auth/utils/auth-status';
-import { useMyPhoneNumber } from '@/features/contact/api/phone-number';
 import PhoneNumberCard from '@/features/contact/components/phone-number-card';
-import { useOpenZaloPermissionSettings } from '@/features/contact/hooks/use-open-zalo-permission-settings';
 import { useShareSellerPermissions } from '@/features/contact/hooks/use-seller-permissions';
 
 // Dev-only entry to the media measurement page. Remove with src/pages/media-lab.tsx.
@@ -17,9 +15,6 @@ export default function ProfilePage() {
   const user = session?.user;
   const navigate = useNavigate();
   const activation = useShareSellerPermissions();
-  const openPermissionSettings = useOpenZaloPermissionSettings();
-  const phone = useMyPhoneNumber();
-  const hasShared = Boolean(user?.name || phone.data);
 
   return (
     <Page className={pageClass}>
@@ -48,24 +43,12 @@ export default function ProfilePage() {
               </button>
             </>
           ) : (
-            <>
-              <div className="min-w-0 flex-1">
-                <p className="m-0 font-semibold">{user?.name ?? 'Người dùng Zalo'}</p>
-                <p className="m-0 mt-1 text-sm text-slate-500">
-                  {getAuthStatusLabel({ isSignedIn: Boolean(user), isBootstrapping })}
-                </p>
-              </div>
-            </>
-          )}
-          {/* Once anything is shared, in both states: withdrawing only the phone keeps the name. */}
-          {hasShared && (
-            <button
-              type="button"
-              onClick={openPermissionSettings}
-              className="min-h-11 w-full rounded-full border-0 bg-marketplace-tint-soft font-semibold text-marketplace-blue"
-            >
-              Quản lý quyền
-            </button>
+            <div>
+              <p className="m-0 font-semibold">{user?.name ?? 'Người dùng Zalo'}</p>
+              <p className="m-0 mt-1 text-sm text-slate-500">
+                {getAuthStatusLabel({ isSignedIn: Boolean(user), isBootstrapping })}
+              </p>
+            </div>
           )}
         </section>
 
