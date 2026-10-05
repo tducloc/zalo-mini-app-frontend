@@ -1,7 +1,7 @@
 import { type PropsWithChildren, useCallback, useEffect } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { type InfiniteData, useQueryClient } from '@tanstack/react-query';
-import { configAppView, getSystemInfo } from 'zmp-sdk';
+import { configAppView, EventName, events, getSystemInfo } from 'zmp-sdk';
 import { Icon, useLocation, useNavigate } from 'zmp-ui';
 
 import { previewVideoPool } from '@/features/feed/services/preview-video';
@@ -72,6 +72,18 @@ export default function AppShell({ children }: PropsWithChildren) {
     videoPool.setParking(element);
     previewVideoPool.setParking(element);
   }, []);
+
+  // A link opened while the Mini App runs in the background (a listing sent in a chat) brings
+  // back the last page; Zalo passes the link's path to go to.
+  useEffect(() => {
+    events.on(EventName.OpenApp, ({ path }: { path?: string }) => {
+      if (path) navigate(path);
+    });
+    // zmp-sdk wraps each listener, so only removing every OpenApp listener works.
+    return () => {
+      events.off(EventName.OpenApp);
+    };
+  }, [navigate]);
 
   useEffect(() => {
     const themeTextColor = getSystemInfo().zaloTheme === 'dark' ? 'white' : 'black';

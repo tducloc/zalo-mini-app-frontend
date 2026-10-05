@@ -2,9 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ComponentProps, ReactNode } from 'react';
 import { openChat, openPhone, openProfile } from 'zmp-sdk';
 
-import ProductContactAction, {
-  chatGreeting,
-} from '@/features/products/components/detail/contact-action';
+import ProductContactAction from '@/features/products/components/detail/contact-action';
 import type { ProductDetail } from '@/features/products/types/product';
 
 vi.mock('zmp-sdk', () => ({ openChat: vi.fn(), openPhone: vi.fn(), openProfile: vi.fn() }));
@@ -75,10 +73,25 @@ describe('ProductContactAction', () => {
       expect(openChat).toHaveBeenCalledWith({
         type: 'user',
         id: 'zalo_seller',
-        message: chatGreeting('Sofa góc chữ L'),
+        message:
+          'Chào bạn, mình quan tâm tin "Sofa góc chữ L" trên Chợ Zalo. Sản phẩm còn không ạ?',
       }),
     );
     expect(openProfile).not.toHaveBeenCalled();
+  });
+
+  it("ends the greeting with the listing's Mini App link inside Zalo", async () => {
+    vi.stubGlobal('APP_ID', '1234567890');
+    vi.mocked(openChat).mockResolvedValue(undefined as never);
+    renderAction('PUBLISHED', null);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Nhắn qua Zalo' }));
+    await waitFor(() =>
+      expect(vi.mocked(openChat).mock.calls[0]?.[0].message).toMatch(
+        /Sản phẩm còn không ạ\?\nhttps:\/\/zalo\.me\/s\/1234567890\/products\/prd_1$/,
+      ),
+    );
+    vi.unstubAllGlobals();
   });
 
   it("opens the seller's profile when the chat does not open, then says it failed", async () => {
