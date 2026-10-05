@@ -23,7 +23,7 @@ export default function DraftBanner({ className }: { className: string }) {
       <span className="min-w-0 flex-1">{UNFINISHED_DRAFT}</span>
       <button
         type="button"
-        onClick={() => navigate('/sell')}
+        onClick={() => navigate('/sell', { replace: true })}
         className="min-h-9 shrink-0 rounded-lg border-0 bg-white px-3 font-semibold text-marketplace-ink"
       >
         Tiếp tục
