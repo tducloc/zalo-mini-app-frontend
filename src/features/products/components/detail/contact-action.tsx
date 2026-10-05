@@ -3,9 +3,17 @@ import { openChat, openPhone, openProfile } from 'zmp-sdk';
 
 import { ProductDetail } from '@/features/products/types/product';
 
-/** The first message in the chat, which the buyer can edit before sending. */
-export const chatGreeting = (title: string) =>
-  `Chào bạn, mình quan tâm tin "${title}" trên Chợ Zalo. Sản phẩm còn không ạ?`;
+/**
+ * The first message in the chat, which the buyer can edit before sending. Inside Zalo it ends
+ * with the listing's Mini App link, so the seller opens the listing from the chat.
+ */
+export function chatGreeting(title: string, productId: string) {
+  const greeting = `Chào bạn, mình quan tâm tin "${title}" trên Chợ Zalo. Sản phẩm còn không ạ?`;
+  if (!window.APP_ID) {
+    return greeting;
+  }
+  return `${greeting}\nhttps://zalo.me/s/${window.APP_ID}/products/${productId}`;
+}
 
 /**
  * A buyer's two ways to the seller: a Zalo chat about this listing, and a call, possible
@@ -32,7 +40,11 @@ export default function ProductContactAction({
   const messageSeller = async () => {
     if (!zaloProfileId) return;
     try {
-      await openChat({ type: 'user', id: zaloProfileId, message: chatGreeting(product.title) });
+      await openChat({
+        type: 'user',
+        id: zaloProfileId,
+        message: chatGreeting(product.title, product.id),
+      });
     } catch {
       // The profile has its own "Nhắn tin", where the chat may not open directly.
       try {
