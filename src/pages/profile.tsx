@@ -5,10 +5,8 @@ import { cardClass, pageClass, pageContentClass, stateIconClass } from '@/compon
 import { useSession } from '@/features/auth/hooks/use-session';
 import { getAuthStatusLabel } from '@/features/auth/utils/auth-status';
 import PhoneNumberCard from '@/features/contact/components/phone-number-card';
-import {
-  useShareSellerPermissions,
-  useZaloPermissionSettings,
-} from '@/features/contact/hooks/use-seller-permissions';
+import { useOpenZaloPermissionSettings } from '@/features/contact/hooks/use-open-zalo-permission-settings';
+import { useShareSellerPermissions } from '@/features/contact/hooks/use-seller-permissions';
 
 // Dev-only entry to the media measurement page. Remove with src/pages/media-lab.tsx.
 const showMediaLab = import.meta.env.DEV || import.meta.env.VITE_MEDIA_LAB === 'true';
@@ -18,7 +16,7 @@ export default function ProfilePage() {
   const user = session?.user;
   const navigate = useNavigate();
   const activation = useShareSellerPermissions();
-  const openPermissionSettings = useZaloPermissionSettings();
+  const openPermissionSettings = useOpenZaloPermissionSettings();
 
   return (
     <Page className={pageClass}>
@@ -57,7 +55,7 @@ export default function ProfilePage() {
               {user && (
                 <button
                   type="button"
-                  onClick={() => void openPermissionSettings()}
+                  onClick={openPermissionSettings}
                   className="min-h-11 w-full rounded-full border-0 bg-marketplace-tint-soft font-semibold text-marketplace-blue"
                 >
                   Quản lý quyền

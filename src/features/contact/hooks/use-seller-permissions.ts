@@ -1,15 +1,8 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { EventName, events, openPermissionSetting } from 'zmp-sdk';
 
 import { getSession, refreshSellerProfile } from '@/features/auth/api/session';
 import { useSession } from '@/features/auth/hooks/use-session';
-import type { SessionUser } from '@/features/auth/types/session';
-import {
-  phoneNumberKey,
-  useMyPhoneNumber,
-  useSharePhoneNumber,
-} from '@/features/contact/api/phone-number';
+import { useMyPhoneNumber, useSharePhoneNumber } from '@/features/contact/api/phone-number';
 import { requestPhoneShare } from '@/features/contact/services/zalo-phone';
 import {
   askMissingSellerPermissions,
@@ -21,8 +14,6 @@ import {
 } from '@/features/contact/services/zalo-permissions';
 import { phoneShareFailure } from '@/features/contact/utils/phone';
 import { useToast } from '@/hooks/use-toast';
-import { http } from '@/lib/http';
-import { useAuthStore } from '@/stores/auth';
 import { warnInDev } from '@/utils/dev-log';
 
 function skipsZaloPermissions() {
@@ -151,44 +142,4 @@ export function useShareSellerPermissions() {
   };
 
   return { missing, share, isSharing };
-}
-
-interface StoredProfile extends Pick<SessionUser, 'name' | 'avatarUrl'> {
-  phoneNumber: string | null;
-}
-
-/**
- * "Quản lý quyền" opens Zalo's permission screen. A withdrawal there reaches the server through
- * Zalo's webhook, so when the app comes back the card reads `GET /me` again. Not a new sign-in:
- * that asks Zalo for the name and could bring back a name the user just withdrew.
- *
- * In zmp-sdk 2.53 `openPermissionSetting` resolves right after it asks Zalo to open the screen,
- * so the listener goes on before the call. It is `once` because zmp-sdk wraps each listener,
- * so `events.off` cannot remove it.
- */
-export function useZaloPermissionSettings() {
-  const queryClient = useQueryClient();
-
-  const reload = async () => {
-    const response = await http.get<{ data: StoredProfile }>('/me');
-    const session = getSession();
-    if (!session) {
-      return;
-    }
-
-    const { name, avatarUrl, phoneNumber } = response.data.data;
-    useAuthStore.getState().setSession({ ...session, user: { ...session.user, name, avatarUrl } });
-    queryClient.setQueryData(phoneNumberKey(session.user.id), phoneNumber);
-  };
-
-  return async () => {
-    events.once(EventName.AppResumed, () => {
-      reload().catch((error) => warnInDev('contact', 'reloading the profile failed', error));
-    });
-    try {
-      await openPermissionSetting();
-    } catch (error) {
-      warnInDev('contact', 'opening Zalo permission settings failed', error);
-    }
-  };
 }
