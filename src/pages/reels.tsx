@@ -120,8 +120,6 @@ export default function ReelsPage() {
       onScroll={updatePager}
       // Nothing on screen may change on touchstart: iOS then drops the tap's click, and no
       // button in a reel would work. The tab bar joins the pane once the pager scrolls.
-      onTouchStart={(event) => event.stopPropagation()}
-      onTouchMove={(event) => event.stopPropagation()}
       onTouchEnd={() => {
         if (pagerRef.current?.scrollLeft === 0) setPagerInteractive(false);
       }}
