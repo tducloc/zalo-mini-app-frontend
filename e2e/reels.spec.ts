@@ -14,6 +14,18 @@ const waitForRouteSlideIn = (page: Page) =>
     .poll(() => pager(page).evaluate((element) => element.getBoundingClientRect().left))
     .toBe(0);
 
+/** Whether the app shell has loaded the Reels page's code. Vite dev serves each module at its path. */
+const isReelsPageLoaded = (page: Page) =>
+  page.evaluate(async (path) => {
+    const module = await import(path);
+    return module.isReelsPageLoaded() as boolean;
+  }, '/src/pages/lazy-pages.ts');
+
+const reelsLoaded = (page: Page) =>
+  page.waitForResponse(
+    (response) => new URL(response.url()).pathname.endsWith('/api/v1/reels') && response.ok(),
+  );
+
 const pagerPosition = (page: Page) => pager(page).evaluate((element) => element.scrollLeft);
 
 async function expectPlaying(target: Locator) {
@@ -51,11 +63,12 @@ test('starts with sound from the tab tap and comes back to the same reel', async
       return play.call(this);
     };
   });
-  const prefetched = page.waitForResponse(
-    (response) => new URL(response.url()).pathname.endsWith('/api/v1/reels') && response.ok(),
-  );
+  const prefetched = reelsLoaded(page);
   await page.goto('/');
   await prefetched;
+  // A user taps Reels once Home has settled, and by then the app shell has loaded the Reels
+  // code (after the load event). An earlier tap starts muted, as the next tests show.
+  await expect.poll(() => isReelsPageLoaded(page)).toBe(true);
   await tab(page, 'Reels').click();
   const tabPositions = await page.evaluate(async () => {
     const positions: number[] = [];
@@ -111,6 +124,26 @@ test('starts muted when the first reel is not ready at the tab tap', async ({ pa
   await tab(page, 'Reels').click();
   await expectPlaying(video(page, 0));
   expect(await video(page, 0).evaluate((element: HTMLVideoElement) => element.muted)).toBe(true);
+});
+
+test('starts muted when the Reels code has not loaded at the tab tap', async ({ page }) => {
+  let release = () => {};
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route('**/src/pages/reels.tsx*', async (route) => {
+    await held;
+    await route.continue();
+  });
+  const prefetched = reelsLoaded(page);
+  await page.goto('/');
+  await prefetched;
+  expect(await isReelsPageLoaded(page)).toBe(false);
+
+  await tab(page, 'Reels').click();
+  release();
+
+  await expectPlaying(video(page, 0));
+  expect(await video(page, 0).evaluate((element: HTMLVideoElement) => element.muted)).toBe(true);
+  await expect(reel(page, 0).getByRole('button', { name: 'Bật âm thanh' })).toBeVisible();
 });
 
 async function swipe(

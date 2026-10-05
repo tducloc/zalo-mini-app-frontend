@@ -8,6 +8,7 @@ import DraftBanner from '@/features/listings/components/draft/draft-banner';
 import DraftIndicator, {
   DRAFT_STATUS_ID,
 } from '@/features/listings/components/draft/draft-indicator';
+import { isReelsPageLoaded, preloadPages } from '@/pages/lazy-pages';
 import { useHasDraft } from '@/stores/listing-draft';
 import { useToastOffset } from '@/hooks/use-toast-offset';
 import { useReelsStore } from '@/stores/reels';
@@ -71,6 +72,17 @@ export default function AppShell({ children }: PropsWithChildren) {
     void queryClient.prefetchInfiniteQuery(reelsQueryOptions);
   }, [queryClient]);
 
+  // The screens' code loads after the window's load event, which waits for the first card
+  // images, so it stays off LCP.
+  useEffect(() => {
+    if (document.readyState === 'complete') {
+      preloadPages();
+      return;
+    }
+
+    window.addEventListener('load', preloadPages, { once: true });
+  }, []);
+
   const navigateFromTab = (path: string) => {
     if (
       path === '/reels' &&
@@ -80,7 +92,8 @@ export default function AppShell({ children }: PropsWithChildren) {
       const hasFirstReel = Boolean(
         queryClient.getQueryData<InfiniteData<ReelsPage>>(reelKeys.all())?.pages[0]?.data.length,
       );
-      if (hasFirstReel) {
+      // Sound needs the first reel mounted inside the tap. Otherwise the page starts muted.
+      if (hasFirstReel && isReelsPageLoaded()) {
         flushSync(() => {
           useReelsStore.getState().setMuted(false);
           navigate(path);
