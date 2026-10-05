@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { openShareSheet } from 'zmp-sdk';
 
 import ProductActionsSheet from '@/features/products/components/detail/actions-sheet';
 import ProductDescription from '@/features/products/components/detail/description';
@@ -283,6 +284,33 @@ describe('product detail UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Đóng' }));
     expect(onClose).toHaveBeenCalledWith(1);
+  });
+
+  it('shares a listing whose title and text pass the share sheet limits (100 and 400)', async () => {
+    const onClose = vi.fn();
+    const longListing = { ...product, title: 'T'.repeat(120), description: 'D'.repeat(5_000) };
+
+    render(
+      <ProductActionsSheet
+        hasReported={false}
+        isReportAvailable
+        isOwner={false}
+        product={longListing}
+        visible
+        isOwnerActionPending={false}
+        onClose={onClose}
+        onError={vi.fn()}
+        onOwnerAction={vi.fn()}
+        onReport={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Chia sẻ tin đăng/ }));
+
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(vi.mocked(openShareSheet).mock.calls[0][0].data).toMatchObject({
+      title: `${'T'.repeat(99)}…`,
+      description: `${'D'.repeat(399)}…`,
+    });
   });
 
   it('shows a disabled reported state instead of allowing a duplicate report', () => {
