@@ -18,7 +18,7 @@ const waitForRouteSlideIn = (page: Page) =>
 const isReelsPageLoaded = (page: Page) =>
   page.evaluate(async (path) => {
     const module = await import(path);
-    return module.LazyReelsPage.isLoaded() as boolean;
+    return module.isReelsPageLoaded() as boolean;
   }, '/src/pages/lazy-reels-page.ts');
 
 const reelsLoaded = (page: Page) =>
@@ -67,7 +67,7 @@ test('starts with sound from the tab tap and comes back to the same reel', async
   await page.goto('/');
   await prefetched;
   // A user taps Reels once Home has settled, and by then the app shell has loaded the Reels
-  // code (after load, when idle). An earlier tap starts muted, as the next tests show.
+  // code (after the load event). An earlier tap starts muted, as the next tests show.
   await expect.poll(() => isReelsPageLoaded(page)).toBe(true);
   await tab(page, 'Reels').click();
   const tabPositions = await page.evaluate(async () => {
