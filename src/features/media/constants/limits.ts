@@ -16,14 +16,15 @@ export const MAX_VIDEOS_PER_LISTING = 1;
 
 /**
  * The heaviest photo the app takes, as the server does. Refused at pick time, before the
- * worker decodes it; phone cameras write 2–8 MB, a 48 MP JPEG up to ~15 MB. Equal to the
- * server's limit, so an original the phone cannot shrink still passes.
+ * worker decodes it. Room for a camera JPEG at MAX_IMAGE_PIXELS (a Galaxy S25 Ultra writes
+ * 21 MB at 50 MP). Equal to the server's limit, so an original the phone cannot shrink
+ * still passes.
  */
-export const MAX_IMAGE_BYTES = 15 * MIB;
+export const MAX_IMAGE_BYTES = 25 * MIB;
 
 /**
  * The most pixels the app takes, as the server does (MAX_INPUT_PIXELS): the 48 MP and
- * 50 MP camera modes pass. A 108 MP photo fits in 15 MB but would take ~430 MB to decode,
+ * 50 MP camera modes pass. A 108 MP photo fits in 25 MB but would take ~430 MB to decode,
  * which the worker does not survive, and the server would refuse the original.
  */
 export const MAX_IMAGE_PIXELS = 50_000_000;
