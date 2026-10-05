@@ -52,16 +52,17 @@ export default function ProfilePage() {
                   {getAuthStatusLabel({ isSignedIn: Boolean(user), isBootstrapping })}
                 </p>
               </div>
-              {user && (
-                <button
-                  type="button"
-                  onClick={openPermissionSettings}
-                  className="min-h-11 w-full rounded-full border-0 bg-marketplace-tint-soft font-semibold text-marketplace-blue"
-                >
-                  Quản lý quyền
-                </button>
-              )}
             </>
+          )}
+          {/* In both states: a seller who withdrew only the phone still shares the name. */}
+          {user && (
+            <button
+              type="button"
+              onClick={openPermissionSettings}
+              className="min-h-11 w-full rounded-full border-0 bg-marketplace-tint-soft font-semibold text-marketplace-blue"
+            >
+              Quản lý quyền
+            </button>
           )}
         </section>
 

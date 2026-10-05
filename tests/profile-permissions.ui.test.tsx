@@ -24,7 +24,10 @@ vi.mock('@/components/layout/mobile-page-header', () => ({ default: () => null }
 vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({}) }));
 vi.mock('@/lib/http', () => ({ http: { get: vi.fn() } }));
 
-beforeEach(() => resumeListeners.clear());
+beforeEach(() => {
+  vi.clearAllMocks();
+  resumeListeners.clear();
+});
 
 function mockMe(name: string | null, phoneNumber: string | null) {
   vi.mocked(http.get).mockResolvedValue({ data: { data: { name, avatarUrl: null, phoneNumber } } });
@@ -43,7 +46,7 @@ async function returnFromZaloPermissions(name: string | null, phoneNumber: strin
   );
 
   await userEvent.click(await screen.findByRole('button', { name: 'Quản lý quyền' }));
-  expect(openPermissionSetting).toHaveBeenCalled();
+  expect(openPermissionSetting).toHaveBeenCalledTimes(1);
   expect(await screen.findByText('Số điện thoại liên hệ')).toBeTruthy();
 
   mockMe(name, phoneNumber);

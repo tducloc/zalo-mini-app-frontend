@@ -2,8 +2,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { EventName, events, openPermissionSetting } from 'zmp-sdk';
 
 import { updateSessionUser } from '@/features/auth/api/session';
-import { fetchMe, phoneNumberKey } from '@/features/contact/api/phone-number';
 import { useSession } from '@/features/auth/hooks/use-session';
+import { fetchMe, phoneNumberKey } from '@/features/contact/api/phone-number';
 import { warnInDev } from '@/utils/dev-log';
 
 /**
