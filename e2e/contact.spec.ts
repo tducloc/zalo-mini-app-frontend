@@ -2,7 +2,7 @@ import { expect, tab, test } from './support';
 
 // The dev sign-in shares 0900000000 without Zalo (backend DEV_PHONE_NUMBER). The first
 // GET /me answers no number, so the notice shows however earlier runs left the account.
-test('shares the Zalo phone number from the sell page, then shows it in the profile', async ({
+test('activates the account from the profile, then the sell page asks no more', async ({
   page,
 }) => {
   await page.route(
@@ -17,17 +17,19 @@ test('shares the Zalo phone number from the sell page, then shows it in the prof
 
   await page.goto('/');
   await tab(page, 'Đăng tin').click();
-  const notice = page.getByRole('complementary', { name: 'Bạn chưa chia sẻ số điện thoại' });
+  const notice = page.getByRole('complementary', { name: 'Hiển thị thông tin liên hệ' });
   await expect(notice).toBeVisible();
 
-  const shared = page.waitForResponse((response) => response.url().endsWith('/me/phone-number'));
-  await notice.getByRole('button', { name: 'Chia sẻ số điện thoại' }).click();
-  expect((await shared).status()).toBe(200);
-  await expect(notice).toHaveCount(0);
-  await expect(
-    page.getByText('Đã chia sẻ số điện thoại. Người mua có thể liên hệ với bạn.'),
-  ).toBeVisible();
-
   await tab(page, 'Cá nhân').click();
+  await expect(page.getByText('Kích hoạt tài khoản')).toBeVisible();
+  const shared = page.waitForResponse((response) => response.url().endsWith('/me/phone-number'));
+  await page.getByRole('button', { name: 'Kích hoạt ngay' }).click();
+  expect((await shared).status()).toBe(200);
+  await expect(page.getByText('Đã chia sẻ. Người mua có thể liên hệ với bạn.')).toBeVisible();
+  await expect(page.getByText('Kích hoạt tài khoản')).toHaveCount(0);
   await expect(page.getByText('0900 000 000 · Đã xác minh qua Zalo')).toBeVisible();
+
+  await tab(page, 'Đăng tin').click();
+  await expect(page.getByRole('heading', { name: 'Hình ảnh sản phẩm' })).toBeVisible();
+  await expect(notice).toHaveCount(0);
 });

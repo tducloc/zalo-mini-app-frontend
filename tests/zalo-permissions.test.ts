@@ -12,7 +12,6 @@ const store = vi.hoisted(() => new Map<string, string>());
 vi.mock('zmp-sdk', () => ({
   authorize: vi.fn(),
   getSetting: vi.fn(),
-  openPermissionSetting: vi.fn(),
   nativeStorage: {
     getItem: (key: string) => store.get(key) ?? null,
     setItem: (key: string, value: string) => {

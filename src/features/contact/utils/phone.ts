@@ -8,8 +8,6 @@ export function formatPhoneNumber(phoneNumber: string) {
     : phoneNumber;
 }
 
-export const phoneShareSuccess = 'Đã chia sẻ số điện thoại. Người mua có thể liên hệ với bạn.';
-
 /** Why sharing stopped, for a toast; `isRefusal` when the seller chose it, not a failure. */
 export function phoneShareFailure(error: unknown): { message: string; isRefusal: boolean } {
   if (error instanceof PhoneShareRefusedError) {
