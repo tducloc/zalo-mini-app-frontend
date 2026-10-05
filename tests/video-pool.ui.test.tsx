@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { VideoPool } from '@/features/reels/services/video-pool';
+import { VideoPool } from '@/lib/video-pool';
 
 // jsdom has no media playback.
 beforeEach(() => {
@@ -17,43 +17,42 @@ function setUp() {
 }
 
 describe('VideoPool', () => {
-  it('parks every element, muted and inline, until a reel claims one', () => {
+  it('parks one element per feature, muted and inline, until one is claimed', () => {
     const { parking } = setUp();
 
     const videos = Array.from(parking.querySelectorAll('video'));
-    expect(videos).toHaveLength(1);
+    expect(videos).toHaveLength(3);
     expect(
       videos.every((video) => video.muted && video.hasAttribute('playsinline') && video.loop),
     ).toBe(true);
   });
 
-  it('reuses the same few elements however many reels there are', () => {
+  it('gives every claimer in a feature the same element', () => {
     const { pool, hosts } = setUp();
 
-    const first = pool.claim(0, hosts[0]);
-    pool.release(0, first);
-    const fourth = pool.claim(3, hosts[3]);
-
-    expect(fourth).toBe(first);
-    expect(hosts[3].contains(fourth)).toBe(true);
-    expect(pool.claim(4, hosts[4])).toBe(fourth);
-  });
-
-  it('gives every reel the same element', () => {
-    const { pool, hosts } = setUp();
-
-    const videos = [4, 5, 6].map((index) => pool.claim(index, hosts[index]));
+    const videos = [4, 5, 6].map((index) => pool.claim('reels', hosts[index]).video);
 
     expect(new Set(videos).size).toBe(1);
     expect(hosts[6].contains(videos[0])).toBe(true);
   });
 
+  it('never hands one feature the element another plays in', () => {
+    const { pool, hosts } = setUp();
+
+    const reel = pool.claim('reels', hosts[0]).video;
+    const preview = pool.claim('feed', hosts[1]).video;
+    const detail = pool.claim('detail', hosts[2]).video;
+
+    expect(new Set([reel, preview, detail]).size).toBe(3);
+    expect(hosts[0].contains(reel)).toBe(true);
+  });
+
   it('drops the source and parks the element on release', async () => {
     const { pool, parking, hosts } = setUp();
-    const video = pool.claim(1, hosts[1]);
+    const { video, release } = pool.claim('feed', hosts[1]);
     video.src = 'https://media.example/1.mp4';
 
-    pool.release(1, video);
+    release();
     await Promise.resolve();
 
     expect(video.hasAttribute('src')).toBe(false);
@@ -62,26 +61,27 @@ describe('VideoPool', () => {
 
   it('keeps the source when the same element is reclaimed during route mount', async () => {
     const { pool, hosts } = setUp();
-    const video = pool.claim(0, hosts[0]);
+    const { video, release } = pool.claim('reels', hosts[0]);
     video.src = 'https://media.example/1.mp4';
 
-    pool.release(0, video);
-    pool.claim(0, hosts[1]);
+    release();
+    pool.claim('reels', hosts[1]);
     await Promise.resolve();
 
     expect(video.getAttribute('src')).toBe('https://media.example/1.mp4');
     expect(video.parentElement).toBe(hosts[1]);
   });
 
-  it('leaves the element alone when another reel claimed it first', () => {
+  it('leaves the element alone when a newer claim in the feature took it first', async () => {
     const { pool, hosts } = setUp();
-    const video = pool.claim(1, hosts[1]);
-    pool.claim(4, hosts[4]);
-    video.src = 'https://media.example/4.mp4';
+    const first = pool.claim('reels', hosts[1]);
+    pool.claim('reels', hosts[4]);
+    first.video.src = 'https://media.example/4.mp4';
 
-    pool.release(1, video);
+    first.release();
+    await Promise.resolve();
 
-    expect(video.getAttribute('src')).toBe('https://media.example/4.mp4');
-    expect(video.parentElement).toBe(hosts[4]);
+    expect(first.video.getAttribute('src')).toBe('https://media.example/4.mp4');
+    expect(first.video.parentElement).toBe(hosts[4]);
   });
 });

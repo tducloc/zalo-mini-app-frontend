@@ -15,25 +15,18 @@ vi.mock('zmp-sdk', () => ({
   openShareSheet: vi.fn(),
 }));
 
-vi.mock('zmp-ui', () => {
-  const Swiper = Object.assign(({ children }: { children: ReactNode }) => <div>{children}</div>, {
-    Slide: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  });
-
-  return {
-    Button: ({ children }: { children: ReactNode }) => <button type="button">{children}</button>,
-    Header: () => null,
-    Icon: () => null,
-    Modal: () => null,
-    Page: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-    Sheet: () => null,
-    Swiper,
-    useLocation: () => ({ pathname: '/reels' }),
-    useNavigate: () => vi.fn(),
-    useParams: () => ({}),
-    useSnackbar: () => ({ openSnackbar: vi.fn(), closeSnackbar: vi.fn() }),
-  };
-});
+vi.mock('zmp-ui', () => ({
+  Button: ({ children }: { children: ReactNode }) => <button type="button">{children}</button>,
+  Header: () => null,
+  Icon: () => null,
+  Modal: () => null,
+  Page: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  Sheet: () => null,
+  useLocation: () => ({ pathname: '/reels' }),
+  useNavigate: () => vi.fn(),
+  useParams: () => ({}),
+  useSnackbar: () => ({ openSnackbar: vi.fn(), closeSnackbar: vi.fn() }),
+}));
 
 const product = {
   id: 'prd_1',

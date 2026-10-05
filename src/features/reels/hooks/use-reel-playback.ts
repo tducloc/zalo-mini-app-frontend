@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 
-import { videoPool } from '@/features/reels/services/video-pool';
 import type { ReelItem as Reel } from '@/features/reels/types/reel';
 import { isPlayRefused, reelPlayer, shouldPlay } from '@/features/reels/utils/reel-player';
 import type { ReelSlot } from '@/features/reels/utils/reel-slot';
+import { videoPool } from '@/lib/video-pool';
 import { useReelsStore } from '@/stores/reels';
 import { thumbHashUrl } from '@/utils/thumbhash';
 
@@ -27,7 +27,6 @@ function useIsLate(isOn: boolean, delayMs: number) {
 /** Attaches the shared video element and keeps its play, pause and sound in one place. */
 export function useReelPlayback(
   reel: Reel,
-  index: number,
   slot: Exclude<ReelSlot, 'empty'>,
   isAppVisible: boolean,
 ) {
@@ -66,7 +65,7 @@ export function useReelPlayback(
       return;
     }
 
-    const video = videoPool.claim(index, host);
+    const { video, release } = videoPool.claim('reels', host);
     video.className = `absolute inset-0 size-full ${fitClass}`;
     video.poster = posterUrl ?? '';
     video.setAttribute('aria-label', label);
@@ -106,9 +105,9 @@ export function useReelPlayback(
       video.removeEventListener('waiting', handleWaiting);
       video.removeEventListener('error', handleError);
       videoRef.current = null;
-      videoPool.release(index, video);
+      release();
     };
-  }, [index, src, fitClass, posterUrl, label]);
+  }, [src, fitClass, posterUrl, label]);
 
   useEffect(() => {
     const video = videoRef.current;

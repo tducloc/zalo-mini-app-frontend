@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 import ProductActionsSheet from '@/features/products/components/detail/actions-sheet';
@@ -6,27 +6,16 @@ import ProductDescription from '@/features/products/components/detail/descriptio
 import MediaLightbox from '@/features/products/components/gallery/media-lightbox';
 import ProductMediaGallery from '@/features/products/components/gallery/media-gallery';
 import { ProductDetail } from '@/features/products/types/product';
+import { videoPool } from '@/lib/video-pool';
+import { useDetailSoundStore } from '@/stores/detail-sound';
 
 vi.mock('zmp-sdk', () => ({ openShareSheet: vi.fn() }));
 
-vi.mock('zmp-ui', () => {
-  const Swiper = Object.assign(
-    ({ afterChange, children }: { afterChange?: (index: number) => void; children: ReactNode }) => (
-      <div data-testid="swiper">
-        {children}
-        <button onClick={() => afterChange?.(1)}>Slide tiếp theo</button>
-      </div>
-    ),
-    { Slide: ({ children }: { children: ReactNode }) => <div>{children}</div> },
-  );
-
-  return {
-    Icon: () => null,
-    Sheet: ({ children, visible }: { children: ReactNode; visible: boolean }) =>
-      visible ? <section>{children}</section> : null,
-    Swiper,
-  };
-});
+vi.mock('zmp-ui', () => ({
+  Icon: () => null,
+  Sheet: ({ children, visible }: { children: ReactNode; visible: boolean }) =>
+    visible ? <section>{children}</section> : null,
+}));
 
 const product: ProductDetail = {
   id: 'prd_1',
@@ -68,20 +57,198 @@ const product: ProductDetail = {
   publishedAt: '2026-09-21T00:00:00.000Z',
 };
 
-afterEach(() => vi.restoreAllMocks());
+const SLIDE_WIDTH_PX = 375;
+const VIDEO_URL = 'https://example.com/video.mp4';
+
+let observerCallbacks = new Set<IntersectionObserverCallback>();
+let parking: HTMLElement;
+
+function showVideoOnScreen(ratio: number) {
+  act(() =>
+    observerCallbacks.forEach((callback) =>
+      callback(
+        [{ intersectionRatio: ratio } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      ),
+    ),
+  );
+}
+
+function scrollToSlide(track: HTMLElement, index: number) {
+  track.scrollLeft = index * SLIDE_WIDTH_PX;
+  fireEvent.scroll(track);
+}
+
+/** The pool drops the source and parks the element one microtask after a release. */
+const settleRelease = () => act(async () => {});
+
+const galleryVideo = (track: HTMLElement) => track.querySelector('video');
+
+function renderGallery() {
+  const view = render(
+    <ProductMediaGallery media={product.media} productTitle={product.title} canLoadMedia />,
+  );
+  const track = view.container.querySelector<HTMLElement>('[data-gallery-track]');
+  if (!track) {
+    throw new Error('gallery track missing');
+  }
+  return { ...view, track };
+}
+
+function renderPlayingVideo() {
+  const view = renderGallery();
+  scrollToSlide(view.track, 1);
+  showVideoOnScreen(1);
+  const video = galleryVideo(view.track);
+  if (!video) {
+    throw new Error('the video slide holds no video');
+  }
+  return { ...view, video };
+}
+
+beforeEach(() => {
+  observerCallbacks = new Set();
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe() {
+        observerCallbacks.add(this.callback);
+      }
+      disconnect() {
+        observerCallbacks.delete(this.callback);
+      }
+    },
+  );
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(SLIDE_WIDTH_PX);
+  vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+  vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined);
+  vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => undefined);
+  parking = document.createElement('div');
+  videoPool.setParking(parking);
+  useDetailSoundStore.setState({ isMuted: false });
+});
+
+afterEach(async () => {
+  // Unmount first: the gallery gives its video back to the pool, through the mocked pause.
+  cleanup();
+  await settleRelease();
+  videoPool.setParking(null);
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe('product detail UI', () => {
-  it('shows and updates the gallery position chip for image and video media', () => {
-    render(<ProductMediaGallery media={product.media} productTitle={product.title} canLoadMedia />);
+  it('counts the slide the gallery is scrolled to', () => {
+    const { track } = renderGallery();
 
     expect(screen.getByText('1 / 2')).toBeTruthy();
-    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined);
-    fireEvent.click(screen.getByRole('button', { name: 'Slide tiếp theo' }));
+    scrollToSlide(track, 1);
     expect(screen.getByText('2 / 2')).toBeTruthy();
   });
 
+  it('plays the video with sound, without controls, only while its slide is shown on screen', async () => {
+    const { track } = renderGallery();
+    const play = vi.mocked(HTMLMediaElement.prototype.play);
+
+    scrollToSlide(track, 1);
+    expect(galleryVideo(track)).toBeNull();
+
+    showVideoOnScreen(1);
+    const video = galleryVideo(track);
+    expect(video?.getAttribute('src')).toBe(VIDEO_URL);
+    expect(video?.muted).toBe(false);
+    expect(video?.controls).toBe(false);
+    expect(play).toHaveBeenCalledOnce();
+
+    // Reels slid its detail pane away, or the page scrolled past the gallery.
+    showVideoOnScreen(0.2);
+    await settleRelease();
+    expect(galleryVideo(track)).toBeNull();
+    expect(video?.hasAttribute('src')).toBe(false);
+
+    showVideoOnScreen(1);
+    expect(galleryVideo(track)).toBe(video);
+    expect(play).toHaveBeenCalledTimes(2);
+
+    scrollToSlide(track, 0);
+    await settleRelease();
+    expect(galleryVideo(track)).toBeNull();
+  });
+
+  it('gives the video back while the app is in the background', async () => {
+    const { track } = renderPlayingVideo();
+
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+    fireEvent(document, new Event('visibilitychange'));
+    await settleRelease();
+    expect(galleryVideo(track)).toBeNull();
+  });
+
+  it('plays muted when the WebView refuses sound before a tap', async () => {
+    vi.mocked(HTMLMediaElement.prototype.play).mockRejectedValueOnce(
+      new DOMException('', 'NotAllowedError'),
+    );
+    const { video } = renderPlayingVideo();
+    await act(async () => {});
+
+    expect(video.muted).toBe(true);
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole('button', { name: 'Bật âm thanh' })).toBeTruthy();
+  });
+
+  it('turns the sound off and on from its button, without opening the lightbox', () => {
+    const { video } = renderPlayingVideo();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Tắt âm thanh' }));
+    expect(video.muted).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bật âm thanh' }));
+    expect(video.muted).toBe(false);
+    // Played again within the tap, so WebKit keeps the sound on.
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it("keeps the viewer's sound choice for the next video", async () => {
+    const first = renderPlayingVideo();
+    fireEvent.click(screen.getByRole('button', { name: 'Tắt âm thanh' }));
+    first.unmount();
+    await settleRelease();
+
+    const { video } = renderPlayingVideo();
+    expect(video.muted).toBe(true);
+    expect(screen.getByRole('button', { name: 'Bật âm thanh' })).toBeTruthy();
+  });
+
+  it('goes back to muted when the WebView refuses sound from the button', async () => {
+    useDetailSoundStore.setState({ isMuted: true });
+    const { video } = renderPlayingVideo();
+    vi.mocked(HTMLMediaElement.prototype.play).mockRejectedValueOnce(
+      new DOMException('', 'NotAllowedError'),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bật âm thanh' }));
+    await act(async () => {});
+    expect(video.muted).toBe(true);
+    expect(screen.getByRole('button', { name: 'Bật âm thanh' })).toBeTruthy();
+  });
+
+  it('opens the tapped video full screen and stops it in the gallery', async () => {
+    const { track } = renderPlayingVideo();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Xem video toàn màn hình' }));
+    const lightbox = screen.getByRole('dialog', { name: `Ảnh và video: ${product.title}` });
+    expect(lightbox.textContent).toContain('2 / 2');
+    await settleRelease();
+    expect(galleryVideo(track)).toBeNull();
+
+    showVideoOnScreen(1);
+    expect(galleryVideo(track)).toBeNull();
+  });
+
   it('opens every photo and video full screen, counted as the gallery counts them', () => {
-    render(<ProductMediaGallery media={product.media} productTitle={product.title} canLoadMedia />);
+    renderGallery();
 
     fireEvent.click(screen.getByRole('button', { name: 'Phóng to ảnh' }));
     const lightbox = screen.getByRole('dialog', { name: `Ảnh và video: ${product.title}` });
@@ -91,6 +258,21 @@ describe('product detail UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Đóng' }));
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('returns the gallery to the slide the lightbox closes on', () => {
+    const { track } = renderGallery();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Phóng to ảnh' }));
+    const lightboxTrack = screen.getByRole('dialog').querySelector<HTMLElement>('.snap-x');
+    if (!lightboxTrack) {
+      throw new Error('lightbox track missing');
+    }
+    scrollToSlide(lightboxTrack, 1);
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng' }));
+
+    expect(screen.getByText('2 / 2')).toBeTruthy();
+    expect(track.scrollLeft).toBe(SLIDE_WIDTH_PX);
   });
 
   it('hands the slide it closes on back to the gallery', () => {

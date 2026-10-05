@@ -4,7 +4,6 @@ import { type InfiniteData, useQueryClient } from '@tanstack/react-query';
 import { configAppView, EventName, events, getSystemInfo } from 'zmp-sdk';
 import { Icon, useLocation, useNavigate } from 'zmp-ui';
 
-import { previewVideoPool } from '@/features/feed/services/preview-video';
 import DraftBanner from '@/features/listings/components/draft/draft-banner';
 import DraftIndicator, {
   DRAFT_STATUS_ID,
@@ -14,8 +13,8 @@ import { useHasDraft } from '@/stores/listing-draft';
 import { useToastOffset } from '@/hooks/use-toast-offset';
 import { useReelsStore } from '@/stores/reels';
 import { reelKeys, reelsQueryOptions } from '@/features/reels/api/get-reels';
-import { videoPool } from '@/features/reels/services/video-pool';
 import type { ReelsPage } from '@/features/reels/types/reel';
+import { videoPool } from '@/lib/video-pool';
 import { warnInDev } from '@/utils/dev-log';
 
 type NavigationItem = {
@@ -70,7 +69,6 @@ export default function AppShell({ children }: PropsWithChildren) {
   useToastOffset(shouldShowTabbar ? (isDraftBannerShown ? 136 : 88) : null);
   const setVideoParking = useCallback((element: HTMLDivElement | null) => {
     videoPool.setParking(element);
-    previewVideoPool.setParking(element);
   }, []);
 
   // A link opened while the Mini App runs in the background (a listing sent in a chat) brings

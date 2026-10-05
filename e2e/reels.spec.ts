@@ -213,9 +213,12 @@ test('swipes left from a reel to its detail, and right below the gallery back to
 
   const counter = page.getByLabel(/^Nội dung \d+ trên \d+$/);
   await expect(counter).toHaveText(/^1 \//);
+  // On the first photo a right swipe stays in the gallery instead of carrying the pager back.
   await swipe(page, { x: width * 0.3, y: 150 }, { x: width * 0.9, y: 150 });
-  await expect(counter).not.toHaveText(/^1 \//);
-  await expect.poll(() => pagerPosition(page)).toBeGreaterThan(width * 0.9);
+  expect(await pagerPosition(page)).toBeGreaterThan(width * 0.9);
+  await expect(counter).toHaveText(/^1 \//);
+  await swipe(page, { x: width * 0.9, y: 150 }, { x: width * 0.3, y: 150 });
+  await expect(counter).toHaveText(/^2 \//);
   await expect(heading).toBeVisible();
 
   const belowGallery = width + 60;

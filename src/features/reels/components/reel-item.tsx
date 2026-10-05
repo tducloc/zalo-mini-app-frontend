@@ -30,12 +30,11 @@ export default function ReelItem({ slot, ...props }: ReelProps) {
 
 function ReelContent({
   reel,
-  index,
   slot,
   isAppVisible,
   onOpen,
 }: ReelProps & { slot: Exclude<ReelSlot, 'empty'> }) {
-  const playback = useReelPlayback(reel, index, slot, isAppVisible);
+  const playback = useReelPlayback(reel, slot, isAppVisible);
   const showPlay =
     playback.isActive && (playback.status === 'paused' || playback.status === 'blocked');
 

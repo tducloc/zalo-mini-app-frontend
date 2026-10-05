@@ -7,8 +7,8 @@ import {
   listingCopyClass,
   listingImageClass,
 } from '@/features/feed/constants/styles';
-import { previewVideoPool } from '@/features/feed/services/preview-video';
 import type { ProductCard } from '@/features/products/types/product';
+import { videoPool } from '@/lib/video-pool';
 import { formatShortRelativeTime } from '@/utils/format';
 import { thumbHashUrl } from '@/utils/thumbhash';
 
@@ -20,8 +20,6 @@ const FADE_MS = 200;
 const START_TIMEOUT_MS = 5000;
 const previewClass =
   'pointer-events-none absolute inset-0 size-full object-cover transition-opacity duration-200';
-/** Each preview's claim on the pooled element, so a late release cannot take the next card's. */
-let previewTurns = 0;
 
 const videoBadgeClass =
   'absolute bottom-2 left-2 inline-flex items-center gap-[3px] rounded-[10px] bg-marketplace-ink/70 py-0.5 pl-1.5 pr-2 text-micro font-semibold leading-4 text-white';
@@ -147,8 +145,7 @@ function CardPreview({
       return;
     }
 
-    const owner = ++previewTurns;
-    const video = previewVideoPool.claim(owner, host);
+    const { video, release } = videoPool.claim('feed', host);
     const show = (isShown: boolean) => {
       video.className = `${previewClass} ${isShown ? 'opacity-100' : 'opacity-0'}`;
     };
@@ -212,7 +209,7 @@ function CardPreview({
       video.removeEventListener('error', finish);
       video.removeEventListener('transitionend', finish);
       // Pauses, drops the source and parks it, unless the next card claims it first.
-      previewVideoPool.release(owner, video);
+      release();
     };
   }, [src, onRefused]);
 

@@ -3,7 +3,7 @@ import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ListingCard from '@/features/feed/components/grid/listing-card';
-import { previewVideoPool } from '@/features/feed/services/preview-video';
+import { videoPool } from '@/lib/video-pool';
 import type { ProductCard } from '@/features/products/types/product';
 
 vi.mock('zmp-ui', () => ({ Icon: () => null }));
@@ -148,12 +148,12 @@ describe('every card preview plays in the one pooled element', () => {
     vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => {});
     parking = document.createElement('div');
     document.body.append(parking);
-    previewVideoPool.setParking(parking);
+    videoPool.setParking(parking);
   });
   afterEach(async () => {
     cleanup();
     await Promise.resolve();
-    previewVideoPool.setParking(null);
+    videoPool.setParking(null);
     parking.remove();
     vi.restoreAllMocks();
   });
@@ -189,7 +189,7 @@ describe('every card preview plays in the one pooled element', () => {
 
     expect(video.getAttribute('src')).toBe(product.previewUrl);
     expect(lastPlayed()).toBe(video);
-    expect(document.querySelectorAll('video')).toHaveLength(1);
+    expect(view.container.querySelectorAll('video')).toHaveLength(1);
 
     view.rerender(<Feed activeId="prd_2" />);
     await act(async () => {});
@@ -197,7 +197,7 @@ describe('every card preview plays in the one pooled element', () => {
     expect(firstCard.querySelector('video')).toBeNull();
     expect(video.getAttribute('src')).toBe(second.previewUrl);
     expect(lastPlayed()).toBe(video);
-    expect(document.querySelectorAll('video')).toHaveLength(1);
+    expect(view.container.querySelectorAll('video')).toHaveLength(1);
 
     view.rerender(<Feed activeId={null} />);
     await act(async () => {});
