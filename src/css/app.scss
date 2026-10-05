@@ -67,3 +67,8 @@ button:focus-visible {
     max(var(--toast-bottom-offset, 0px), var(--zaui-safe-area-inset-bottom, 0px)) + 12px
   );
 }
+/* A tab switch or a swipe back hides the old page at once, but zmp-ui keeps it above the new
+   one for 200 ms, where it would still take the first touches. */
+.zaui-routes-no-animation-exit {
+  visibility: hidden;
+}
