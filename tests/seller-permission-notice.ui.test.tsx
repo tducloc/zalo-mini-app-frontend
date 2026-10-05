@@ -24,15 +24,18 @@ function renderNotice(name: string | null, phoneNumber: string | null | undefine
 }
 
 it.each([
-  [null, null, 'Bạn chưa chia sẻ tên và số điện thoại'],
-  ['Linh', null, 'Bạn chưa chia sẻ số điện thoại'],
-  [null, '0912345678', 'Bạn chưa chia sẻ tên Zalo'],
-])('names what the seller has not shared (name %s, phone %s)', (name, phoneNumber, title) => {
-  renderNotice(name, phoneNumber);
+  [null, null],
+  ['Linh', null],
+  [null, '0912345678'],
+])(
+  'asks to share while the name or the phone is missing (name %s, phone %s)',
+  (name, phoneNumber) => {
+    renderNotice(name, phoneNumber);
 
-  expect(screen.getByRole('complementary', { name: title })).toBeTruthy();
-  expect(screen.getByRole('button', { name: 'Chia sẻ' })).toBeTruthy();
-});
+    expect(screen.getByRole('complementary', { name: 'Hiển thị thông tin liên hệ' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Chia sẻ' })).toBeTruthy();
+  },
+);
 
 it.each([
   ['Linh', '0912345678'],

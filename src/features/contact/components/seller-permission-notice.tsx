@@ -2,6 +2,8 @@ import { Icon } from 'zmp-ui';
 
 import { useShareSellerPermissions } from '@/features/contact/hooks/use-seller-permissions';
 
+const NOTICE_TITLE = 'Hiển thị thông tin liên hệ';
+
 /** On the sell page until the seller shares their Zalo name and phone number. */
 export default function SellerPermissionNotice() {
   const { missing, share, isSharing } = useShareSellerPermissions();
@@ -11,17 +13,18 @@ export default function SellerPermissionNotice() {
     return null;
   }
 
-  const title = `Bạn chưa chia sẻ ${missing}`;
-
   return (
     <aside
-      aria-label={title}
+      aria-label={NOTICE_TITLE}
       className="mb-5 flex gap-2.5 rounded-xl bg-amber-50 p-3 text-sm leading-5 text-amber-900"
     >
       <Icon icon="zi-warning-circle-solid" size={20} className="shrink-0 text-amber-500" />
       <div className="min-w-0 flex-1">
-        <p className="m-0 font-semibold">{title}</p>
-        <p className="m-0 mt-0.5">Người mua thấy tên bạn trên tin đăng và gọi cho bạn khi cần.</p>
+        <p className="m-0 font-semibold">{NOTICE_TITLE}</p>
+        <p className="m-0 mt-0.5">
+          Chia sẻ tên và số điện thoại để người mua có thể gọi trực tiếp cho bạn. Bạn vẫn có thể
+          nhận tin nhắn qua Zalo nếu không bật tính năng này.
+        </p>
         <button
           type="button"
           disabled={isSharing}

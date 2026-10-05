@@ -17,7 +17,7 @@ test('activates the account from the profile, then the sell page asks no more', 
 
   await page.goto('/');
   await tab(page, 'Đăng tin').click();
-  const notice = page.getByRole('complementary', { name: 'Bạn chưa chia sẻ số điện thoại' });
+  const notice = page.getByRole('complementary', { name: 'Hiển thị thông tin liên hệ' });
   await expect(notice).toBeVisible();
 
   await tab(page, 'Cá nhân').click();
