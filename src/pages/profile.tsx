@@ -5,6 +5,7 @@ import { cardClass, pageClass, pageContentClass, stateIconClass } from '@/compon
 import { useSession } from '@/features/auth/hooks/use-session';
 import { getAuthStatusLabel } from '@/features/auth/utils/auth-status';
 import PhoneNumberCard from '@/features/contact/components/phone-number-card';
+import { useShareSellerPermissions } from '@/features/contact/hooks/use-seller-permissions';
 
 // Dev-only entry to the media measurement page. Remove with src/pages/media-lab.tsx.
 const showMediaLab = import.meta.env.DEV || import.meta.env.VITE_MEDIA_LAB === 'true';
@@ -13,21 +14,41 @@ export default function ProfilePage() {
   const { session, isBootstrapping } = useSession();
   const user = session?.user;
   const navigate = useNavigate();
+  const activation = useShareSellerPermissions();
 
   return (
     <Page className={pageClass}>
       <MobilePageHeader title="Cá nhân" />
       <main className={pageContentClass}>
-        <section className={`${cardClass} flex items-center gap-3 p-4`}>
+        <section className={`${cardClass} flex flex-wrap items-center gap-3 p-4`}>
           <span className={stateIconClass}>
             <Icon icon="zi-user" size={27} />
           </span>
-          <div>
-            <p className="m-0 font-semibold">{user?.name ?? 'Người dùng Zalo'}</p>
-            <p className="m-0 mt-1 text-sm text-slate-500">
-              {getAuthStatusLabel({ isSignedIn: Boolean(user), isBootstrapping })}
-            </p>
-          </div>
+          {activation.missing ? (
+            <>
+              <div className="min-w-0 flex-1">
+                <p className="m-0 font-semibold">Kích hoạt tài khoản</p>
+                <p className="m-0 mt-1 text-sm text-slate-500">
+                  Chia sẻ tên và số điện thoại Zalo để người mua biết bạn là ai và gọi được cho bạn.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={activation.isSharing}
+                onClick={activation.share}
+                className="min-h-11 w-full rounded-full border-0 bg-marketplace-blue font-bold text-white disabled:opacity-60"
+              >
+                {activation.isSharing ? 'Đang kích hoạt…' : 'Kích hoạt ngay'}
+              </button>
+            </>
+          ) : (
+            <div>
+              <p className="m-0 font-semibold">{user?.name ?? 'Người dùng Zalo'}</p>
+              <p className="m-0 mt-1 text-sm text-slate-500">
+                {getAuthStatusLabel({ isSignedIn: Boolean(user), isBootstrapping })}
+              </p>
+            </div>
+          )}
         </section>
 
         {user && <PhoneNumberCard />}
