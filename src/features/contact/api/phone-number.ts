@@ -20,6 +20,16 @@ export async function fetchMe() {
   return response.data.data;
 }
 
+/** The seller turned phone sharing off in Zalo; buyers no longer see the number. */
+export function withdrawPhoneNumber() {
+  return http.delete('/me/phone-number');
+}
+
+/** The seller turned name sharing off in Zalo; listings no longer show the name or avatar. */
+export function withdrawProfile() {
+  return http.delete('/me/profile');
+}
+
 /** The signed-in seller's shared phone number (`GET /me`); idle until the session exists. */
 export function useMyPhoneNumber() {
   const userId = useSession().session?.user.id ?? null;
