@@ -1,4 +1,4 @@
-import { authorize, getSetting, nativeStorage, openPermissionSetting } from 'zmp-sdk';
+import { authorize, getSetting, nativeStorage } from 'zmp-sdk';
 
 /** What a seller can share with buyers. Zalo's sheet lets them turn each one on or off. */
 export const SELLER_SCOPES = ['scope.userInfo', 'scope.userPhonenumber'] as const;
@@ -95,9 +95,4 @@ export async function askMissingSellerPermissions(
       permissions: current,
     };
   }
-}
-
-/** Zalo's own screen, where the seller turns each permission on or off later. */
-export function openSellerPermissionSettings() {
-  return openPermissionSetting();
 }

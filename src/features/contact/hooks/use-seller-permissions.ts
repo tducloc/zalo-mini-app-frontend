@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { getSession, refreshSellerProfile } from '@/features/auth/api/session';
 import { useSession } from '@/features/auth/hooks/use-session';
@@ -8,7 +8,6 @@ import {
   askMissingSellerPermissions,
   hasAskedSellerPermissions,
   markSellerPermissionsAsked,
-  openSellerPermissionSettings,
   readSellerPermissions,
   type SellerPermissions,
 } from '@/features/contact/services/zalo-permissions';
@@ -81,38 +80,4 @@ export function SellerPermissionAsk() {
   }, [userId, phone.isFetched, phone.data, share]);
 
   return null;
-}
-
-/** Profile reads the toggles and opens Zalo's screen to change them. */
-export function useSellerPermissionSettings() {
-  const userId = useSession().session?.user.id ?? null;
-  const phone = useMyPhoneNumber();
-  const share = useSharePhoneNumber();
-  const [permissions, setPermissions] = useState<SellerPermissions | null>(null);
-
-  useEffect(() => {
-    if (!userId || skipsZaloPermissions()) {
-      return;
-    }
-    void readSellerPermissions().then(setPermissions);
-  }, [userId]);
-
-  const openSettings = async () => {
-    try {
-      await openSellerPermissionSettings();
-    } catch (error) {
-      warnInDev('contact', 'opening Zalo permission settings failed', error);
-      return;
-    }
-    const current = await readSellerPermissions();
-    setPermissions(current);
-    if (!current) {
-      return;
-    }
-    await saveGranted(current, phone.data, phone.isSuccess, async () =>
-      share.mutateAsync(await requestPhoneShare()),
-    );
-  };
-
-  return { permissions, openSettings };
 }
