@@ -7,7 +7,7 @@ import { http } from '@/lib/http';
 /** The number buyers call, verified by Zalo; null until the seller shares it. */
 type PhoneNumber = string | null;
 
-const phoneNumberKey = (userId: string | null) => ['phone-number', userId] as const;
+export const phoneNumberKey = (userId: string | null) => ['phone-number', userId] as const;
 
 /** The signed-in seller's shared phone number (`GET /me`); idle until the session exists. */
 export function useMyPhoneNumber() {
