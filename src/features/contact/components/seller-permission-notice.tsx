@@ -1,20 +1,15 @@
 import { Icon } from 'zmp-ui';
 
-import { useMyPhoneNumber } from '@/features/contact/api/phone-number';
-import { useSharePhone } from '@/features/contact/hooks/use-share-phone';
+import { useShareSellerPermissions } from '@/features/contact/hooks/use-seller-permissions';
 
-const NOTICE_TITLE = 'Bạn chưa chia sẻ số điện thoại';
+const NOTICE_TITLE = 'Hiển thị thông tin liên hệ';
 
-/**
- * On the sell page until the seller shares a phone number: buyers can message them on
- * Zalo, but cannot call when that does not work.
- */
-export default function SharePhoneNotice() {
-  const phoneNumber = useMyPhoneNumber();
-  const { share, isSharing } = useSharePhone();
+/** On the sell page until the seller shares their Zalo name and phone number. */
+export default function SellerPermissionNotice() {
+  const { missing, share, isSharing } = useShareSellerPermissions();
 
   // Nothing while loading or failed: a notice that flashes away would only distract.
-  if (phoneNumber.data !== null) {
+  if (!missing) {
     return null;
   }
 
@@ -27,7 +22,8 @@ export default function SharePhoneNotice() {
       <div className="min-w-0 flex-1">
         <p className="m-0 font-semibold">{NOTICE_TITLE}</p>
         <p className="m-0 mt-0.5">
-          Người mua chỉ nhắn được cho bạn qua Zalo. Chia sẻ số để họ gọi được khi cần.
+          Chia sẻ tên và số điện thoại để người mua có thể gọi trực tiếp cho bạn. Bạn vẫn có thể
+          nhận tin nhắn qua Zalo nếu không bật tính năng này.
         </p>
         <button
           type="button"
@@ -35,7 +31,7 @@ export default function SharePhoneNotice() {
           onClick={share}
           className="mt-2.5 min-h-9 rounded-lg border-0 bg-amber-900 px-3 font-semibold text-white disabled:opacity-60"
         >
-          {isSharing ? 'Đang chia sẻ…' : 'Chia sẻ số điện thoại'}
+          {isSharing ? 'Đang chia sẻ…' : 'Chia sẻ'}
         </button>
       </div>
     </aside>
