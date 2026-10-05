@@ -8,12 +8,14 @@ import DraftBanner from '@/features/listings/components/draft/draft-banner';
 import DraftIndicator, {
   DRAFT_STATUS_ID,
 } from '@/features/listings/components/draft/draft-indicator';
+import { LazyReelsPage } from '@/pages/lazy-reels-page';
 import { useHasDraft } from '@/stores/listing-draft';
 import { useToastOffset } from '@/hooks/use-toast-offset';
 import { useReelsStore } from '@/stores/reels';
 import { reelKeys, reelsQueryOptions } from '@/features/reels/api/get-reels';
 import { videoPool } from '@/features/reels/services/video-pool';
 import type { ReelsPage } from '@/features/reels/types/reel';
+import { runAfterLoadWhenIdle } from '@/utils/after-load-idle';
 
 type NavigationItem = {
   label: string;
@@ -71,6 +73,13 @@ export default function AppShell({ children }: PropsWithChildren) {
     void queryClient.prefetchInfiniteQuery(reelsQueryOptions);
   }, [queryClient]);
 
+  // The Reels tab tap needs the page's chunk already here (see navigateFromTab). Load it once
+  // the page has loaded and the browser is idle, so it stays off Home's first paint.
+  useEffect(
+    () => runAfterLoadWhenIdle(() => void LazyReelsPage.preload().catch(() => undefined)),
+    [],
+  );
+
   const navigateFromTab = (path: string) => {
     if (
       path === '/reels' &&
@@ -80,7 +89,8 @@ export default function AppShell({ children }: PropsWithChildren) {
       const hasFirstReel = Boolean(
         queryClient.getQueryData<InfiniteData<ReelsPage>>(reelKeys.all())?.pages[0]?.data.length,
       );
-      if (hasFirstReel) {
+      // Sound needs the first reel mounted inside the tap. Otherwise the page starts muted.
+      if (hasFirstReel && LazyReelsPage.isLoaded()) {
         flushSync(() => {
           useReelsStore.getState().setMuted(false);
           navigate(path);

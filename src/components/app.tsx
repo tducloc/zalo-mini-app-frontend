@@ -6,12 +6,11 @@ import ErrorBoundary from '@/components/feedback/error-boundary';
 import AppShell from '@/components/layout/app-shell';
 import { AuthBootstrap } from '@/features/auth/components/bootstrap';
 import HomePage from '@/pages/home';
-import ReelsPage from '@/pages/reels';
+import { LazyReelsPage } from '@/pages/lazy-reels-page';
 import { warnInDev } from '@/utils/dev-log';
 
-// Home and Reels stay in the first script. The Reels tab tap renders the page inside the tap
-// (flushSync), the one moment WebKit allows sound, and a lazy page would suspend there.
-// The other screens load when the route opens.
+// Home stays in the first script. Reels loads after the first paint (see AppShell). The
+// other screens load when the route opens.
 const MyListingsPage = lazy(() => import('@/pages/my-listings'));
 const SellPage = lazy(() => import('@/pages/sell'));
 const ProfilePage = lazy(() => import('@/pages/profile'));
@@ -46,7 +45,7 @@ export default function MyApp() {
                   <Route path="/" element={guarded(<HomePage />)} />
                   <Route path="/my-listings" element={guarded(<MyListingsPage />)} />
                   <Route path="/sell" element={guarded(<SellPage />)} />
-                  <Route path="/reels" element={guarded(<ReelsPage />)} />
+                  <Route path="/reels" element={guarded(<LazyReelsPage />)} />
                   <Route path="/profile" element={guarded(<ProfilePage />)} />
                   {MediaLabPage && (
                     <Route
