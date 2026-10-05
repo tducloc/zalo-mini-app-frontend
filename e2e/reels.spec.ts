@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import { devices, type Locator, type Page } from '@playwright/test';
 
 import { expect, skipReelsGestureHint, tab, test } from './support';
 
@@ -230,6 +230,41 @@ test('swipes left from a reel to its detail, and right below the gallery back to
   await page.waitForTimeout(500);
   expect(await pagerPosition(page)).toBe(0);
   await expect(reel(page, 0)).toBeInViewport({ ratio: 0.9 });
+});
+
+test.describe('on iOS', () => {
+  // zmp-ui watches for the edge swipe only on iOS, and then skips its own slide.
+  test.use({ userAgent: devices['iPhone 13'].userAgent });
+  const NATIVE_BACK_GESTURE_MS = 300;
+
+  test('leaves Reels without a second slide after the edge swipe back', async ({ page }) => {
+    await page.goto('/');
+    await tab(page, 'Reels').click();
+    await expectPlaying(video(page, 0));
+    await waitForRouteSlideIn(page);
+
+    const middle = (page.viewportSize()?.height ?? 839) / 2;
+    await swipe(page, { x: 5, y: middle }, { x: 120, y: middle });
+    await page.waitForTimeout(NATIVE_BACK_GESTURE_MS);
+    const framesWithReels = await pager(page).evaluate(async (element) => {
+      history.back();
+      let count = 0;
+      for (let frame = 0; frame < 30; frame += 1) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        const route = element.closest('.zaui-routes-item');
+        const isPainted =
+          element.isConnected &&
+          route !== null &&
+          getComputedStyle(route).opacity !== '0' &&
+          element.getBoundingClientRect().left < innerWidth;
+        if (isPainted) count += 1;
+      }
+      return count;
+    });
+
+    expect(framesWithReels).toBe(0);
+    await expect(tab(page, 'Trang chủ')).toHaveAttribute('aria-current', 'page');
+  });
 });
 
 test('plays each reel past the first page with the same video element', async ({ page }) => {
