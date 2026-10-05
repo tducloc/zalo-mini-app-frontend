@@ -118,8 +118,8 @@ export default function ReelsPage() {
       className="fixed inset-0 flex snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain bg-black [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       data-reels-pager
       onScroll={updatePager}
-      // Nothing on screen may change on touchstart: iOS then drops the tap's click, and no
-      // button in a reel would work. The tab bar joins the pane once the pager scrolls.
+      // The tab bar joins the pane once the pager scrolls. Touches must reach zmp-ui's document
+      // listeners, which turn off the route's slide when iOS's edge swipe goes back.
       onTouchEnd={() => {
         if (pagerRef.current?.scrollLeft === 0) setPagerInteractive(false);
       }}
