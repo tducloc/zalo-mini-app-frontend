@@ -1,6 +1,7 @@
 import { type PropsWithChildren, useCallback, useEffect } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { type InfiniteData, useQueryClient } from '@tanstack/react-query';
+import { configAppView, getSystemInfo } from 'zmp-sdk';
 import { Icon, useLocation, useNavigate } from 'zmp-ui';
 
 import { previewVideoPool } from '@/features/feed/services/preview-video';
@@ -15,6 +16,7 @@ import { useReelsStore } from '@/stores/reels';
 import { reelKeys, reelsQueryOptions } from '@/features/reels/api/get-reels';
 import { videoPool } from '@/features/reels/services/video-pool';
 import type { ReelsPage } from '@/features/reels/types/reel';
+import { warnInDev } from '@/utils/dev-log';
 
 type NavigationItem = {
   label: string;
@@ -57,6 +59,9 @@ export default function AppShell({ children }: PropsWithChildren) {
   const isPagerInteractive = useReelsStore((state) => state.isPagerInteractive);
   const shouldShowTabbar = !currentPath.startsWith('/products/');
   const isDark = currentPath === '/reels';
+  // Zalo draws its "•••" and "✕" over the page. Reels and a listing start with dark media at
+  // the top, where the theme's black icons vanish.
+  const hasDarkTop = isDark || currentPath.startsWith('/products/');
   // On the sell page the draft is in front of the seller.
   const shouldShowDraft = currentPath !== '/sell';
   const isDraftBannerShown = useHasDraft() && shouldShowDraft;
@@ -67,6 +72,17 @@ export default function AppShell({ children }: PropsWithChildren) {
     videoPool.setParking(element);
     previewVideoPool.setParking(element);
   }, []);
+
+  useEffect(() => {
+    const themeTextColor = getSystemInfo().zaloTheme === 'dark' ? 'white' : 'black';
+    // The rest matches app-config.json, including when HMR retains an older native view
+    // configuration.
+    void configAppView({
+      actionBar: { hide: true },
+      statusBarType: 'transparent',
+      headerTextColor: hasDarkTop ? 'white' : themeTextColor,
+    }).catch((error: unknown) => warnInDev('app', 'Cannot configure native header', error));
+  }, [hasDarkTop]);
 
   useEffect(() => {
     void queryClient.prefetchInfiniteQuery(reelsQueryOptions);
