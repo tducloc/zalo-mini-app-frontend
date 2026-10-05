@@ -1,5 +1,7 @@
 // Missing built-ins on iOS 15.1–15.3; must run before anything else.
 import '@/polyfills';
+// Reads Zalo's build query before the router drops it.
+import '@/lib/zalo-launch';
 
 // ZaUI stylesheet
 import 'zmp-ui/zaui.css';
