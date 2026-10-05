@@ -2,17 +2,20 @@ import { Button, Icon } from 'zmp-ui';
 import { openChat, openPhone, openProfile } from 'zmp-sdk';
 
 import { ProductDetail } from '@/features/products/types/product';
+import { zaloBuildQuery } from '@/lib/zalo-launch';
 
 /**
  * The first message in the chat, which the buyer can edit before sending. Inside Zalo it ends
- * with the listing's Mini App link, so the seller opens the listing from the chat.
+ * with the listing's Mini App link, so the seller opens the listing from the chat, in the same
+ * Zalo build (Development, Testing or live) the buyer is using.
  */
 export function chatGreeting(title: string, productId: string) {
   const greeting = `Chào bạn, mình quan tâm tin "${title}" trên Chợ Zalo. Sản phẩm còn không ạ?`;
   if (!window.APP_ID) {
     return greeting;
   }
-  return `${greeting}\nhttps://zalo.me/s/${window.APP_ID}/products/${productId}`;
+  const query = zaloBuildQuery ? `?${zaloBuildQuery}` : '';
+  return `${greeting}\nhttps://zalo.me/s/${window.APP_ID}/products/${productId}${query}`;
 }
 
 /**
