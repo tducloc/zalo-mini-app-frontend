@@ -48,6 +48,9 @@ export default function ListingCard({
   // is tried again instead of keeping the placeholder forever.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const shouldShowImage = Boolean(product.thumbnailUrl) && product.thumbnailUrl !== failedUrl;
+  // The placeholder only stands in while the photo loads; then it is dropped from the DOM.
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  const isImageLoaded = shouldShowImage && product.thumbnailUrl === loadedUrl;
   const placeholderUrl = useMemo(() => thumbHashUrl(product.placeholder), [product.placeholder]);
 
   return (
@@ -59,7 +62,7 @@ export default function ListingCard({
       onClick={() => onOpen(product.id)}
     >
       <div className={listingImageClass}>
-        {placeholderUrl && shouldShowImage && (
+        {placeholderUrl && shouldShowImage && !isImageLoaded && (
           <img
             alt=""
             aria-hidden
@@ -77,6 +80,7 @@ export default function ListingCard({
             src={product.thumbnailUrl ?? undefined}
             width={THUMBNAIL_SIZE}
             onError={() => setFailedUrl(product.thumbnailUrl)}
+            onLoad={() => setLoadedUrl(product.thumbnailUrl)}
           />
         ) : (
           <span
