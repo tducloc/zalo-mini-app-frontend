@@ -18,6 +18,7 @@ const OVERSCAN_PX = 1000;
 
 export default function VirtualListingGrid({
   products,
+  blurReadyIds,
   columns,
   width,
   isComplete,
@@ -29,6 +30,8 @@ export default function VirtualListingGrid({
   onPreviewFinished,
 }: {
   products: ProductCard[];
+  /** The cards that may show their ThumbHash blur yet. */
+  blurReadyIds: ReadonlySet<string>;
   columns: number;
   width: number;
   isComplete: boolean;
@@ -116,6 +119,7 @@ export default function VirtualListingGrid({
               >
                 <ListingCard
                   isAboveFold={index < firstLazyCard}
+                  canShowBlur={blurReadyIds.has(product.id)}
                   isPreviewActive={product.id === activeId}
                   cardRef={product.previewUrl ? cardRef(product.id) : undefined}
                   product={product}
