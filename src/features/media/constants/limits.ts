@@ -35,10 +35,11 @@ export const IMAGE_HEAD_BYTES = 256 * 1024;
 export const PHOTO_MAX_EDGE = 1600;
 
 /**
- * The shortest short edge a photo may have once its long edge is scaled to PHOTO_MAX_EDGE.
- * The feed's card is a 600 × 600 square cut from it, so a smaller photo would be blurry.
- * A long panorama fails too: 4000 × 1000 is uploaded as 1600 × 400. The server refuses
- * the same (IMAGE_TOO_SMALL, backend/src/media/processing/image-processing.ts).
+ * The shortest long edge a photo may have. The feed card's thumbnail keeps the photo's
+ * ratio with a 600 px long edge, so a smaller photo would be blurry. Scaling to PHOTO_MAX_EDGE never
+ * takes a long edge under this, so the picked photo gives the same answer as the uploaded
+ * one. The server refuses the same (IMAGE_TOO_SMALL,
+ * backend/src/media/processing/image-processing.ts).
  */
 export const MIN_IMAGE_EDGE = 600;
 

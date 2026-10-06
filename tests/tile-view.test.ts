@@ -184,7 +184,7 @@ describe('refusedFilesMessage', () => {
   });
 
   it('says the same about a photo too small, whether the phone or the server refuses it', () => {
-    const sentence = 'Vui lòng chọn ảnh từ 600 × 600 px trở lên';
+    const sentence = 'Vui lòng chọn ảnh có cạnh dài từ 600 px trở lên';
     expect(refusedFilesMessage([{ name: 'nho.jpg', reason: RejectReason.ImageTooSmall }])).toBe(
       `${sentence} (nho.jpg).`,
     );

@@ -30,11 +30,10 @@ const MEGAPIXEL = 1_000_000;
 /** The same words whether the phone or the server finds the clip unplayable. */
 const NOT_PLAYABLE = 'Vui lòng chọn video khác: video này không phát được trên mọi điện thoại';
 
-/** MIN_IMAGE_EDGE on both sides: true of the photo once scaled to PHOTO_MAX_EDGE. */
-const MIN_IMAGE_SIZE_TEXT = `${MIN_IMAGE_EDGE} × ${MIN_IMAGE_EDGE} px`;
+const MIN_IMAGE_SIZE_TEXT = `cạnh dài từ ${MIN_IMAGE_EDGE} px`;
 
 /** The same words whether the phone or the server finds the photo too small. */
-const TOO_SMALL = `Vui lòng chọn ảnh từ ${MIN_IMAGE_SIZE_TEXT} trở lên`;
+const TOO_SMALL = `Vui lòng chọn ảnh có ${MIN_IMAGE_SIZE_TEXT} trở lên`;
 
 // ---- Fields ----
 
@@ -77,7 +76,7 @@ const rejectSentences: Record<RejectReason, string> = {
 
 /** Under each grid: what the picker takes, before the seller picks something it refuses. */
 export const mediaRules = {
-  photo: `JPG, PNG hoặc WebP, từ ${MIN_IMAGE_SIZE_TEXT}, mỗi ảnh tối đa ${MAX_IMAGE_BYTES / MIB} MB.`,
+  photo: `JPG, PNG hoặc WebP, ${MIN_IMAGE_SIZE_TEXT}, mỗi ảnh tối đa ${MAX_IMAGE_BYTES / MIB} MB.`,
   video: `MP4 hoặc MOV, tối đa ${MAX_VIDEO_SECONDS} giây, ${MAX_VIDEO_BYTES / MIB} MB, ${MAX_VIDEO_SHORT_EDGE}p.`,
 };
 
