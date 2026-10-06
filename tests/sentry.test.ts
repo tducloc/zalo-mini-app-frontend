@@ -3,7 +3,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 
 import { initSentry } from '@/lib/sentry';
 
-vi.mock('@sentry/react', () => ({ init: vi.fn(), browserTracingIntegration: vi.fn() }));
+vi.mock('@sentry/react', () => ({ init: vi.fn() }));
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -18,18 +18,14 @@ it('stays off without a DSN', () => {
   expect(init).not.toHaveBeenCalled();
 });
 
-it('starts with the DSN, the environment and a 10% trace rate by default', () => {
+it('starts with the DSN and the environment, without performance tracing', () => {
   vi.stubEnv('VITE_SENTRY_DSN', 'https://public@o1.ingest.sentry.test/2');
   vi.stubEnv('VITE_SENTRY_ENVIRONMENT', 'testing');
-  vi.stubEnv('VITE_SENTRY_TRACES_SAMPLE_RATE', '');
 
   initSentry();
 
-  expect(init).toHaveBeenCalledWith(
-    expect.objectContaining({
-      dsn: 'https://public@o1.ingest.sentry.test/2',
-      environment: 'testing',
-      tracesSampleRate: 0.1,
-    }),
-  );
+  expect(init).toHaveBeenCalledWith({
+    dsn: 'https://public@o1.ingest.sentry.test/2',
+    environment: 'testing',
+  });
 });
