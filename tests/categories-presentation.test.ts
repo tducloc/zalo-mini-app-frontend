@@ -13,7 +13,7 @@ describe('presentCategories', () => {
   it('uses Vietnamese labels in the fixed display order, not the API order', () => {
     expect(presentCategories(apiCategories).map((category) => category.label)).toEqual([
       'Điện tử',
-      'Nhà cửa',
+      'Nội thất',
       'Thời trang',
       'Xe cộ',
       'Khác',
@@ -40,6 +40,6 @@ describe('presentCategories', () => {
 });
 
 it('labels a category by ID and falls back to its API name', () => {
-  expect(getCategoryLabel({ id: 'cat_home_living', name: 'Home & Living' })).toBe('Nhà cửa');
+  expect(getCategoryLabel({ id: 'cat_home_living', name: 'Home & Living' })).toBe('Nội thất');
   expect(getCategoryLabel({ id: 'cat_books', name: 'Books' })).toBe('Books');
 });

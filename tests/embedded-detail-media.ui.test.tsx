@@ -36,7 +36,7 @@ const product = {
   condition: 'NEW',
   status: 'PUBLISHED',
   location: { id: null, name: 'Quận 3, Hồ Chí Minh' },
-  category: { id: 'cat_home', name: 'Nhà cửa', slug: 'home' },
+  category: { id: 'cat_home', name: 'Nội thất', slug: 'home' },
   media: [
     {
       id: 'media_cover',
