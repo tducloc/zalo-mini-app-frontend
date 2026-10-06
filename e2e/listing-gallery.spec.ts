@@ -62,6 +62,22 @@ async function swipeGallery(page: Page, dx: number) {
     .toBe(0);
 }
 
+/** Swipes from the cover to the listing's video slide and returns its index. */
+async function swipeToVideo(page: Page) {
+  const videoSlide = await galleryTrack(page)
+    .locator(':scope > *')
+    .evaluateAll((slides) =>
+      slides.findIndex((slide) => slide.querySelector('[aria-label="Xem video toàn màn hình"]')),
+    );
+  expect(videoSlide).toBeGreaterThan(0);
+
+  for (let slide = 1; slide <= videoSlide; slide += 1) {
+    await swipeGallery(page, -SWIPE_DISTANCE_PX);
+    await expect(counter(page)).toHaveAccessibleName(new RegExp(`^Nội dung ${slide + 1} trên`));
+  }
+  return videoSlide;
+}
+
 /**
  * WebKit's rule, which Chromium does not apply: a video plays with sound only from a play()
  * made while a tap's handler runs, or on an element a tap already played with sound.
@@ -140,19 +156,10 @@ test('swipes the detail gallery and autoplays its video, muted until a tap allow
 
   await waitForGalleryAtRest(page);
 
-  const videoSlide = await galleryTrack(page)
-    .locator(':scope > *')
-    .evaluateAll((slides) =>
-      slides.findIndex((slide) => slide.querySelector('[aria-label="Xem video toàn màn hình"]')),
-    );
-  expect(videoSlide).toBeGreaterThan(0);
   const video = galleryVideo(page);
   await expect(video).toHaveCount(0);
 
-  for (let slide = 1; slide <= videoSlide; slide += 1) {
-    await swipeGallery(page, -SWIPE_DISTANCE_PX);
-    await expect(counter(page)).toHaveAccessibleName(new RegExp(`^Nội dung ${slide + 1} trên`));
-  }
+  const videoSlide = await swipeToVideo(page);
   await expectPlaying(video);
   expect(await video.evaluate((element: HTMLVideoElement) => element.controls)).toBe(false);
   // Reached by a swipe, not a tap: the WebView refuses sound, so it plays muted.
@@ -225,8 +232,7 @@ test('in Reels, the detail video plays only while the detail pane is on screen',
   await expect(counter(page)).toBeVisible();
 
   const video = galleryVideo(page);
-  await swipeGallery(page, -SWIPE_DISTANCE_PX);
-  await expect(counter(page)).toHaveAccessibleName(/^Nội dung 2 trên/);
+  await swipeToVideo(page);
   await expectPlaying(video);
   expect(await isMuted(video)).toBe(false);
   expect(await isPaused(reelVideo)).toBe(true);
