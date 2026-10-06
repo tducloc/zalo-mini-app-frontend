@@ -1,5 +1,12 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { type RefObject, useLayoutEffect, useRef, useState } from 'react';
+import {
+  type RefObject,
+  startTransition,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import ListingCard from '@/features/feed/components/grid/listing-card';
 import { listingGridClass } from '@/features/feed/constants/styles';
@@ -15,6 +22,10 @@ import {
 import type { ProductCard } from '@/features/products/types/product';
 
 const OVERSCAN_PX = 1000;
+const FIRST_RENDER_ROWS = 1;
+
+// Only the app's first feed render is split; a list coming back from another page renders whole.
+let hasRenderedAllRows = false;
 
 export default function VirtualListingGrid({
   products,
@@ -44,6 +55,18 @@ export default function VirtualListingGrid({
 }) {
   const listRef = useRef<HTMLDivElement>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
+
+  // Rendering every card the moment the feed arrives is one long task right after the first paint.
+  // The first row (the LCP card) renders now, and the rest in a transition React splits into slices.
+  const [isShowingAllRows, setIsShowingAllRows] = useState(hasRenderedAllRows);
+  const hasProducts = products.length > 0;
+  useEffect(() => {
+    if (!hasProducts || hasRenderedAllRows) {
+      return;
+    }
+    hasRenderedAllRows = true;
+    startTransition(() => setIsShowingAllRows(true));
+  }, [hasProducts]);
 
   const rowHeight = cardHeight(width, columns);
   const virtualizer = useVirtualizer({
@@ -98,40 +121,43 @@ export default function VirtualListingGrid({
       role="list"
       style={{ height: virtualizer.getTotalSize() }}
     >
-      {virtualizer.getVirtualItems().map((row) => (
-        <div
-          key={row.key}
-          className={`${listingGridClass} absolute inset-x-0 top-0`}
-          role="none"
-          style={{
-            ...gridColumnsStyle(columns),
-            transform: `translateY(${row.start - scrollMargin}px)`,
-          }}
-        >
-          {cardsInRow(products, row.index, columns).map((product, column) => {
-            const index = row.index * columns + column;
-            return (
-              <div
-                key={product.id}
-                aria-posinset={index + 1}
-                aria-setsize={setSize}
-                role="listitem"
-              >
-                <ListingCard
-                  isAboveFold={index < firstLazyCard}
-                  canShowBlur={blurReadyIds.has(product.id)}
-                  isPreviewActive={product.id === activeId}
-                  cardRef={product.previewUrl ? cardRef(product.id) : undefined}
-                  product={product}
-                  onOpen={onOpen}
-                  onPreviewRefused={onPreviewRefused}
-                  onPreviewFinished={onPreviewFinished}
-                />
-              </div>
-            );
-          })}
-        </div>
-      ))}
+      {virtualizer
+        .getVirtualItems()
+        .filter((row) => isShowingAllRows || row.index < FIRST_RENDER_ROWS)
+        .map((row) => (
+          <div
+            key={row.key}
+            className={`${listingGridClass} absolute inset-x-0 top-0`}
+            role="none"
+            style={{
+              ...gridColumnsStyle(columns),
+              transform: `translateY(${row.start - scrollMargin}px)`,
+            }}
+          >
+            {cardsInRow(products, row.index, columns).map((product, column) => {
+              const index = row.index * columns + column;
+              return (
+                <div
+                  key={product.id}
+                  aria-posinset={index + 1}
+                  aria-setsize={setSize}
+                  role="listitem"
+                >
+                  <ListingCard
+                    isAboveFold={index < firstLazyCard}
+                    canShowBlur={blurReadyIds.has(product.id)}
+                    isPreviewActive={product.id === activeId}
+                    cardRef={product.previewUrl ? cardRef(product.id) : undefined}
+                    product={product}
+                    onOpen={onOpen}
+                    onPreviewRefused={onPreviewRefused}
+                    onPreviewFinished={onPreviewFinished}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ))}
     </div>
   );
 }
