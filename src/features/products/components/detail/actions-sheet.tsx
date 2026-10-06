@@ -5,6 +5,21 @@ import { sheetActionClass, sheetActionIconClass } from '@/components/layout/styl
 import OwnerActionList from '@/features/my-listings/components/actions/owner-action-list';
 import type { ListingAction } from '@/features/my-listings/types/my-listing';
 import type { ProductDetail } from '@/features/products/types/product';
+import { warnInDev } from '@/utils/dev-log';
+
+// zmp-sdk refuses longer text before Zalo sees it. A listing allows a 120-character title and
+// a 5,000-character description.
+const SHARE_TITLE_MAX_LENGTH = 100;
+const SHARE_DESCRIPTION_MAX_LENGTH = 400;
+
+function shorten(text: string, maxLength: number) {
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  // Never leave half of an emoji's surrogate pair before the ellipsis.
+  return `${text.slice(0, maxLength - 1).replace(/[\uD800-\uDBFF]$/, '')}…`;
+}
 
 const reportActionClass = {
   available: { action: 'text-[#c63737]', icon: 'bg-marketplace-danger-tint' },
@@ -46,14 +61,15 @@ export default function ProductActionsSheet({
       await openShareSheet({
         type: 'zmp',
         data: {
-          title: product.title,
-          description: product.description,
+          title: shorten(product.title, SHARE_TITLE_MAX_LENGTH),
+          description: shorten(product.description, SHARE_DESCRIPTION_MAX_LENGTH),
           thumbnail,
           path: `/products/${product.id}`,
         },
       });
       onClose();
-    } catch {
+    } catch (error: unknown) {
+      warnInDev('share', 'Cannot open the share sheet', error);
       onError('Không thể mở bảng chia sẻ trên thiết bị này.');
     }
   };
