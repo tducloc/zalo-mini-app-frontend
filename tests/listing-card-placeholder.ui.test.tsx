@@ -23,10 +23,11 @@ const product: ProductCard = {
   publishedAt: '2026-09-28T00:00:00.000Z',
 };
 
-function renderCard(card: ProductCard) {
+function renderCard(card: ProductCard, { canShowBlur = true } = {}) {
   return render(
     <ListingCard
       isAboveFold
+      canShowBlur={canShowBlur}
       isPreviewActive={false}
       product={card}
       onOpen={() => {}}
@@ -48,6 +49,25 @@ describe('feed card placeholder', () => {
     expect(container.querySelector(PLACEHOLDER_SELECTOR)).toBeNull();
   });
 
+  it('waits until the feed lets the card show it', () => {
+    const { container, rerender } = renderCard(product, { canShowBlur: false });
+    expect(container.querySelector(PLACEHOLDER_SELECTOR)).toBeNull();
+
+    rerender(
+      <ListingCard
+        isAboveFold
+        canShowBlur
+        isPreviewActive={false}
+        product={product}
+        onOpen={() => {}}
+        onPreviewFinished={() => {}}
+        onPreviewRefused={() => {}}
+      />,
+    );
+
+    expect(container.querySelector(PLACEHOLDER_SELECTOR)).not.toBeNull();
+  });
+
   it('comes back for a new photo until that one loads', () => {
     const { container, rerender } = renderCard(product);
     fireEvent.load(container.querySelector(`img[src="${THUMBNAIL_URL}"]`) as HTMLImageElement);
@@ -56,6 +76,7 @@ describe('feed card placeholder', () => {
     rerender(
       <ListingCard
         isAboveFold
+        canShowBlur
         isPreviewActive={false}
         product={{ ...product, thumbnailUrl: nextUrl }}
         onOpen={() => {}}
