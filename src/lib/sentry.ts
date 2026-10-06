@@ -14,7 +14,5 @@ export const initSentry = () => {
       import.meta.env.VITE_SENTRY_ENVIRONMENT ||
       new URLSearchParams(window.location.search).get('env')?.toLowerCase() ||
       import.meta.env.MODE,
-    integrations: [Sentry.browserTracingIntegration()],
-    tracesSampleRate: Number(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE || 0.1),
   });
 };
