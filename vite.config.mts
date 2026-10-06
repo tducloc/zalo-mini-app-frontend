@@ -36,6 +36,11 @@ export default () => {
       // run ES2020 (plans/create-listing.md, R6).
       target: 'es2020',
       sourcemap: uploadSourceMaps ? 'hidden' : false,
+      rollupOptions: {
+        // zmp-vite-plugin lists every entry in listSyncJS. Boot comes first and is tiny, so Zalo
+        // runs it while the main script still downloads (src/boot.ts).
+        input: { boot: 'src/boot.ts', index: 'index.html' },
+      },
     },
     resolve: {
       alias: {
