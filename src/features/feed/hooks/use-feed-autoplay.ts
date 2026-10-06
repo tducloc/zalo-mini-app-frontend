@@ -4,6 +4,8 @@ import { type Box, canAutoplay, pickActiveCard, visibleArea } from '@/features/f
 import { getConnection } from '@/utils/network';
 
 const DWELL_MS = 300;
+const IDLE_TIMEOUT_MS = 1000;
+const IDLE_FALLBACK_MS = 100;
 
 /** Off unless VITE_FEED_AUTOPLAY=true, until it is measured on devices (plans/home-feed.md). */
 const isFlagOn = import.meta.env.VITE_FEED_AUTOPLAY === 'true';
@@ -20,6 +22,20 @@ function isAutoplayAllowed() {
     saveData: connection?.saveData,
     effectiveType: connection?.effectiveType,
   });
+}
+
+/**
+ * Runs `callback` once the main thread is free. A pick measures every card, and right after the
+ * feed renders that measuring and the preview start would lengthen the render's long task.
+ */
+function whenIdle(callback: () => void) {
+  // iOS WebViews have no requestIdleCallback.
+  if (typeof requestIdleCallback !== 'function') {
+    const timer = setTimeout(callback, IDLE_FALLBACK_MS);
+    return () => clearTimeout(timer);
+  }
+  const handle = requestIdleCallback(callback, { timeout: IDLE_TIMEOUT_MS });
+  return () => cancelIdleCallback(handle);
 }
 
 function areaOf(scroller: HTMLElement, header: HTMLElement | null): Box {
@@ -143,12 +159,13 @@ export function useFeedAutoplay({
       frame ||= requestAnimationFrame(choose);
     };
 
-    scheduleChoose();
+    const cancelIdle = whenIdle(scheduleChoose);
     scroller.addEventListener('scroll', scheduleChoose, { passive: true });
     window.addEventListener('resize', scheduleChoose);
     document.addEventListener('visibilitychange', scheduleChoose);
 
     return () => {
+      cancelIdle();
       cancelAnimationFrame(frame);
       clearTimeout(dwell);
       // A card still resting is chosen again by the next run, not skipped as unchanged.

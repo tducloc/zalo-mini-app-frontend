@@ -57,14 +57,16 @@ describe('useFeedAutoplay', () => {
       result.current.cardRef(id)(element);
     }
     const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms));
+    // jsdom has no requestIdleCallback: a pick of the hook's own waits for the 100 ms fallback.
+    const idle = () => wait(120);
 
-    wait(20);
+    idle();
     expect(result.current.activeId).toBeNull();
     wait(300);
     expect(result.current.activeId).toBe('row1-left');
 
     act(() => result.current.onFinished('row1-left'));
-    wait(20);
+    idle();
     expect(result.current.activeId).toBe('row1-right');
 
     scrollTop = 60;
