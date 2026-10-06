@@ -115,8 +115,10 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
     // As stored in the file, before EXIF orientation (api-spec, upload-urls).
     const original = { bytes: file.size, width: photo.width, height: photo.height };
     const asPicked: UploadSource = { blob: file, contentType: photo.format, optimized: false };
+    // The tile shows the photo itself (iOS 15.1–16.3 only). WebKit decodes a big photo drawn
+    // small subsampled to under 5 MP: about 12 MB for a 12 or 48 MP photo, not 48 or 192.
     if (!canOptimizeImages) {
-      markReady(id, original, asPicked);
+      markReady(id, original, asPicked, URL.createObjectURL(file));
       return;
     }
 

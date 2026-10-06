@@ -1,10 +1,11 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon } from 'zmp-ui';
 
 import { useObjectUrl } from '@/features/listings/hooks/use-object-url';
 import { TileTone, type TileView } from '@/features/listings/types/tile-view';
+import { videoPool } from '@/lib/video-pool';
 
 interface MediaTileProps {
   /** The draft file's id: what a drag moves. */
@@ -44,9 +45,8 @@ export default function MediaTile({
   });
 
   const isError = view.tone === TileTone.Error;
-  // A video shows the still read from it, else the file in a <video>, which iOS leaves
-  // blank. A photo shows its original only when it failed: decoding ten full-size photos
-  // for the grid is what the image worker exists to avoid.
+  // A video shows the still read from it, else its first frame (VideoFrame). A photo without
+  // a preview (the image worker crashed on it) shows its original only when it failed.
   const localUrl = useObjectUrl(!view.imageUrl && (isVideo || isError) ? file : null);
   // A picture that does not load (an unreadable file) falls back to the icon.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
@@ -79,15 +79,7 @@ export default function MediaTile({
         className="relative block h-full w-full overflow-hidden rounded-[10px] border-0 bg-marketplace-pale p-0"
       >
         {isPictureShown && isVideoFrame && (
-          // #t=0.1 makes iOS draw a frame instead of a blank box.
-          <video
-            src={`${pictureUrl}#t=0.1`}
-            muted
-            playsInline
-            preload="metadata"
-            onError={handlePictureError}
-            className="h-full w-full object-cover"
-          />
+          <VideoFrame url={pictureUrl} onError={handlePictureError} />
         )}
         {isPictureShown && !isVideoFrame && (
           <img
@@ -148,6 +140,47 @@ export default function MediaTile({
       </button>
     </li>
   );
+}
+
+/**
+ * The video's first frame, where no still could be read from it (no WebCodecs: iOS before
+ * 16.4). iOS draws a frame only once the page plays the video, and plays only an element
+ * that was in the page at the viewer's last touch, so the form's pooled element plays and
+ * stops as soon as a frame is up.
+ */
+function VideoFrame({ url, onError }: { url: string; onError: () => void }) {
+  const hostRef = useRef<HTMLSpanElement>(null);
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) {
+      return;
+    }
+
+    const { video, release } = videoPool.claim('form', host);
+    const stopAtFrame = () => {
+      if (video.currentTime > 0) {
+        video.pause();
+      }
+    };
+    const handleError = () => onErrorRef.current();
+
+    video.className = 'h-full w-full object-cover';
+    video.addEventListener('timeupdate', stopAtFrame);
+    video.addEventListener('error', handleError);
+    video.src = url;
+    video.play().catch(() => undefined);
+
+    return () => {
+      video.removeEventListener('timeupdate', stopAtFrame);
+      video.removeEventListener('error', handleError);
+      release();
+    };
+  }, [url]);
+
+  return <span ref={hostRef} className="block h-full w-full" />;
 }
 
 /** The overlay while the file is on its way: a spinner or a percentage, and a bar. */
