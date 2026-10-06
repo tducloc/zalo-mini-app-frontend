@@ -1,4 +1,3 @@
-import { arrayMove } from '@dnd-kit/sortable';
 import { create } from 'zustand';
 
 import { EMPTY_FIELDS } from '@/features/listings/constants/listing-fields';
@@ -64,7 +63,9 @@ export const createListingDraftStore = <M extends ListingMedia>(start: ListingDr
           return state;
         }
 
-        return { media: arrayMove(state.media, from, to) };
+        const media = [...state.media];
+        media.splice(to, 0, ...media.splice(from, 1));
+        return { media };
       }),
 
     reset: () =>

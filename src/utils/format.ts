@@ -1,8 +1,10 @@
-const numberFormatter = new Intl.NumberFormat('vi-VN');
+// No Intl here: the first vi-VN formatter loads ICU's locale data, which was most of the
+// first script's run and delayed the first paint.
+const THOUSANDS = /\B(?=(\d{3})+(?!\d))/g;
 
-/** Groups thousands the Vietnamese way: 1000000 → "1.000.000". */
+/** Groups the thousands of a whole number the Vietnamese way: 1000000 → "1.000.000". */
 export function formatNumber(value: number) {
-  return numberFormatter.format(value);
+  return String(value).replace(THOUSANDS, '.');
 }
 
 export function formatVnd(value: number) {
@@ -13,8 +15,6 @@ const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 const RELATIVE_DAYS_LIMIT = 7;
-// Built once: toLocaleDateString builds a new formatter on every call, once per card.
-const shortDateFormatter = new Intl.DateTimeFormat('vi-VN', { day: 'numeric', month: 'numeric' });
 
 /**
  * Compact relative time for listing cards ("2 ngày", "20/9"), leaving the narrow meta
@@ -40,5 +40,6 @@ export function formatShortRelativeTime(isoDate: string, now = Date.now()) {
     return `${Math.floor(elapsed / DAY_MS)} ngày`;
   }
 
-  return shortDateFormatter.format(new Date(isoDate));
+  const date = new Date(isoDate);
+  return `${date.getDate()}/${date.getMonth() + 1}`;
 }

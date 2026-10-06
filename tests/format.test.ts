@@ -1,4 +1,4 @@
-import { formatShortRelativeTime } from '@/utils/format';
+import { formatShortRelativeTime, formatVnd } from '@/utils/format';
 
 const now = Date.parse('2026-09-23T10:00:00.000Z');
 const ago = (ms: number) => new Date(now - ms).toISOString();
@@ -20,5 +20,14 @@ describe('formatShortRelativeTime', () => {
 
   it('treats a publication time slightly in the future as just now', () => {
     expect(formatShortRelativeTime(new Date(now + 5_000).toISOString(), now)).toBe('Vừa xong');
+  });
+});
+
+describe('formatVnd', () => {
+  it('groups thousands as vi-VN does', () => {
+    for (const price of [0, 999, 1_000, 25_000_000, 1_234_567_890]) {
+      expect(formatVnd(price)).toBe(`${price.toLocaleString('vi-VN')} đ`);
+    }
+    expect(formatVnd(1_000_000)).toBe('1.000.000 đ');
   });
 });
