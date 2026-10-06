@@ -1,4 +1,4 @@
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import ListingCard from '@/features/feed/components/grid/listing-card';
@@ -60,14 +60,25 @@ describe('card thumbnails show the whole photo in their square box', () => {
     vi.restoreAllMocks();
   });
 
-  it('in the feed, over the blurred placeholder that fills the bars', () => {
+  it('in the feed, with black bars and the placeholder under the photo only', () => {
     const { container } = renderFeedCard(false);
 
     const cover = container.querySelector(`img[src="${THUMBNAIL_URL}"]`);
     const placeholder = container.querySelector('img[src^="data:image/png"]');
     expect(cover?.classList).toContain('object-contain');
     expect(cover?.classList).not.toContain('object-cover');
-    expect(placeholder?.classList).toContain('object-cover');
+    expect(placeholder?.classList).toContain('object-contain');
+    expect(cover?.parentElement?.classList).toContain('bg-black');
+  });
+
+  it('drops the feed placeholder once the photo has loaded', () => {
+    const { container } = renderFeedCard(false);
+    const cover = container.querySelector(`img[src="${THUMBNAIL_URL}"]`);
+    expect(container.querySelector('img[src^="data:image/png"]')).not.toBeNull();
+
+    fireEvent.load(cover as HTMLImageElement);
+
+    expect(container.querySelector('img[src^="data:image/png"]')).toBeNull();
   });
 
   it('in the feed preview clip', () => {
@@ -96,5 +107,6 @@ describe('card thumbnails show the whole photo in their square box', () => {
     const cover = container.querySelector(`img[src="${THUMBNAIL_URL}"]`);
     expect(cover?.classList).toContain('object-contain');
     expect(cover?.classList).not.toContain('object-cover');
+    expect(cover?.parentElement?.classList).toContain('bg-black');
   });
 });

@@ -6,7 +6,10 @@ export const surfaceClass = 'border border-solid border-marketplace-line bg-whit
 // Listing card and its skeleton share geometry so loading never shifts layout.
 export const listingGridClass = 'grid gap-2.5';
 export const listingCardClass = `block w-full overflow-hidden rounded-[10px] p-0 text-left text-inherit ${surfaceClass}`;
-export const listingImageClass = 'relative aspect-square bg-marketplace-skeleton';
+export const listingImageClass = 'relative aspect-square';
+/** Behind a loaded photo: black bars beside a contained, non-square photo. */
+export const listingPhotoBackdropClass = 'bg-black';
+export const listingEmptyBackdropClass = 'bg-marketplace-skeleton';
 // padding + 34px title + 25px price + 15px meta
 export const listingCopyClass = 'h-[91px] px-[9px] pb-[9px] pt-2';
 

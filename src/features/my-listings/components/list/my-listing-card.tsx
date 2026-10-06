@@ -5,6 +5,8 @@ import Price from '@/components/price';
 import { actionLabels } from '@/features/my-listings/constants/messages';
 import {
   myListingCardClass,
+  myListingEmptyBackdropClass,
+  myListingPhotoBackdropClass,
   myListingThumbnailClass,
 } from '@/features/my-listings/constants/styles';
 import { ListingAction, StatusTone, type MyListing } from '@/features/my-listings/types/my-listing';
@@ -49,7 +51,9 @@ export default function MyListingCard({
         type="button"
         onClick={() => onOpen(listing.id)}
       />
-      <div className={myListingThumbnailClass}>
+      <div
+        className={`${myListingThumbnailClass} ${shouldShowImage ? myListingPhotoBackdropClass : myListingEmptyBackdropClass}`}
+      >
         {shouldShowImage ? (
           <img
             alt=""

@@ -1,6 +1,7 @@
 import Skeleton from '@/components/feedback/skeleton';
 import {
   myListingCardClass,
+  myListingEmptyBackdropClass,
   myListingStackClass,
   myListingThumbnailClass,
 } from '@/features/my-listings/constants/styles';
@@ -17,7 +18,7 @@ export default function MyListingSkeleton({ count }: { count: number }) {
     >
       {Array.from({ length: count }, (_, index) => (
         <div className={myListingCardClass} key={index} aria-hidden="true">
-          <Skeleton className={myListingThumbnailClass} />
+          <Skeleton className={`${myListingThumbnailClass} ${myListingEmptyBackdropClass}`} />
           <div className="flex-1 pt-1">
             <Skeleton className={lineClass} />
             <Skeleton className={`mt-2.5 w-[70%] ${lineClass}`} />

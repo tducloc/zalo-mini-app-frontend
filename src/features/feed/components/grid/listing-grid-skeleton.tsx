@@ -3,6 +3,7 @@ import {
   listingCardClass,
   listingCopyClass,
   listingGridClass,
+  listingEmptyBackdropClass,
   listingImageClass,
 } from '@/features/feed/constants/styles';
 import { gridColumnsStyle } from '@/features/feed/utils/feed-grid';
@@ -26,7 +27,7 @@ export default function ListingGridSkeleton({
     >
       {Array.from({ length: count }, (_, index) => (
         <div className={listingCardClass} key={index} aria-hidden="true">
-          <Skeleton className={listingImageClass} />
+          <Skeleton className={`${listingImageClass} ${listingEmptyBackdropClass}`} />
           <div className={listingCopyClass}>
             <Skeleton className={`mt-1 ${lineClass}`} />
             <Skeleton className={`mt-2.5 w-[62%] ${lineClass}`} />

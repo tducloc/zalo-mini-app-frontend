@@ -5,7 +5,9 @@ import Price from '@/components/price';
 import {
   listingCardClass,
   listingCopyClass,
+  listingEmptyBackdropClass,
   listingImageClass,
+  listingPhotoBackdropClass,
 } from '@/features/feed/constants/styles';
 import type { ProductCard } from '@/features/products/types/product';
 import { videoPool } from '@/lib/video-pool';
@@ -46,6 +48,9 @@ export default function ListingCard({
   // is tried again instead of keeping the placeholder forever.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const shouldShowImage = Boolean(product.thumbnailUrl) && product.thumbnailUrl !== failedUrl;
+  // The placeholder only stands in while the photo loads; then it is dropped from the DOM.
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  const isImageLoaded = shouldShowImage && product.thumbnailUrl === loadedUrl;
   const placeholderUrl = useMemo(() => thumbHashUrl(product.placeholder), [product.placeholder]);
 
   return (
@@ -56,13 +61,14 @@ export default function ListingCard({
       type="button"
       onClick={() => onOpen(product.id)}
     >
-      <div className={listingImageClass}>
-        {placeholderUrl && shouldShowImage && (
-          // Covers the box, so the bars beside a contained photo show it blurred.
+      <div
+        className={`${listingImageClass} ${shouldShowImage ? listingPhotoBackdropClass : listingEmptyBackdropClass}`}
+      >
+        {placeholderUrl && shouldShowImage && !isImageLoaded && (
           <img
             alt=""
             aria-hidden
-            className="absolute inset-0 size-full object-cover"
+            className="absolute inset-0 size-full object-contain"
             src={placeholderUrl}
           />
         )}
@@ -74,6 +80,7 @@ export default function ListingCard({
             loading={isAboveFold ? 'eager' : 'lazy'}
             src={product.thumbnailUrl ?? undefined}
             onError={() => setFailedUrl(product.thumbnailUrl)}
+            onLoad={() => setLoadedUrl(product.thumbnailUrl)}
           />
         ) : (
           <span
