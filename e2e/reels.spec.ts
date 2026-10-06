@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { expect, skipReelsGestureHint, tab, test } from './support';
+import { expect, isReelsPageLoaded, skipReelsGestureHint, tab, test } from './support';
 
 const reel = (page: Page, index: number) => page.locator(`section[data-reel-index="${index}"]`);
 const video = (page: Page, index: number) => reel(page, index).locator('video');
@@ -13,13 +13,6 @@ const waitForRouteSlideIn = (page: Page) =>
   expect
     .poll(() => pager(page).evaluate((element) => element.getBoundingClientRect().left))
     .toBe(0);
-
-/** Whether the app shell has loaded the Reels page's code. Vite dev serves each module at its path. */
-const isReelsPageLoaded = (page: Page) =>
-  page.evaluate(async (path) => {
-    const module = await import(path);
-    return module.isReelsPageLoaded() as boolean;
-  }, '/src/pages/lazy-pages.ts');
 
 const reelsLoaded = (page: Page) =>
   page.waitForResponse(

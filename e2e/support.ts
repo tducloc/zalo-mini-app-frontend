@@ -19,6 +19,13 @@ export const skipReelsGestureHint = (page: Page) =>
     hint.click(),
   );
 
+/** Whether the app shell has loaded the Reels page's code. Vite dev serves each module at its path. */
+export const isReelsPageLoaded = (page: Page) =>
+  page.evaluate(async (path) => {
+    const module = await import(path);
+    return module.isReelsPageLoaded() as boolean;
+  }, '/src/pages/lazy-pages.ts');
+
 /** The tab bar's button; the form has its own "Đăng tin" to post. */
 export const tab = (page: Page, name: string) =>
   page.getByRole('navigation').getByRole('button', { name });
