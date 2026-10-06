@@ -72,3 +72,9 @@ button:focus-visible {
 .zaui-routes-no-animation-exit {
   visibility: hidden;
 }
+/* A page that enters without the slide needs no transform. zmp-ui's translateX(0) pinned fixed
+   panes such as Reels to the page for 200 ms, then let go while the Reels hint was still fading
+   in. */
+.zaui-routes .zaui-routes-no-animation-enter {
+  transform: none;
+}

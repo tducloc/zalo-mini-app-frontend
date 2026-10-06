@@ -1,6 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 
-import { expect, tab, test } from './support';
+import { expect, isReelsPageLoaded, tab, test } from './support';
 
 const hint = (page: Page) => page.getByRole('dialog', { name: 'Hướng dẫn lướt video' });
 const firstVideo = (page: Page) => page.locator('section[data-reel-index="0"] video');
@@ -69,6 +69,35 @@ test('teaches the gestures once, over a reel that keeps playing with sound', asy
   await tab(page, 'Reels').click();
   await expectPlaying(firstVideo(page));
   await expect(hint(page)).toHaveCount(0);
+});
+
+// A transform on the entering page would pin the fixed Reels pane to the page, not the screen.
+test('keeps Reels on the screen through the tab switch, while the hint fades in', async ({
+  page,
+}) => {
+  const prefetched = page.waitForResponse(
+    (response) => new URL(response.url()).pathname.endsWith('/api/v1/reels') && response.ok(),
+  );
+  await page.goto('/');
+  await prefetched;
+  await expect.poll(() => isReelsPageLoaded(page)).toBe(true);
+
+  const framesOffScreen = await tab(page, 'Reels').evaluate(async (button: HTMLButtonElement) => {
+    button.click();
+    const frames: number[] = [];
+    for (let frame = 0; frame < 30; frame += 1) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const pane = document.querySelector<HTMLElement>('[data-reels-pager]');
+      const box = pane?.getBoundingClientRect();
+      const isOnScreen =
+        pane?.offsetParent === null && box?.width === innerWidth && box.height === innerHeight;
+      if (!isOnScreen) frames.push(frame);
+    }
+    return frames;
+  });
+
+  expect(framesOffScreen).toEqual([]);
+  await expect(hint(page)).toBeVisible();
 });
 
 test('a swipe dismisses the hint, and the next swipe moves the reels', async ({ page }) => {
