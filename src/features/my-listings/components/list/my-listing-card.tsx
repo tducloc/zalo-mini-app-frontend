@@ -10,9 +10,6 @@ import {
 import { ListingAction, StatusTone, type MyListing } from '@/features/my-listings/types/my-listing';
 import { getListingActions, getStatusLine } from '@/features/my-listings/utils/my-listing';
 
-// Square 400×400 thumbnails shown at 88px; the attributes reserve space before the image loads.
-const THUMBNAIL_SIZE = 400;
-
 const statusToneClass: Record<StatusTone, string> = {
   [StatusTone.Muted]: 'text-marketplace-muted',
   [StatusTone.Progress]: 'text-marketplace-blue',
@@ -56,12 +53,10 @@ export default function MyListingCard({
         {shouldShowImage ? (
           <img
             alt=""
-            className="block size-full object-cover"
+            className="block size-full object-contain"
             decoding="async"
-            height={THUMBNAIL_SIZE}
             loading="lazy"
             src={listing.thumbnailUrl ?? undefined}
-            width={THUMBNAIL_SIZE}
             onError={() => setFailedUrl(listing.thumbnailUrl)}
           />
         ) : (

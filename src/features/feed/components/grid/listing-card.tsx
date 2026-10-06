@@ -12,14 +12,12 @@ import { videoPool } from '@/lib/video-pool';
 import { formatShortRelativeTime } from '@/utils/format';
 import { thumbHashUrl } from '@/utils/thumbhash';
 
-// Square 400×400 thumbnails; the attributes reserve space before the image loads.
-const THUMBNAIL_SIZE = 400;
 /** Times a preview plays before the card shows its cover again. */
 const PREVIEW_PLAYS = 2;
 const FADE_MS = 200;
 const START_TIMEOUT_MS = 5000;
 const previewClass =
-  'pointer-events-none absolute inset-0 size-full object-cover transition-opacity duration-200';
+  'pointer-events-none absolute inset-0 size-full object-contain transition-opacity duration-200';
 
 const videoBadgeClass =
   'absolute bottom-2 left-2 inline-flex items-center gap-[3px] rounded-[10px] bg-marketplace-ink/70 py-0.5 pl-1.5 pr-2 text-micro font-semibold leading-4 text-white';
@@ -60,6 +58,7 @@ export default function ListingCard({
     >
       <div className={listingImageClass}>
         {placeholderUrl && shouldShowImage && (
+          // Covers the box, so the bars beside a contained photo show it blurred.
           <img
             alt=""
             aria-hidden
@@ -70,12 +69,10 @@ export default function ListingCard({
         {shouldShowImage ? (
           <img
             alt=""
-            className="relative block size-full object-cover"
+            className="relative block size-full object-contain"
             decoding="async"
-            height={THUMBNAIL_SIZE}
             loading={isAboveFold ? 'eager' : 'lazy'}
             src={product.thumbnailUrl ?? undefined}
-            width={THUMBNAIL_SIZE}
             onError={() => setFailedUrl(product.thumbnailUrl)}
           />
         ) : (
