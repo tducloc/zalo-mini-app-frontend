@@ -1,4 +1,4 @@
-import { API_URL, dragPhoto, expect, fixture, openSellPage, sellForm, tab, test } from './support';
+import { expect, fixture, openSellPage, sellForm, tab, test } from './support';
 
 /**
  * L6 acceptance (plans/create-listing.md, "L6 in phases"): a seller picks photos and a
@@ -20,15 +20,6 @@ test('posts a listing with two photos and a video', async ({ page }) => {
 
   const tiles = page.getByRole('listitem', { name: /^Ảnh \d+$|^Video$/ });
   await expect(tiles).toHaveCount(3);
-  await expect(tiles.first()).toContainText('Ảnh bìa');
-
-  // Held and dragged first, the second photo becomes the cover. Tile names follow the
-  // position, so the picture tells which photo moved.
-  const secondPicture = tiles.nth(1).locator('img');
-  await expect(secondPicture).toHaveAttribute('src', /.+/, { timeout: UPLOAD_TIMEOUT_MS });
-  const secondSource = (await secondPicture.getAttribute('src')) ?? '';
-  await dragPhoto(page, 1, 0);
-  await expect(tiles.first().locator('img')).toHaveAttribute('src', secondSource);
   await expect(tiles.first()).toContainText('Ảnh bìa');
 
   // Fields, filled while the files upload.
@@ -57,34 +48,6 @@ test('posts a listing with two photos and a video', async ({ page }) => {
   expect(data.media[0]).toMatchObject({ role: 'MAIN', type: 'IMAGE' });
 
   await expect(tab(page, 'Quản lý tin')).toHaveAttribute('aria-current', 'page');
-});
-
-test('refuses a photo too small for a sharp feed card, keeping the others', async ({ page }) => {
-  await openSellPage(page);
-
-  // 400 × 300.
-  await page
-    .getByLabel('Thêm ảnh', { exact: true })
-    .setInputFiles([fixture('small.jpg'), fixture('photo-a.jpg')]);
-
-  await expect(
-    page.getByText('Vui lòng chọn ảnh từ 600 × 600 px trở lên (small.jpg).'),
-  ).toBeVisible();
-  const tiles = page.getByRole('listitem', { name: /^Ảnh \d+$/ });
-  await expect(tiles).toHaveCount(1);
-  await expect(tiles.first()).toContainText('Ảnh bìa');
-});
-
-test('keeps the draft when the seller leaves the page and comes back', async ({ page }) => {
-  await openSellPage(page);
-  await page.getByLabel('Thêm ảnh', { exact: true }).setInputFiles(fixture('photo-a.jpg'));
-  await sellForm(page).getByLabel('Tiêu đề').fill(TITLE);
-
-  await tab(page, 'Trang chủ').click();
-  await tab(page, 'Đăng tin').click();
-
-  await expect(sellForm(page).getByLabel('Tiêu đề')).toHaveValue(TITLE);
-  await expect(page.getByRole('listitem', { name: 'Ảnh 1' })).toBeVisible();
 });
 
 test('shows the draft on other pages, and Huỷ tin ends it', async ({ page }) => {

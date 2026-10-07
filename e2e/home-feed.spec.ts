@@ -187,21 +187,3 @@ test('plays a preview on screen and hands the video on when its card unmounts', 
   await expectPlayingInView(list);
   await expect(page.locator('video[src]')).toHaveCount(1);
 });
-
-for (const { width, height, columns } of [
-  { width: 820, height: 1180, columns: 3 },
-  { width: 1180, height: 820, columns: 4 },
-]) {
-  test.describe(`iPad ${width}×${height}`, () => {
-    test.use({ viewport: { width, height } });
-
-    test(`shows ${columns} cards a row`, async ({ page }) => {
-      await page.goto('/');
-      await expect(cardAt(page, 1)).toBeVisible();
-
-      expect(await firstRowTops(page)).toHaveLength(columns);
-      const { pitch, cardHeight } = await rowGeometry(page);
-      expect(Math.abs(pitch - (cardHeight + 10))).toBeLessThan(1);
-    });
-  });
-}

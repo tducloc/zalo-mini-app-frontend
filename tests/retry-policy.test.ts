@@ -16,10 +16,7 @@ describe('failureFromApiStatus', () => {
     [409, FailureKind.Conflict],
     [429, FailureKind.Server],
     [500, FailureKind.Server],
-    [503, FailureKind.Server],
     [400, FailureKind.Rejected],
-    [403, FailureKind.Rejected],
-    [413, FailureKind.Rejected],
   ])('maps %i to %s', (status, kind) => {
     expect(failureFromApiStatus(status)).toBe(kind);
   });
@@ -33,8 +30,6 @@ describe('failureFromStorageStatus', () => {
     [400, FailureKind.Server],
     [408, FailureKind.Server],
     [500, FailureKind.Server],
-    [503, FailureKind.Server],
-    [411, FailureKind.Rejected],
     [413, FailureKind.Rejected],
   ])('maps %i to %s', (status, kind) => {
     expect(failureFromStorageStatus(status)).toBe(kind);

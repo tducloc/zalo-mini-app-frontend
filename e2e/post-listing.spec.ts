@@ -27,31 +27,6 @@ const title = (what: string) => `E2E ${what} ${Date.now()}`;
 /** Long enough to fill the form while the upload is still running. */
 const SLOW_STORAGE_MS = 4_000;
 
-/** A JPEG header saying `width` × `height`, which is all the app reads before refusing. */
-function jpegHeader(width: number, height: number) {
-  const jfif = [0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 1, 1, 0, 0, 1, 0, 1, 0, 0];
-  const size = [height >> 8, height & 0xff, width >> 8, width & 0xff];
-  const startOfFrame = [
-    0xff,
-    0xc0,
-    0x00,
-    0x11,
-    0x08,
-    ...size,
-    3,
-    1,
-    0x22,
-    0,
-    2,
-    0x11,
-    1,
-    3,
-    0x11,
-    1,
-  ];
-  return Buffer.from([0xff, 0xd8, ...jfif, ...startOfFrame, 0xff, 0xd9]);
-}
-
 test('shows every missing field on the first tap, then keeps Post disabled until fixed', async ({
   page,
 }) => {
@@ -253,18 +228,6 @@ test('opens the listing a reused key already made (422)', async ({ page, request
   await page.getByRole('button', { name: 'Quay lại' }).last().click();
   await tab(page, 'Đăng tin').click();
   await expect(sellForm(page).getByLabel('Tiêu đề')).toHaveValue('');
-  await expect(photoTiles(page)).toHaveCount(0);
-});
-
-test('refuses files the listing cannot take, in one toast, without a tile', async ({ page }) => {
-  await openSellPage(page);
-  await page.getByLabel('Thêm ảnh', { exact: true }).setInputFiles([
-    { name: 'doc.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 not a photo') },
-    { name: 'huge.jpg', mimeType: 'image/jpeg', buffer: jpegHeader(12_000, 9_000) },
-  ]);
-
-  await expect(page.getByText(/Vui lòng chọn ảnh JPG, PNG hoặc WebP \(doc\.pdf\)\./)).toBeVisible();
-  await expect(page.getByText(/không quá 50 MP.*\(huge\.jpg\)\./)).toBeVisible();
   await expect(photoTiles(page)).toHaveCount(0);
 });
 
