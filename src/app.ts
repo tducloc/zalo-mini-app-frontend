@@ -2,8 +2,6 @@
 import '@/polyfills';
 // Reads Zalo's build query before the router drops it.
 import '@/lib/zalo-launch';
-// Starts the feed request; Zalo usually ran it already as its own entry (vite.config.ts).
-import '@/boot';
 
 // ZaUI stylesheet
 import 'zmp-ui/zaui.css';

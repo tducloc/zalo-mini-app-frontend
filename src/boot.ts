@@ -1,8 +1,8 @@
 import type { ProductFeedPage } from '@/features/products/types/product';
 
-// Its own entry, so Zalo runs it from listSyncJS while the main script is still downloading: the
-// feed request, the first card images and the connection to the media CDN start before the app
-// code runs. app.ts imports it too, so it also runs where only the main entry loads.
+// Loaded before the app (index.html) as its own chunk (vite.config.mts), so Zalo runs it while
+// the main script is still downloading: the feed request, the first card images and the
+// connection to the media CDN start before the app code runs.
 const feedBase = import.meta.env.VITE_API_BASE_URL;
 const mediaOrigin = import.meta.env.VITE_MEDIA_ORIGIN;
 
