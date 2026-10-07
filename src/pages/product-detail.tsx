@@ -144,6 +144,35 @@ export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
       )}
     </DetailBottomBar>
   );
+
+  // Embedded in Reels, the sheets come after the bar outside the Page. iOS makes the scrolling
+  // Page its own stacking context, which keeps anything in it under the bar.
+  const overlays = (
+    <>
+      <ProductActionsSheet
+        isOwner={isOwner}
+        hasReported={product.viewer.hasReported}
+        // The anonymous placeholder cannot know whether this viewer reported.
+        isReportAvailable={!productQuery.isPlaceholderData}
+        isOwnerActionPending={ownerActions.isPending}
+        product={product}
+        visible={actionsOpen}
+        onClose={() => setActionsOpen(false)}
+        onError={showError}
+        onOwnerAction={(action) => ownerActions.selectAction(product.id, action)}
+        onReport={() => setReportOpen(true)}
+      />
+      {/* After the sheet: it closes as the dialog opens, and the dialog keeps the scroll lock. */}
+      <ConfirmDialog {...ownerActions.markSoldDialog} />
+      <ProductReportSheet
+        isPending={reportMutation.isPending}
+        visible={reportOpen}
+        onClose={() => setReportOpen(false)}
+        onSubmit={handleSubmitReport}
+      />
+    </>
+  );
+
   return (
     <>
       {/* No tab bar: room for the bottom bar, and a gap above it. */}
@@ -164,29 +193,10 @@ export default function ProductDetailPage(props: ProductDetailPageProps = {}) {
           </section>
         </main>
         {!isEmbedded && bottomBar}
-        <ProductActionsSheet
-          isOwner={isOwner}
-          hasReported={product.viewer.hasReported}
-          // The anonymous placeholder cannot know whether this viewer reported.
-          isReportAvailable={!productQuery.isPlaceholderData}
-          isOwnerActionPending={ownerActions.isPending}
-          product={product}
-          visible={actionsOpen}
-          onClose={() => setActionsOpen(false)}
-          onError={showError}
-          onOwnerAction={(action) => ownerActions.selectAction(product.id, action)}
-          onReport={() => setReportOpen(true)}
-        />
-        {/* After the sheet: it closes as the dialog opens, and the dialog keeps the scroll lock. */}
-        <ConfirmDialog {...ownerActions.markSoldDialog} />
-        <ProductReportSheet
-          isPending={reportMutation.isPending}
-          visible={reportOpen}
-          onClose={() => setReportOpen(false)}
-          onSubmit={handleSubmitReport}
-        />
+        {!isEmbedded && overlays}
       </Page>
       {isEmbedded && bottomBar}
+      {isEmbedded && overlays}
     </>
   );
 }
