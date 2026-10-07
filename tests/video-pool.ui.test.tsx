@@ -85,4 +85,20 @@ describe('VideoPool', () => {
     expect(first.video.getAttribute('src')).toBe('https://media.example/4.mp4');
     expect(first.video.parentElement).toBe(hosts[4]);
   });
+
+  it('plays and pauses the parked elements on a tap, not the one in use', () => {
+    const { pool, parking, hosts } = setUp();
+    const play = vi
+      .spyOn(HTMLMediaElement.prototype, 'play')
+      .mockImplementation(() => Promise.resolve());
+    const reel = pool.claim('reels', hosts[0]).video;
+    const parked = Array.from(parking.querySelectorAll('video'));
+
+    window.dispatchEvent(new Event('pointerup'));
+
+    const played = play.mock.contexts as HTMLVideoElement[];
+    expect(parked).toHaveLength(3);
+    expect(parked.every((video) => played.includes(video))).toBe(true);
+    expect(played).not.toContain(reel);
+  });
 });

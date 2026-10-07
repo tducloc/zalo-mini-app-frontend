@@ -38,6 +38,22 @@ export class VideoPool {
   private parking: HTMLElement | null = null;
 
   /**
+   * Inside Zalo, iOS refuses play() outside a tap, even muted, until a tap has played that
+   * element: a feed preview or a listing's video starts later, after the tap. So every tap
+   * plays and pauses the parked elements while it is still being handled.
+   */
+  private readonly unlockParked = () => {
+    for (const feature of VIDEO_FEATURES) {
+      if (this.owners.has(feature)) {
+        continue;
+      }
+      const video = this.videos[feature];
+      video.play()?.catch(() => undefined);
+      video.pause();
+    }
+  };
+
+  /**
    * Where the unused elements wait: inside the page, so that a touch anywhere on it counts
    * for them too. Null when the page goes.
    */
@@ -47,6 +63,12 @@ export class VideoPool {
       if (!this.owners.has(feature)) {
         parking?.append(this.videos[feature]);
       }
+    }
+    // pointerup, not pointerdown: a scroll starts with pointerdown and is no tap.
+    if (parking) {
+      window.addEventListener('pointerup', this.unlockParked, true);
+    } else {
+      window.removeEventListener('pointerup', this.unlockParked, true);
     }
   }
 
