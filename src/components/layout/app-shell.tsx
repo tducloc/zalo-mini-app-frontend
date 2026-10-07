@@ -1,7 +1,7 @@
 import { type PropsWithChildren, useCallback, useEffect } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { type InfiniteData, useQueryClient } from '@tanstack/react-query';
-import { EventName, events, getSystemInfo } from 'zmp-sdk';
+import { configAppView, EventName, events, getSystemInfo } from 'zmp-sdk';
 import { Icon, useLocation, useNavigate } from 'zmp-ui';
 
 import DraftBanner from '@/features/listings/components/draft/draft-banner';
@@ -87,15 +87,11 @@ export default function AppShell({ children }: PropsWithChildren) {
     const themeTextColor = getSystemInfo().zaloTheme === 'dark' ? 'white' : 'black';
     // The rest matches app-config.json, including when HMR retains an older native view
     // configuration.
-    void import('@/lib/app-view')
-      .then(({ configAppView }) =>
-        configAppView({
-          actionBar: { hide: true },
-          statusBarType: 'transparent',
-          headerTextColor: hasDarkTop ? 'white' : themeTextColor,
-        }),
-      )
-      .catch((error: unknown) => warnInDev('app', 'Cannot configure native header', error));
+    void configAppView({
+      actionBar: { hide: true },
+      statusBarType: 'transparent',
+      headerTextColor: hasDarkTop ? 'white' : themeTextColor,
+    }).catch((error: unknown) => warnInDev('app', 'Cannot configure native header', error));
   }, [hasDarkTop]);
 
   useEffect(() => {
