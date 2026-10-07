@@ -17,11 +17,11 @@ function setUp() {
 }
 
 describe('VideoPool', () => {
-  it('parks one element per feature, muted and inline, until one is claimed', () => {
+  it('parks one element for Reels and one shared, muted and inline, until one is claimed', () => {
     const { parking } = setUp();
 
     const videos = Array.from(parking.querySelectorAll('video'));
-    expect(videos).toHaveLength(4);
+    expect(videos).toHaveLength(2);
     expect(
       videos.every((video) => video.muted && video.hasAttribute('playsinline') && video.loop),
     ).toBe(true);
@@ -36,21 +36,19 @@ describe('VideoPool', () => {
     expect(hosts[6].contains(videos[0])).toBe(true);
   });
 
-  it('never hands one feature the element another plays in', () => {
+  it('never hands the shared element the one Reels plays in', () => {
     const { pool, hosts } = setUp();
 
     const reel = pool.claim('reels', hosts[0]).video;
-    const preview = pool.claim('feed', hosts[1]).video;
-    const detail = pool.claim('detail', hosts[2]).video;
-    const form = pool.claim('form', hosts[3]).video;
+    const shared = pool.claim('shared', hosts[1]).video;
 
-    expect(new Set([reel, preview, detail, form]).size).toBe(4);
+    expect(shared).not.toBe(reel);
     expect(hosts[0].contains(reel)).toBe(true);
   });
 
   it('drops the source and parks the element on release', async () => {
     const { pool, parking, hosts } = setUp();
-    const { video, release } = pool.claim('feed', hosts[1]);
+    const { video, release } = pool.claim('shared', hosts[1]);
     video.src = 'https://media.example/1.mp4';
 
     release();
@@ -97,7 +95,7 @@ describe('VideoPool', () => {
     window.dispatchEvent(new Event('pointerup'));
 
     const played = play.mock.contexts as HTMLVideoElement[];
-    expect(parked).toHaveLength(3);
+    expect(parked).toHaveLength(1);
     expect(parked.every((video) => played.includes(video))).toBe(true);
     expect(played).not.toContain(reel);
   });

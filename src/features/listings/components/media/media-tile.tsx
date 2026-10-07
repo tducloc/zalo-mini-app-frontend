@@ -145,7 +145,7 @@ export default function MediaTile({
 /**
  * The video's first frame, where no still could be read from it (no WebCodecs: iOS before
  * 16.4). iOS draws a frame only once the page plays the video, and plays only an element
- * that was in the page at the viewer's last touch, so the form's pooled element plays and
+ * that was in the page at the viewer's last touch, so the shared pooled element plays and
  * stops as soon as a frame is up.
  */
 function VideoFrame({ url, onError }: { url: string; onError: () => void }) {
@@ -159,7 +159,7 @@ function VideoFrame({ url, onError }: { url: string; onError: () => void }) {
       return;
     }
 
-    const { video, release } = videoPool.claim('form', host);
+    const { video, release } = videoPool.claim('shared', host);
     const stopAtFrame = () => {
       if (video.currentTime > 0) {
         video.pause();
@@ -168,6 +168,7 @@ function VideoFrame({ url, onError }: { url: string; onError: () => void }) {
     const handleError = () => onErrorRef.current();
 
     video.className = 'h-full w-full object-cover';
+    video.muted = true;
     video.addEventListener('timeupdate', stopAtFrame);
     video.addEventListener('error', handleError);
     video.src = url;

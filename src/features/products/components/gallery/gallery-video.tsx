@@ -67,11 +67,12 @@ export default function GalleryVideo({
         return;
       }
 
-      const claim = videoPool.claim('detail', host);
+      const claim = videoPool.claim('shared', host);
       const video = claim.video;
       video.className = fillClass;
       video.setAttribute('aria-label', `Video: ${title}`);
       video.muted = useDetailSoundStore.getState().isMuted;
+      video.loop = true;
       video.src = src;
       release = claim.release;
       videoRef.current = video;
