@@ -139,6 +139,29 @@ test('comes back from a listing to the same place, with no empty frame', async (
   expect(restoredFrames.filter((frame) => frame.cards === 0)).toEqual([]);
 });
 
+test('plays a preview from the second row as the app opens, before any scroll', async ({
+  page,
+}) => {
+  // A tall phone, where the second row is on screen enough to play. As on production, the first
+  // page's preview cards sit in that row, which mounts after the first.
+  await page.setViewportSize({ width: 390, height: 932 });
+  await page.route(
+    (url) => url.pathname.endsWith('/api/v1/products') && !url.searchParams.has('cursor'),
+    async (route) => {
+      const response = await route.fetch();
+      const body = await response.json();
+      const previews = body.data.filter((card: { previewUrl?: string }) => card.previewUrl);
+      const others = body.data.filter((card: { previewUrl?: string }) => !card.previewUrl);
+      body.data = [...others.slice(0, 2), ...previews, ...others.slice(2)];
+      await route.fulfill({ response, json: body });
+    },
+  );
+  await page.goto('/');
+
+  await expectPlayingInView(feedList(page));
+  expect(await scrollTopOf(page)).toBe(0);
+});
+
 test('plays a preview on screen and hands the video on when its card unmounts', async ({
   page,
 }) => {

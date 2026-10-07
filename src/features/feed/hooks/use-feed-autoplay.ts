@@ -60,6 +60,9 @@ export function useFeedAutoplay({
   const finished = useRef<ReadonlySet<string>>(new Set());
 
   const [choiceCount, chooseAgain] = useReducer((count: number) => count + 1, 0);
+  // The feed's first render mounts only its first row, so a preview card in a later row arrives
+  // after the pick that follows the data: it asks for another one.
+  const scheduleChooseRef = useRef<() => void>();
 
   const cardRef = useCallback((id: string) => {
     let ref = cardRefs.current.get(id);
@@ -67,6 +70,7 @@ export function useFeedAutoplay({
       ref = (element) => {
         if (element) {
           cards.current.set(id, element);
+          scheduleChooseRef.current?.();
         } else {
           cards.current.delete(id);
         }
@@ -143,12 +147,14 @@ export function useFeedAutoplay({
       frame ||= requestAnimationFrame(choose);
     };
 
+    scheduleChooseRef.current = scheduleChoose;
     scheduleChoose();
     scroller.addEventListener('scroll', scheduleChoose, { passive: true });
     window.addEventListener('resize', scheduleChoose);
     document.addEventListener('visibilitychange', scheduleChoose);
 
     return () => {
+      scheduleChooseRef.current = undefined;
       cancelAnimationFrame(frame);
       clearTimeout(dwell);
       // A card still resting is chosen again by the next run, not skipped as unchanged.
