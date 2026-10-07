@@ -8,7 +8,11 @@ const DWELL_MS = 300;
 /** Off unless VITE_FEED_AUTOPLAY=true, until it is measured on devices (plans/home-feed.md). */
 const isFlagOn = import.meta.env.VITE_FEED_AUTOPLAY === 'true';
 
-/** A WebView that refused one preview refuses them all; no more tries this session. */
+/**
+ * The WebView refused a preview. Zalo's iOS WebView refuses every play before the viewer's
+ * first tap (a scroll does not count) and allows them after it, so previews wait for the next
+ * tap, not the next session.
+ */
 let wasRefused = false;
 
 function isAutoplayAllowed() {
@@ -81,6 +85,14 @@ export function useFeedAutoplay({
   }, []);
 
   const handleRefused = useCallback(() => {
+    if (!wasRefused) {
+      const retry = () => {
+        wasRefused = false;
+        chooseAgain();
+      };
+      // pointerup, not pointerdown: a scroll starts with pointerdown and ends in pointercancel.
+      window.addEventListener('pointerup', retry, { capture: true, once: true });
+    }
     wasRefused = true;
     chooseAgain();
   }, []);
