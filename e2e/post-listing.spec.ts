@@ -3,7 +3,6 @@ import {
   dragPhoto,
   expect,
   test,
-  API_URL,
   answerPost,
   expectReadyToPost,
   fillFields,
@@ -14,106 +13,14 @@ import {
   sellForm,
   tab,
 } from './support';
-import type { Route } from '@playwright/test';
 
 /**
- * L6.5 and L6.6 around the happy path of create-listing.spec.ts: the form's checks, and
- * every answer of `POST /products` (plans/create-listing.md, "L6.6 post"). Server errors
- * are answered by the test; posts that succeed reach the local API.
+ * L6.6 around the happy path of create-listing.spec.ts: what needs a real browser or the
+ * real API (plans/create-listing.md, "L6.6 post"). The form's checks and the way it reads
+ * each refused post are component tests (tests/create-listing-form.ui.test.tsx).
  */
 
 const title = (what: string) => `E2E ${what} ${Date.now()}`;
-
-/** Long enough to fill the form while the upload is still running. */
-const SLOW_STORAGE_MS = 4_000;
-
-test('shows every missing field on the first tap, then keeps Post disabled until fixed', async ({
-  page,
-}) => {
-  await openSellPage(page);
-
-  await expect(postButton(page)).toBeEnabled();
-  await postButton(page).click();
-
-  for (const message of [
-    'Vui lòng chọn danh mục.',
-    'Vui lòng nhập tiêu đề từ 3 đến 120 ký tự.',
-    'Vui lòng nhập mô tả từ 10 đến 5.000 ký tự.',
-    'Vui lòng nhập giá bán là số đồng lớn hơn 0, ví dụ 150.000.',
-    'Vui lòng chọn tình trạng.',
-    'Vui lòng chọn địa điểm.',
-  ]) {
-    // Exactly one message per field.
-    await expect(page.getByText(message, { exact: true })).toHaveCount(1);
-  }
-  await expect(page.getByText(/^Vui lòng thêm ít nhất 1 ảnh/)).toBeVisible();
-  await expect(postButton(page)).toBeDisabled();
-
-  // Only digits stay, so what the seller sees is what posts; 0 is still refused.
-  await sellForm(page).getByLabel('Giá bán (VNĐ)').fill('1.5');
-  await expect(sellForm(page).getByLabel('Giá bán (VNĐ)')).toHaveValue('15');
-  await sellForm(page).getByLabel('Giá bán (VNĐ)').fill('0');
-  await expect(
-    page.getByText('Vui lòng nhập giá bán là số đồng lớn hơn 0, ví dụ 150.000.', { exact: true }),
-  ).toHaveCount(1);
-  await addPhotos(page, ['photo-a.jpg']);
-  await fillFields(page, title('validation'));
-  await expect(sellForm(page).getByLabel('Giá bán (VNĐ)')).toHaveValue('6.990.000');
-  await expectReadyToPost(page);
-  await expect(page.getByText(/^Vui lòng/)).toHaveCount(0);
-});
-
-test('keeps Post disabled while files upload, and says why', async ({ page }) => {
-  // Storage answers slowly, so the upload is still running while the form is filled.
-  await page.route(
-    (url) => url.port === '4566',
-    async (route) => {
-      if (route.request().method() === 'PUT') {
-        await new Promise((resolve) => setTimeout(resolve, SLOW_STORAGE_MS));
-      }
-      await route.fallback();
-    },
-  );
-  await openSellPage(page);
-  await addPhotos(page, ['photo-a.jpg']);
-  await fillFields(page, title('waiting'));
-
-  await expect(postButton(page)).toBeDisabled();
-  await expect(
-    page.getByRole('status').filter({ hasText: 'Đang tải ảnh và video lên' }),
-  ).toBeVisible();
-  await expectReadyToPost(page);
-});
-
-test('marks the fields the server refused (400)', async ({ page }) => {
-  await openSellPage(page);
-  await addPhotos(page, ['photo-a.jpg']);
-  await fillFields(page, title('fields'));
-  await expectReadyToPost(page);
-
-  await answerPost(
-    page,
-    400,
-    { code: 'VALIDATION_ERROR', details: [{ field: 'price' }, { field: 'locationId' }] },
-    { times: 1 },
-  );
-  await postButton(page).click();
-
-  await expect(
-    page.getByText('Vui lòng nhập giá bán là số đồng lớn hơn 0, ví dụ 150.000.'),
-  ).toBeVisible();
-  await expect(page.getByText('Vui lòng chọn địa điểm.')).toBeVisible();
-  await expect(sellForm(page).getByLabel('Giá bán (VNĐ)')).toHaveAttribute('aria-invalid', 'true');
-  await expect(page.getByRole('heading', { name: 'Hình ảnh sản phẩm' })).toBeVisible();
-
-  // Disabled until every field the server refused has been changed.
-  await expect(postButton(page)).toBeDisabled();
-  await sellForm(page).getByLabel('Giá bán (VNĐ)').fill('7.000.000');
-  await expect(postButton(page)).toBeDisabled();
-  await sellForm(page).getByLabel('Địa điểm').selectOption({ label: 'Đà Nẵng' });
-  await expect(page.getByText(/^Vui lòng/)).toHaveCount(0);
-  await expect(postButton(page)).toBeEnabled();
-});
 
 test('keeps the draft and its key through failed posts, then posts once', async ({ page }) => {
   const keys: string[] = [];
@@ -163,74 +70,6 @@ test('keeps the draft and its key through failed posts, then posts once', async 
   await expect(photoTiles(page)).toHaveCount(0);
 });
 
-test('marks the files the server cannot use (409), keeping the draft', async ({ page }) => {
-  await openSellPage(page);
-  await addPhotos(page, ['photo-a.jpg', 'photo-b.jpg']);
-  await fillFields(page, title('conflict'));
-  await expectReadyToPost(page);
-
-  // The server refuses the second photo, whichever id it got.
-  await page.route(
-    (url) => url.pathname.endsWith('/products'),
-    (route: Route) => {
-      if (!isPostListing(route.request())) {
-        return route.fallback();
-      }
-      const { mediaIds } = route.request().postDataJSON() as { mediaIds: string[] };
-      return route.fulfill({
-        status: 409,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          error: {
-            code: 'CONFLICT',
-            message: 'Mocked.',
-            details: [{ mediaId: mediaIds[1], reason: 'NOT_FOUND' }],
-          },
-        }),
-      });
-    },
-    { times: 1 },
-  );
-  await postButton(page).click();
-
-  await expect(page.getByText('Vui lòng xoá rồi chọn lại các tệp được đánh dấu.')).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Ảnh 2, có lỗi\./ })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Ảnh 1, đã sẵn sàng\./ })).toBeVisible();
-  await expect(postButton(page)).toBeDisabled();
-  await expect(sellForm(page).getByLabel('Tiêu đề')).not.toHaveValue('');
-
-  // Without it, the listing goes.
-  await page.getByRole('button', { name: 'Xoá Ảnh 2' }).click();
-  await expect(postButton(page)).toBeEnabled();
-});
-
-test('opens the listing a reused key already made (422)', async ({ page, request }) => {
-  const feed = await request.get(`${API_URL}/products?limit=1`);
-  const [existing] = (await feed.json()).data as { id: string; title: string }[];
-
-  await openSellPage(page);
-  await addPhotos(page, ['photo-a.jpg']);
-  await fillFields(page, title('reused'));
-  await expectReadyToPost(page);
-
-  await answerPost(
-    page,
-    422,
-    { code: 'IDEMPOTENCY_KEY_REUSED', details: { productId: existing.id } },
-    { times: 1 },
-  );
-  await postButton(page).click();
-
-  await expect(page.getByText('Tin này đã được đăng trước đó.')).toBeVisible();
-  await expect(page.getByText(existing.title).first()).toBeVisible();
-
-  // The listing replaced the form in the history; the next draft starts empty.
-  await page.getByRole('button', { name: 'Quay lại' }).last().click();
-  await tab(page, 'Đăng tin').click();
-  await expect(sellForm(page).getByLabel('Tiêu đề')).toHaveValue('');
-  await expect(photoTiles(page)).toHaveCount(0);
-});
-
 test('reorders photos by dragging or from the viewer, and removes one with ×', async ({ page }) => {
   await openSellPage(page);
   await addPhotos(page, ['photo-a.jpg', 'photo-b.jpg', 'photo-a.jpg']);
@@ -270,7 +109,7 @@ test('reorders photos by dragging or from the viewer, and removes one with ×', 
   await expect(pictures.nth(1)).toHaveAttribute('src', before[1] ?? '');
 });
 
-test('keeps the draft as sent while the post is on its way', async ({ page }) => {
+test('does not reorder photos while the post is on its way', async ({ page }) => {
   await openSellPage(page);
   await addPhotos(page, ['photo-a.jpg', 'photo-b.jpg']);
   await fillFields(page, title('in flight'));
@@ -295,11 +134,7 @@ test('keeps the draft as sent while the post is on its way', async ({ page }) =>
   );
   await postButton(page).click();
 
-  const sending = page.getByRole('main').getByRole('button', { name: 'Đang đăng…' });
-  await expect(sending).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Xoá Ảnh 1' })).toBeDisabled();
-  await expect(page.getByLabel('Thêm ảnh', { exact: true })).toBeDisabled();
-  await expect(sellForm(page).getByLabel('Tiêu đề')).toBeDisabled();
+  await expect(page.getByRole('main').getByRole('button', { name: 'Đang đăng…' })).toBeDisabled();
   await dragPhoto(page, 1, 0);
   await expect(pictures.first()).toHaveAttribute('src', cover ?? '');
 
