@@ -37,9 +37,12 @@ export default () => {
       target: 'es2020',
       sourcemap: uploadSourceMaps ? 'hidden' : false,
       rollupOptions: {
-        // zmp-vite-plugin lists every entry in listSyncJS. Boot comes first and is tiny, so Zalo
-        // runs it while the main script still downloads (src/boot.ts).
-        input: { boot: 'src/boot.ts', index: 'index.html' },
+        output: {
+          // index.html loads src/boot.ts before src/app.ts. As its own chunk, zmp-vite-plugin
+          // lists it in listAsyncJS, which Zalo loads async: the tiny script runs while the
+          // main script still downloads.
+          manualChunks: (id) => (id.endsWith('/src/boot.ts') ? 'boot' : undefined),
+        },
       },
     },
     resolve: {
