@@ -12,16 +12,12 @@ export enum ServerMediaStatus {
   Failed = 'FAILED',
 }
 
-/** One file in `POST /media/upload-urls`; the original* fields are provenance only. */
+/** One file in `POST /media/upload-urls`. */
 export interface UploadRequestFile {
   clientFileId: string;
   type: MediaKind;
   contentType: string;
   size: number;
-  originalBytes: number;
-  originalWidth?: number;
-  originalHeight?: number;
-  optimized: boolean;
 }
 
 export interface PresignedPart {
