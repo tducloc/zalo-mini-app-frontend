@@ -8,7 +8,11 @@ const DWELL_MS = 300;
 /** Off unless VITE_FEED_AUTOPLAY=true, until it is measured on devices (plans/home-feed.md). */
 const isFlagOn = import.meta.env.VITE_FEED_AUTOPLAY === 'true';
 
-/** A WebView that refused one preview refuses them all; no more tries this session. */
+/**
+ * The WebView refused a preview. Zalo's iOS WebView refuses every play before the viewer's
+ * first tap (a scroll does not count) and allows them after it, so previews wait for the next
+ * tap, not the next session.
+ */
 let wasRefused = false;
 
 function isAutoplayAllowed() {
@@ -60,6 +64,9 @@ export function useFeedAutoplay({
   const finished = useRef<ReadonlySet<string>>(new Set());
 
   const [choiceCount, chooseAgain] = useReducer((count: number) => count + 1, 0);
+  // The feed's first render mounts only its first row, so a preview card in a later row arrives
+  // after the pick that follows the data: it asks for another one.
+  const scheduleChooseRef = useRef<() => void>();
 
   const cardRef = useCallback((id: string) => {
     let ref = cardRefs.current.get(id);
@@ -67,6 +74,7 @@ export function useFeedAutoplay({
       ref = (element) => {
         if (element) {
           cards.current.set(id, element);
+          scheduleChooseRef.current?.();
         } else {
           cards.current.delete(id);
         }
@@ -77,6 +85,14 @@ export function useFeedAutoplay({
   }, []);
 
   const handleRefused = useCallback(() => {
+    if (!wasRefused) {
+      const retry = () => {
+        wasRefused = false;
+        chooseAgain();
+      };
+      // pointerup, not pointerdown: a scroll starts with pointerdown and ends in pointercancel.
+      window.addEventListener('pointerup', retry, { capture: true, once: true });
+    }
     wasRefused = true;
     chooseAgain();
   }, []);
@@ -143,12 +159,14 @@ export function useFeedAutoplay({
       frame ||= requestAnimationFrame(choose);
     };
 
+    scheduleChooseRef.current = scheduleChoose;
     scheduleChoose();
     scroller.addEventListener('scroll', scheduleChoose, { passive: true });
     window.addEventListener('resize', scheduleChoose);
     document.addEventListener('visibilitychange', scheduleChoose);
 
     return () => {
+      scheduleChooseRef.current = undefined;
       cancelAnimationFrame(frame);
       clearTimeout(dwell);
       // A card still resting is chosen again by the next run, not skipped as unchanged.

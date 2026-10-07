@@ -24,8 +24,22 @@ import ErrorBoundary from '@/components/feedback/error-boundary';
 // Expose app configuration
 import appConfig from '../app-config.json';
 
-// Its own chunk, so Sentry does not slow down the first render.
-void import('@/lib/sentry').then(({ initSentry }) => initSentry());
+// Sentry's start is a ~100 ms task. Started on the first tap or key, or after a while, it stays
+// out of the app's opening; an error before that is not reported.
+const SENTRY_START_DELAY_MS = 10_000;
+const sentryStartEvents = ['pointerdown', 'keydown'] as const;
+let sentryTimer = 0;
+const startSentry = () => {
+  window.clearTimeout(sentryTimer);
+  for (const type of sentryStartEvents) {
+    window.removeEventListener(type, startSentry, true);
+  }
+  void import('@/lib/sentry').then(({ initSentry }) => initSentry());
+};
+for (const type of sentryStartEvents) {
+  window.addEventListener(type, startSentry, true);
+}
+sentryTimer = window.setTimeout(startSentry, SENTRY_START_DELAY_MS);
 
 if (!window.APP_CONFIG) {
   window.APP_CONFIG = appConfig as any;

@@ -133,8 +133,8 @@ export default function ListingCard({
 /**
  * The listing's short muted clip over its cover, played a couple of times and then back to
  * the cover, so nothing moves on and on. It shows once it really plays, so a slow start
- * or a refused autoplay leaves the cover as it was. Every card borrows the feed's one
- * pooled element, because iOS refuses to play a newly made one.
+ * or a refused autoplay leaves the cover as it was. Every card borrows the shared pooled
+ * element, because iOS refuses to play a newly made one.
  */
 function CardPreview({
   src,
@@ -155,7 +155,7 @@ function CardPreview({
       return;
     }
 
-    const { video, release } = videoPool.claim('feed', host);
+    const { video, release } = videoPool.claim('shared', host);
     const show = (isShown: boolean) => {
       video.className = `${previewClass} ${isShown ? 'opacity-100' : 'opacity-0'}`;
     };
@@ -203,6 +203,7 @@ function CardPreview({
     };
 
     show(false);
+    video.muted = true;
     // Counted plays, not a loop.
     video.loop = false;
     video.addEventListener('playing', handlePlaying);

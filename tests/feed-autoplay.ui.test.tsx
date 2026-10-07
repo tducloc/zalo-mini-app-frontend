@@ -76,4 +76,41 @@ describe('useFeedAutoplay', () => {
     wait(300);
     expect(result.current.activeId).toBe('row2-left');
   });
+
+  it('stops after a refused preview and tries again after the next tap', () => {
+    const scroller = withRect(document.createElement('div'), () => ({
+      top: 0,
+      bottom: 800,
+      left: 0,
+      right: 390,
+    }));
+    const card = withRect(document.createElement('button'), () => ({
+      top: 150,
+      bottom: 400,
+      left: 13,
+      right: 193,
+    }));
+    const { result } = renderHook(() =>
+      useFeedAutoplay({
+        previewIds: ['card'],
+        isPaused: false,
+        scrollerRef: { current: scroller },
+        headerRef: { current: null },
+      }),
+    );
+    result.current.cardRef('card')(card);
+    const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms));
+    wait(320);
+    expect(result.current.activeId).toBe('card');
+
+    act(() => result.current.onRefused());
+    wait(320);
+    expect(result.current.activeId).toBeNull();
+
+    act(() => {
+      window.dispatchEvent(new Event('pointerup'));
+    });
+    wait(320);
+    expect(result.current.activeId).toBe('card');
+  });
 });

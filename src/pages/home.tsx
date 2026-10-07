@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { Page, useNavigate } from 'zmp-ui';
+import { Page, useLocation, useNavigate } from 'zmp-ui';
 import { useShallow } from 'zustand/react/shallow';
 
 import { pageClass } from '@/components/layout/styles';
@@ -33,6 +33,9 @@ const sectionHeadingClass = 'mb-3 text-lg font-bold leading-6';
 
 export default function HomePage() {
   const navigate = useNavigate();
+  // zmp-ui keeps Home under a listing that slides in; its preview then gives the shared video
+  // element back for the listing's gallery.
+  const isCurrentRoute = useLocation().pathname === '/';
 
   // search and filters (store survives navigation to detail)
   // Shallow, so a commitSearch that changes nothing (as on mount) does not re-render.
@@ -134,7 +137,7 @@ export default function HomePage() {
         <ProductFeed
           feed={feed}
           hasActiveCriteria={hasActiveCriteria}
-          isAutoplayPaused={isFilterOpen}
+          isAutoplayPaused={isFilterOpen || !isCurrentRoute}
           scrollerRef={pageRef}
           headerRef={headerRef}
           onClearCriteria={handleClearCriteria}
