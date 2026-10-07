@@ -32,7 +32,6 @@ function renderPreview() {
   const view = render(
     <ListingCard
       isAboveFold
-      canShowBlur
       isPreviewActive
       product={product}
       onOpen={() => {}}
@@ -166,7 +165,6 @@ describe('every card preview plays in the one pooled element', () => {
           <ListingCard
             key={card.id}
             isAboveFold
-            canShowBlur
             isPreviewActive={card.id === activeId}
             product={card}
             onOpen={() => {}}
@@ -211,7 +209,6 @@ describe('every card preview plays in the one pooled element', () => {
     const card = (item: ProductCard) => (
       <ListingCard
         isAboveFold
-        canShowBlur
         isPreviewActive
         product={item}
         onOpen={() => {}}

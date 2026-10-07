@@ -27,7 +27,6 @@ const videoBadgeClass =
 export default function ListingCard({
   product,
   isAboveFold,
-  canShowBlur,
   isPreviewActive,
   cardRef,
   onOpen,
@@ -36,8 +35,6 @@ export default function ListingCard({
 }: {
   product: ProductCard;
   isAboveFold: boolean;
-  /** The ThumbHash blur may stand in while the photo loads. */
-  canShowBlur: boolean;
   /** This card's preview is the one playing in the feed. */
   isPreviewActive: boolean;
   /** Lets the feed measure the card to pick which preview plays. */
@@ -54,10 +51,7 @@ export default function ListingCard({
   // The placeholder only stands in while the photo loads; then it is dropped from the DOM.
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   const isImageLoaded = shouldShowImage && product.thumbnailUrl === loadedUrl;
-  const placeholderUrl = useMemo(
-    () => (canShowBlur ? thumbHashUrl(product.placeholder) : null),
-    [canShowBlur, product.placeholder],
-  );
+  const placeholderUrl = useMemo(() => thumbHashUrl(product.placeholder), [product.placeholder]);
 
   return (
     <button

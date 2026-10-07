@@ -1,4 +1,4 @@
-import { type RefObject, useDeferredValue, useEffect, useRef } from 'react';
+import { type RefObject, useEffect, useRef } from 'react';
 
 import FeedbackState from '@/components/feedback/feedback-state';
 import InlineRetry from '@/components/feedback/inline-retry';
@@ -52,13 +52,6 @@ function FeedContent({
   const columns = columnsForWidth(width);
 
   const products = feed.data?.pages.flatMap((page) => page.data) ?? [];
-  // A card's ThumbHash blur takes most of its render time. The cards of a page that just arrived
-  // render without it first, and React adds the blurs in a deferred render, in slices of a few ms.
-  const blurReadyPages = useDeferredValue(feed.data?.pages);
-  const blurReadyIds = new Set(
-    blurReadyPages?.flatMap((page) => page.data.map((product) => product.id)),
-  );
-
   const previewIds = products.flatMap((product) => (product.previewUrl ? [product.id] : []));
   const { activeId, cardRef, onRefused, onFinished } = useFeedAutoplay({
     previewIds,
@@ -100,7 +93,6 @@ function FeedContent({
     <>
       <VirtualListingGrid
         products={products}
-        blurReadyIds={blurReadyIds}
         columns={columns}
         width={width}
         isComplete={!feed.hasNextPage}
