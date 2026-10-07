@@ -24,8 +24,6 @@ const photoRequest: UploadRequestFile = {
   type: MediaKind.Image,
   contentType: 'image/jpeg',
   size: 10,
-  originalBytes: 100,
-  optimized: true,
 };
 const videoRequest: UploadRequestFile = {
   ...photoRequest,

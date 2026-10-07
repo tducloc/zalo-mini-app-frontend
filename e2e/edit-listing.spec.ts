@@ -91,8 +91,6 @@ async function postBlankListing(request: APIRequestContext, token: string, listi
           type: 'IMAGE',
           contentType: 'image/jpeg',
           size: bytes.length,
-          originalBytes: bytes.length,
-          optimized: false,
         },
       ],
     },

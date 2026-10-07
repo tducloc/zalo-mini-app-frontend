@@ -49,10 +49,6 @@ function requestFor(media: ListingMedia, upload: UploadSource): UploadRequestFil
     type: media.kind,
     contentType: upload.contentType,
     size: upload.blob.size,
-    originalBytes: media.original?.bytes ?? upload.blob.size,
-    originalWidth: media.original?.width ?? undefined,
-    originalHeight: media.original?.height ?? undefined,
-    optimized: upload.optimized,
   };
 }
 

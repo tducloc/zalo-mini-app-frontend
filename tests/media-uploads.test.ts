@@ -17,8 +17,6 @@ const file: UploadRequestFile = {
   type: MediaKind.Image,
   contentType: 'image/jpeg',
   size: 10,
-  originalBytes: 10,
-  optimized: true,
 };
 
 const photo = {
