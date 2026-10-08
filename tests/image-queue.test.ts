@@ -112,33 +112,52 @@ describe('image queue', () => {
     expect(await sentIds(current())).toEqual(['b']);
   });
 
-  it('gives the next photo a new worker after a crash', async () => {
+  it('retries the same photo in a new worker before the next photo', async () => {
     const { add, workers, current, sentIds, outcomes } = setup();
     ['a', 'b'].forEach(add);
 
     workers[0].crash();
     await flush();
 
-    expect(outcomes.get('a')).toEqual(original);
+    expect(outcomes.has('a')).toBe(false);
     expect(workers).toHaveLength(2);
+    expect(await sentIds(current())).toEqual(['a']);
+    current().succeed();
+    await flush();
+
+    expect(outcomes.get('a')).toMatchObject({ kind: 'optimized' });
     expect(await sentIds(current())).toEqual(['b']);
   });
 
-  it('uses the originals for everything left after a second crash', async () => {
-    const { add, workers, outcomes } = setup();
+  it('uses the original after two crashes but still optimizes every next photo', async () => {
+    const { add, workers, current, sentIds, outcomes } = setup();
     ['a', 'b', 'c'].forEach(add);
 
-    workers[0].crash();
-    await flush();
-    workers[1].crash();
-    await flush();
-    add('d');
-    await flush();
-
-    for (const id of ['a', 'b', 'c', 'd']) {
+    for (const id of ['a', 'b']) {
+      current().crash();
+      await flush();
+      expect(await sentIds(current())).toEqual([id]);
+      current().crash();
+      await flush();
       expect(outcomes.get(id)).toEqual(original);
     }
-    expect(workers).toHaveLength(2);
+
+    expect(await sentIds(current())).toEqual(['c']);
+    current().succeed();
+    await flush();
+    expect(outcomes.get('c')).toMatchObject({ kind: 'optimized' });
+    expect(workers).toHaveLength(5);
+  });
+
+  it('does not retry a removed photo after its worker crashes', async () => {
+    const { add, remove, current, sentIds, outcomes } = setup();
+    ['a', 'b'].forEach(add);
+    remove('a');
+    current().crash();
+    await flush();
+
+    expect(outcomes.get('a')).toMatchObject({ name: 'AbortError' });
+    expect(await sentIds(current())).toEqual(['b']);
   });
 
   it('never decodes a photo removed while waiting', async () => {
@@ -176,13 +195,15 @@ describe('image queue', () => {
     add('b');
     workers[1].crash();
     await flush();
+    current().succeed();
+    await flush();
     add('c');
     await flush();
     current().succeed();
     await flush();
 
     expect(outcomes.get('c')).toMatchObject({ kind: 'optimized' });
-    expect(workers).toHaveLength(3);
+    expect(workers).toHaveLength(4);
   });
 
   it('uses the originals when the WebView will not start a worker at all', async () => {
