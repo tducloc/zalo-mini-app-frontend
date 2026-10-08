@@ -13,11 +13,12 @@ import '@/css/app.scss';
 // React core
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 
 // Mount the app
 import MyApp from '@/components/app';
 import ErrorBoundary from '@/components/feedback/error-boundary';
+import { createQueryClient } from '@/lib/query-client';
 
 // Expose app configuration
 import appConfig from '../app-config.json';
@@ -44,15 +45,7 @@ if (!window.APP_CONFIG) {
 }
 
 const root = createRoot(document.getElementById('app')!);
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 30_000,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+const queryClient = createQueryClient();
 
 root.render(
   React.createElement(

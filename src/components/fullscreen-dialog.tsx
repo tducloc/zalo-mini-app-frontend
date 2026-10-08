@@ -35,8 +35,9 @@ export default function FullscreenDialog({
       // Above zmp-ui's header and sheets; the toast (1100, use-toast) stays above it.
       className="fixed inset-0 z-[1050] flex flex-col bg-black text-white"
     >
-      {/* The same width on each side of `header`, so it sits in the middle. */}
-      <div className="grid grid-cols-[44px_1fr_44px] items-center px-2 pb-2 pt-[max(8px,env(safe-area-inset-top))]">
+      {/* The same width on each side of `header`, so it sits in the middle. The top inset is
+          Reels' back button's: Android reports no env() inset, so 24px clears its status bar. */}
+      <div className="grid grid-cols-[44px_1fr_44px] items-center px-2 pb-2 pt-[max(24px,var(--zaui-safe-area-inset-top,env(safe-area-inset-top,0px)))]">
         <button
           ref={closeRef}
           type="button"
