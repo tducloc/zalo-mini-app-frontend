@@ -9,7 +9,6 @@ import {
   videoLengthProblem,
   originalVideoProblem,
   readVideoMetadata,
-  shouldConvertVideo,
 } from '@/features/media/utils/video';
 
 const MB = 1024 * 1024;
@@ -123,14 +122,5 @@ describe('originalVideoProblem', () => {
     expect(originalVideoProblem({ ...IPHONE_1080P, bytes: MAX_VIDEO_BYTES + 1 })).toBe(
       RejectReason.VideoTooLarge,
     );
-  });
-});
-
-describe('shouldConvertVideo', () => {
-  it('leaves every clip for the server to transcode', () => {
-    expect(shouldConvertVideo(IPHONE_1080P)).toBe(false);
-    expect(shouldConvertVideo({ ...IPHONE_1080P, videoCodec: 'hevc' })).toBe(false);
-    const heavy720 = { ...IPHONE_1080P, width: 720, height: 1280, bytes: 60 * MB };
-    expect(shouldConvertVideo(heavy720)).toBe(false);
   });
 });

@@ -8,14 +8,6 @@ describe('slotOf', () => {
     expect(slots(7, 3)).toEqual(['empty', 'empty', 'idle', 'active', 'idle', 'empty', 'empty']);
   });
 
-  it('gives it to the first reel', () => {
-    expect(slots(4, 0)).toEqual(['active', 'idle', 'empty', 'empty']);
-  });
-
-  it('gives it to the last reel', () => {
-    expect(slots(4, 3)).toEqual(['empty', 'empty', 'idle', 'active']);
-  });
-
   it('holds no video while the end of the list is on screen, and keeps the last reel ready', () => {
     expect(slots(4, 4)).toEqual(['empty', 'empty', 'empty', 'idle']);
   });

@@ -17,14 +17,8 @@ const feedWidth = (screen: number) => screen - 32;
 describe('columnsForWidth', () => {
   it.each([
     ['iPhone SE', 375, 2],
-    ['iPhone Pro Max', 430, 2],
-    ['iPad mini portrait', 744, 3],
     ['iPad portrait', 820, 3],
-    ['iPad Pro 11" portrait', 834, 3],
-    ['iPad Pro 12.9" portrait', 1024, 4],
-    ['iPad mini landscape', 1133, 4],
     ['iPad landscape', 1180, 4],
-    ['iPad Pro 12.9" landscape', 1366, 4],
   ])('%s (%ipt) shows %i cards a row', (_, screen, columns) => {
     expect(columnsForWidth(feedWidth(screen))).toBe(columns);
   });

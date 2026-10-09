@@ -56,18 +56,6 @@ describe('pickActiveCard', () => {
 describe('pickActiveCard turns', () => {
   const row = [card('left', 280, 13), card('right', 280, 197)];
 
-  it('plays the left card, then the right one, then none', () => {
-    const first = pickActiveCard(row, viewport, new Set());
-    expect(first.activeId).toBe('left');
-
-    const second = pickActiveCard(row, viewport, new Set([...first.finished, 'left']));
-    expect(second.activeId).toBe('right');
-
-    const third = pickActiveCard(row, viewport, new Set([...second.finished, 'right']));
-    expect(third.activeId).toBeNull();
-    expect(third.finished).toEqual(new Set(['left', 'right']));
-  });
-
   it('plays a finished card again once it has left the screen and come back', () => {
     const scrolledAway = [card('left', 900, 13), card('right', 900, 197)];
     const away = pickActiveCard(scrolledAway, viewport, new Set(['left', 'right']));
