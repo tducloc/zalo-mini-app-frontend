@@ -9,11 +9,25 @@ const SWIPE_DISTANCE_PX = 250;
 const MAX_FEED_SCROLLS = 30;
 const FEED_SCROLL_PX = 700;
 const FEED_SCROLL_WAIT_MS = 100;
+const PINCH_FROM_PX = 60;
+const PINCH_TO_PX = 240;
+const DOUBLE_TAP_GAP_MS = 80;
+const DOUBLE_TAP_SCALE = 2.5;
+const TRACKPAD_SCROLLS = 10;
+// A trackpad's sideways scroll: mostly deltaX, with a little deltaY.
+const TRACKPAD_DELTA_X = 40;
+const TRACKPAD_DELTA_Y = -3;
 
 const counter = (page: Page) => page.getByLabel(/^Nội dung \d+ trên \d+$/);
 const galleryTrack = (page: Page) => page.locator('[data-gallery-track]');
 const galleryVideo = (page: Page) => galleryTrack(page).locator('video');
 const pager = (page: Page) => page.locator('[data-reels-pager]');
+
+const lightbox = (page: Page) => page.getByRole('dialog', { name: /^Ảnh và video: / });
+const lightboxTrack = (page: Page) => lightbox(page).locator('.snap-x');
+const coverPhoto = (page: Page) => lightbox(page).locator('.react-transform-component').first();
+const photoScale = (page: Page) =>
+  coverPhoto(page).evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).a);
 
 const isMuted = (video: Locator) => video.evaluate((element: HTMLVideoElement) => element.muted);
 const isPaused = (video: Locator) => video.evaluate((element: HTMLVideoElement) => element.paused);
@@ -46,6 +60,60 @@ async function drag(
   await whileHeld?.();
   await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await touch.detach();
+}
+
+async function coverCentre(page: Page) {
+  const box = await lightbox(page).locator('.react-transform-wrapper').first().boundingBox();
+  if (!box) {
+    throw new Error('the cover photo is not on screen');
+  }
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+/** Two fingers moving apart sideways over the cover photo. */
+async function pinchCover(page: Page) {
+  const { x, y } = await coverCentre(page);
+  const fingers = (gap: number) => [
+    { x: x - gap / 2, y, id: 0 },
+    { x: x + gap / 2, y, id: 1 },
+  ];
+  const touch = await page.context().newCDPSession(page);
+
+  await touch.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: fingers(PINCH_FROM_PX),
+  });
+  for (let step = 1; step <= SWIPE_STEPS; step += 1) {
+    const gap = PINCH_FROM_PX + ((PINCH_TO_PX - PINCH_FROM_PX) * step) / SWIPE_STEPS;
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: fingers(gap) });
+    await page.waitForTimeout(FRAME_MS);
+  }
+  await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await touch.detach();
+}
+
+async function doubleTapCover(page: Page) {
+  const point = await coverCentre(page);
+  const touch = await page.context().newCDPSession(page);
+  for (let tap = 0; tap < 2; tap += 1) {
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await page.waitForTimeout(DOUBLE_TAP_GAP_MS);
+  }
+  await touch.detach();
+}
+
+/** A swipe flings the track on; a pinch that starts mid-fling scrolls instead of zooming. */
+async function waitForLightboxAtRest(page: Page) {
+  let lastLeft: number | undefined;
+  await expect
+    .poll(async () => {
+      const left = await lightboxTrack(page).evaluate((track) => track.scrollLeft);
+      const isResting = left === lastLeft;
+      lastLeft = left;
+      return isResting;
+    })
+    .toBe(true);
 }
 
 /** Negative `dx` swipes left. */
@@ -255,4 +323,68 @@ test('in Reels, the detail video plays only while the detail pane is on screen',
   await pager(page).evaluate((element) => element.scrollTo({ left: element.clientWidth }));
   await expectPlaying(video);
   expect(await isPaused(reelVideo)).toBe(true);
+});
+
+test('zooms a photo in the viewer, which holds the swipe until it zooms back', async ({ page }) => {
+  await page.goto('/');
+  await (await videoCard(page)).click();
+  await waitForGalleryAtRest(page);
+  await page.getByRole('button', { name: 'Phóng to ảnh' }).first().click();
+  await expect(lightbox(page)).toContainText('1 / ');
+  await waitForLightboxAtRest(page);
+
+  await pinchCover(page);
+  await expect.poll(() => photoScale(page)).toBeGreaterThan(DOUBLE_TAP_SCALE);
+
+  const zoomedTransform = await coverPhoto(page).evaluate((element) => element.style.transform);
+  await drag(page, await coverCentre(page), -SWIPE_DISTANCE_PX);
+  await expect
+    .poll(() => coverPhoto(page).evaluate((element) => element.style.transform))
+    .not.toBe(zoomedTransform);
+  expect(await lightboxTrack(page).evaluate((track) => track.scrollLeft)).toBe(0);
+  await expect(lightbox(page)).toContainText('1 / ');
+
+  await doubleTapCover(page);
+  await expect.poll(() => photoScale(page)).toBe(1);
+  await doubleTapCover(page);
+  await expect.poll(() => photoScale(page)).toBe(DOUBLE_TAP_SCALE);
+  await doubleTapCover(page);
+  await expect.poll(() => photoScale(page)).toBe(1);
+
+  await drag(page, await coverCentre(page), -SWIPE_DISTANCE_PX);
+  await expect(lightbox(page)).toContainText('2 / ');
+});
+
+test.describe('with a trackpad', () => {
+  test.use({ isMobile: false, hasTouch: false });
+
+  test('scrolls the viewer sideways without zooming, and zooms on a pinch', async ({ page }) => {
+    await page.goto('/');
+    await (await videoCard(page)).click();
+    await waitForGalleryAtRest(page);
+    await page.getByRole('button', { name: 'Phóng to ảnh' }).first().click();
+    await expect(lightbox(page)).toContainText('1 / ');
+
+    const { x, y } = await coverCentre(page);
+    await page.mouse.move(x, y);
+    for (let scroll = 0; scroll < TRACKPAD_SCROLLS; scroll += 1) {
+      await page.mouse.wheel(TRACKPAD_DELTA_X, TRACKPAD_DELTA_Y);
+      await page.waitForTimeout(FRAME_MS);
+    }
+    await expect(lightbox(page)).toContainText('2 / ');
+    expect(await photoScale(page)).toBe(1);
+
+    await lightboxTrack(page).evaluate((track) => {
+      track.scrollLeft = 0;
+    });
+    await waitForLightboxAtRest(page);
+    // The browser sends a trackpad pinch as a wheel with ctrlKey.
+    await page.keyboard.down('Control');
+    for (let scroll = 0; scroll < TRACKPAD_SCROLLS; scroll += 1) {
+      await page.mouse.wheel(0, -TRACKPAD_DELTA_X);
+      await page.waitForTimeout(FRAME_MS);
+    }
+    await page.keyboard.up('Control');
+    await expect.poll(() => photoScale(page)).toBeGreaterThan(1);
+  });
 });

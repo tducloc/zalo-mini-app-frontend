@@ -45,6 +45,7 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.88.0",
     "react-lazy-with-preload": "^2.2.1",
+    "react-zoom-pan-pinch": "^4.2.0",
     "thumbhash": "^0.1.1",
     "zmp": "^0.0.0",
     "zmp-sdk": "latest",
