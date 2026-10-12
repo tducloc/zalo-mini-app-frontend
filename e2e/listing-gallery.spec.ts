@@ -13,6 +13,10 @@ const PINCH_FROM_PX = 60;
 const PINCH_TO_PX = 240;
 const DOUBLE_TAP_GAP_MS = 80;
 const DOUBLE_TAP_SCALE = 2.5;
+const TRACKPAD_SCROLLS = 10;
+// A trackpad's sideways scroll: mostly deltaX, with a little deltaY.
+const TRACKPAD_DELTA_X = 40;
+const TRACKPAD_DELTA_Y = -3;
 
 const counter = (page: Page) => page.getByLabel(/^Nội dung \d+ trên \d+$/);
 const galleryTrack = (page: Page) => page.locator('[data-gallery-track]');
@@ -349,4 +353,38 @@ test('zooms a photo in the viewer, which holds the swipe until it zooms back', a
 
   await drag(page, await coverCentre(page), -SWIPE_DISTANCE_PX);
   await expect(lightbox(page)).toContainText('2 / ');
+});
+
+test.describe('with a trackpad', () => {
+  test.use({ isMobile: false, hasTouch: false });
+
+  test('scrolls the viewer sideways without zooming, and zooms on a pinch', async ({ page }) => {
+    await page.goto('/');
+    await (await videoCard(page)).click();
+    await waitForGalleryAtRest(page);
+    await page.getByRole('button', { name: 'Phóng to ảnh' }).first().click();
+    await expect(lightbox(page)).toContainText('1 / ');
+
+    const { x, y } = await coverCentre(page);
+    await page.mouse.move(x, y);
+    for (let scroll = 0; scroll < TRACKPAD_SCROLLS; scroll += 1) {
+      await page.mouse.wheel(TRACKPAD_DELTA_X, TRACKPAD_DELTA_Y);
+      await page.waitForTimeout(FRAME_MS);
+    }
+    await expect(lightbox(page)).toContainText('2 / ');
+    expect(await photoScale(page)).toBe(1);
+
+    await lightboxTrack(page).evaluate((track) => {
+      track.scrollLeft = 0;
+    });
+    await waitForLightboxAtRest(page);
+    // The browser sends a trackpad pinch as a wheel with ctrlKey.
+    await page.keyboard.down('Control');
+    for (let scroll = 0; scroll < TRACKPAD_SCROLLS; scroll += 1) {
+      await page.mouse.wheel(0, -TRACKPAD_DELTA_X);
+      await page.waitForTimeout(FRAME_MS);
+    }
+    await page.keyboard.up('Control');
+    await expect.poll(() => photoScale(page)).toBeGreaterThan(1);
+  });
 });

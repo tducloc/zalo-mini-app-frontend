@@ -145,6 +145,9 @@ function ZoomablePhoto({
       // Fitted, a one-finger drag is the track's swipe to the next slide. A tap also fires
       // a mousedown after touchend, which as a mouse pan would cancel the double tap's zoom.
       panning={{ disabled: !isZoomed, allowLeftClickPan: false }}
+      // A trackpad's sideways scroll carries a little deltaY, which would zoom; its pinch
+      // comes with ctrlKey and still does.
+      wheel={{ wheelDisabled: true }}
       doubleClick={{ mode: isZoomed ? 'reset' : 'zoomIn', step: DOUBLE_TAP_STEP }}
       onTransform={(_, state) => setIsZoomed(state.scale > 1)}
       onPinchStop={snapBackToFit}
