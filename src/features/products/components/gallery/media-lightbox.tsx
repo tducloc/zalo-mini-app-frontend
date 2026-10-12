@@ -1,10 +1,23 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
+import {
+  type ReactZoomPanPinchRef,
+  TransformComponent,
+  TransformWrapper,
+} from 'react-zoom-pan-pinch';
+
 import FullscreenDialog from '@/components/fullscreen-dialog';
-import { usePinchZoom } from '@/features/products/hooks/use-pinch-zoom';
 import type { ProductDetail } from '@/features/products/types/product';
 
 type ProductMedia = ProductDetail['media'][number];
+
+const MAX_SCALE = 4;
+
+/** A double tap zooms a fitted photo by this much, to 2.5x. */
+const DOUBLE_TAP_STEP = 1.5;
+
+/** Below this, a pinch that ends is taken as "back to fit". */
+const FIT_SNAP_SCALE = 1.05;
 
 interface MediaLightboxProps {
   media: ProductDetail['media'];
@@ -114,30 +127,40 @@ function ZoomablePhoto({
   title: string;
   onZoomChange: (isZoomed: boolean) => void;
 }) {
-  const boxRef = useRef<HTMLDivElement>(null);
-  const photoRef = useRef<HTMLImageElement>(null);
-  const { scale, offset, isZoomed, handlers } = usePinchZoom(boxRef, photoRef);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   useEffect(() => {
     onZoomChange(isZoomed);
   }, [isZoomed, onZoomChange]);
 
+  const snapBackToFit = (ref: ReactZoomPanPinchRef) => {
+    if (ref.state.scale < FIT_SNAP_SCALE) {
+      ref.resetTransform();
+    }
+  };
+
   return (
-    <div
-      ref={boxRef}
-      {...handlers}
-      // Fitted, the browser keeps horizontal swipes for the track; zoomed, every touch is ours.
-      className={`grid h-full w-full place-items-center ${isZoomed ? 'touch-none' : 'touch-pan-x'}`}
+    <TransformWrapper
+      maxScale={MAX_SCALE}
+      // Fitted, a one-finger drag is the track's swipe to the next slide. A tap also fires
+      // a mousedown after touchend, which as a mouse pan would cancel the double tap's zoom.
+      panning={{ disabled: !isZoomed, allowLeftClickPan: false }}
+      doubleClick={{ mode: isZoomed ? 'reset' : 'zoomIn', step: DOUBLE_TAP_STEP }}
+      onTransform={(_, state) => setIsZoomed(state.scale > 1)}
+      onPinchStop={snapBackToFit}
     >
-      <img
-        ref={photoRef}
-        alt={title}
-        draggable={false}
-        src={item.mediumUrl ?? item.thumbnailUrl ?? ''}
-        className="max-h-full max-w-full select-none object-contain"
-        // Follows the fingers.
-        style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})` }}
-      />
-    </div>
+      <TransformComponent
+        // Fitted, the browser keeps horizontal swipes for the track; zoomed, every touch is ours.
+        wrapperClass={`!h-full !w-full ${isZoomed ? 'touch-none' : 'touch-pan-x'}`}
+        contentClass="!h-full !w-full grid place-items-center"
+      >
+        <img
+          alt={title}
+          draggable={false}
+          src={item.mediumUrl ?? item.thumbnailUrl ?? ''}
+          className="max-h-full max-w-full select-none object-contain"
+        />
+      </TransformComponent>
+    </TransformWrapper>
   );
 }
