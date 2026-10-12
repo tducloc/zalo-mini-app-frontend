@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { type InfiniteData, type QueryClient, useInfiniteQuery } from '@tanstack/react-query';
 
 import { productKeys } from '@/features/products/api/keys';
 import type { ProductFeedPage, ProductFeedParams } from '@/features/products/types/product';
@@ -55,6 +55,20 @@ export async function getProductFeed(
     signal,
   });
   return response.data;
+}
+
+/**
+ * Pull to refresh: loads page one of this feed again and drops the other pages first, so one
+ * request runs and later pages load on scroll with the new cursor. The old first page stays on
+ * screen until the new one arrives. Other searches and filters are only marked stale.
+ */
+export async function refreshProductFeed(queryClient: QueryClient, params: ProductFeedParams) {
+  queryClient.setQueryData<InfiniteData<ProductFeedPage, string | undefined>>(
+    productKeys.feed(params),
+    (data) => data && { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) },
+  );
+
+  await queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
 }
 
 export function useProductFeed(params: ProductFeedParams) {

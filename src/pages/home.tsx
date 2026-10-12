@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { Page, useLocation, useNavigate } from 'zmp-ui';
 import { useShallow } from 'zustand/react/shallow';
@@ -7,6 +8,7 @@ import { useCategories } from '@/features/categories/api/get-categories';
 import CategoryStrip from '@/features/categories/components/category-strip';
 import FilterChips from '@/features/feed/components/filters/filter-chips';
 import HomeHeader from '@/features/feed/components/home-header';
+import PullToRefresh from '@/features/feed/components/pull-to-refresh';
 import ProductFeed from '@/features/feed/components/grid/product-feed';
 import type { FeedFilters, FilterKey } from '@/features/feed/types/filters';
 import {
@@ -17,7 +19,7 @@ import {
   toggleCategory,
 } from '@/features/feed/utils/filters';
 import { useLocations } from '@/features/locations/api/get-locations';
-import { useProductFeed } from '@/features/products/api/get-product-feed';
+import { refreshProductFeed, useProductFeed } from '@/features/products/api/get-product-feed';
 import { FilterSheet } from '@/pages/lazy-pages';
 import { useHomeFeedStore } from '@/stores/home-feed';
 
@@ -33,6 +35,7 @@ const sectionHeadingClass = 'mb-3 text-lg font-bold leading-6';
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   // zmp-ui keeps Home under a listing that slides in; its preview then gives the shared video
   // element back for the listing's gallery.
   const isCurrentRoute = useLocation().pathname === '/';
@@ -120,6 +123,11 @@ export default function HomePage() {
         onSearchChange={setSearchInput}
         onSearchClear={clearSearch}
         onSearchSubmit={commitSearch}
+      />
+
+      <PullToRefresh
+        scrollerRef={pageRef}
+        onRefresh={() => refreshProductFeed(queryClient, feedParams)}
       />
 
       <main className={homeContentClass}>
