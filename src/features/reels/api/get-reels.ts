@@ -2,10 +2,9 @@ import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 
 import type { ReelsPage } from '@/features/reels/types/reel';
 import { apiClient } from '@/lib/api-client';
+import { LISTING_GC_TIME_MS, LISTING_STALE_TIME_MS } from '@/lib/query-client';
 
 const REELS_PAGE_SIZE = 10;
-const REELS_STALE_TIME_MS = 5 * 60_000;
-const REELS_GC_TIME_MS = 10 * 60_000;
 const FIRST_PAGE_CURSOR: string | undefined = undefined;
 
 export const reelKeys = {
@@ -25,8 +24,8 @@ export const reelsQueryOptions = infiniteQueryOptions({
   queryFn: ({ pageParam, signal }) => getReels(pageParam, signal),
   initialPageParam: FIRST_PAGE_CURSOR,
   getNextPageParam: (lastPage) => lastPage.meta.nextCursor ?? undefined,
-  staleTime: REELS_STALE_TIME_MS,
-  gcTime: REELS_GC_TIME_MS,
+  staleTime: LISTING_STALE_TIME_MS,
+  gcTime: LISTING_GC_TIME_MS,
 });
 
 export function useReels() {

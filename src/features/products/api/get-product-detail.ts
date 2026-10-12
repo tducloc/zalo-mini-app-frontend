@@ -3,9 +3,7 @@ import { queryOptions, useQuery } from '@tanstack/react-query';
 import { productKeys } from '@/features/products/api/keys';
 import type { ProductDetail } from '@/features/products/types/product';
 import { http } from '@/lib/http';
-
-const DETAIL_STALE_TIME_MS = 60_000;
-const DETAIL_GC_TIME_MS = 10 * 60_000;
+import { LISTING_GC_TIME_MS, LISTING_STALE_TIME_MS } from '@/lib/query-client';
 
 export async function getProductDetail(productId: string, signal?: AbortSignal) {
   const response = await http.get<{ data: ProductDetail }>(
@@ -20,8 +18,8 @@ export function productDetailQueryOptions(productId: string, viewerId: string | 
     queryKey: productKeys.detail(productId, viewerId),
     queryFn: ({ signal }) => getProductDetail(productId, signal),
     enabled: Boolean(productId),
-    staleTime: DETAIL_STALE_TIME_MS,
-    gcTime: DETAIL_GC_TIME_MS,
+    staleTime: LISTING_STALE_TIME_MS,
+    gcTime: LISTING_GC_TIME_MS,
     // Keep showing the anonymous copy of the SAME product while the signed-in
     // copy (with viewer fields) loads; never show another product's data.
     placeholderData: (previousData) => (previousData?.id === productId ? previousData : undefined),

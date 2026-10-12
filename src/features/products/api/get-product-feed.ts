@@ -3,10 +3,9 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { productKeys } from '@/features/products/api/keys';
 import type { ProductFeedPage, ProductFeedParams } from '@/features/products/types/product';
 import { apiClient } from '@/lib/api-client';
+import { LISTING_GC_TIME_MS, LISTING_STALE_TIME_MS } from '@/lib/query-client';
 
 const FEED_PAGE_SIZE = 20;
-const FEED_STALE_TIME_MS = 5 * 60_000;
-const FEED_GC_TIME_MS = 10 * 60_000;
 // The first page has no cursor; typed so later pages can pass one.
 const FIRST_PAGE_CURSOR: string | undefined = undefined;
 
@@ -64,7 +63,7 @@ export function useProductFeed(params: ProductFeedParams) {
     queryFn: ({ pageParam, signal }) => getProductFeed(params, pageParam, signal),
     initialPageParam: FIRST_PAGE_CURSOR,
     getNextPageParam: (lastPage) => lastPage.meta.nextCursor ?? undefined,
-    staleTime: FEED_STALE_TIME_MS,
-    gcTime: FEED_GC_TIME_MS,
+    staleTime: LISTING_STALE_TIME_MS,
+    gcTime: LISTING_GC_TIME_MS,
   });
 }
