@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Page, useLocation, useNavigate } from 'zmp-ui';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -110,6 +110,12 @@ export default function HomePage() {
   const handleSelectCategory = (categoryId: string) =>
     setFilters(toggleCategory(filters, categoryId));
 
+  // Stable, so a search keystroke does not re-render every memoised card.
+  const handleOpenProduct = useCallback(
+    (productId: string) => navigate(`/products/${productId}`),
+    [navigate],
+  );
+
   return (
     <Page ref={pageRef} className={`${pageClass} ${homePageVarsClass}`} restoreScroll>
       <HomeHeader
@@ -149,7 +155,7 @@ export default function HomePage() {
           scrollerRef={pageRef}
           headerRef={headerRef}
           onClearCriteria={handleClearCriteria}
-          onOpenProduct={(productId) => navigate(`/products/${productId}`)}
+          onOpenProduct={handleOpenProduct}
         />
       </main>
 

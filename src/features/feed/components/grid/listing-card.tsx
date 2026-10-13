@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from 'zmp-ui';
 
 import Price from '@/components/price';
@@ -24,7 +24,7 @@ const previewClass =
 const videoBadgeClass =
   'absolute bottom-2 left-2 inline-flex items-center gap-[3px] rounded-[10px] bg-marketplace-ink/70 py-0.5 pl-1.5 pr-2 text-micro font-semibold leading-4 text-white';
 
-export default function ListingCard({
+export default memo(function ListingCard({
   product,
   isAboveFold,
   canShowBlur,
@@ -128,7 +128,7 @@ export default function ListingCard({
       </div>
     </button>
   );
-}
+});
 
 /**
  * The listing's short muted clip over its cover, played a couple of times and then back to
