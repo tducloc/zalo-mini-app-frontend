@@ -442,7 +442,6 @@
   .pc-result .pc-item { margin-top: 0; }
   .pc-result .pc-item b { color: var(--blue); }
   .pc-result .todo-inline { font-size: 15px; margin-top: 4px; }
-  .autoplay .pc { grid-template-columns: 1fr 610px 1.25fr; }
   .pc-list { margin: 16px 0 14px; padding-left: 22px; font-size: 19px; line-height: 1.45; color: var(--text-2); }
   .pc-list li { margin-bottom: 6px; }
   .pc-item .pc-list { margin: 8px 0 0; font-size: 18px; }
@@ -451,16 +450,6 @@
   .pc-list.policy ul { margin: 4px 0 0; padding-left: 18px; font-size: 16.5px; line-height: 1.4; list-style: circle; }
   .pc-list.policy ul li { margin-bottom: 3px; }
   .pc-list code { font-size: 15px; background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 0 4px; }
-  .pc-code { margin: 0 0 16px; padding: 14px 16px; background: #1f2329; color: #abb2bf; border-radius: 12px; font: 12px/1.45 ui-monospace, "SF Mono", Menlo, monospace; overflow: hidden; }
-  .pc-code code { font: inherit; color: inherit; background: none; border: 0; padding: 0; border-radius: 0; }
-  .pc-code .t-kw { color: #c678dd; }
-  .pc-code .t-str { color: #98c379; }
-  .pc-code .t-lit { color: #e06c75; }
-  .pc-code .t-type { color: #56b6c2; }
-  .pc-code .t-fn { color: #61afef; }
-  .pc-code .t-op { color: #7f8896; }
-  .pc-code .hl-block span { color: inherit; }
-  .pc-code .hl-block { display: block; margin: 0 -16px; padding: 0 16px; color: #ffb454; font-weight: 700; background: rgba(255, 180, 84, 0.16); box-shadow: inset 4px 0 #ffb454; }
   .why { display: grid; gap: 34px; height: 100%; align-content: center; }
   .why-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
   .why-mode { border: 1px solid var(--border); border-top: 6px solid var(--blue); border-radius: 18px; padding: 26px 28px; }
@@ -1034,30 +1023,7 @@
       </div>
       <div class="fix pc-card">
         <div class="fix-no">02 · Giải pháp</div>
-        <ul class="pc-list"><li>Tạo một global video element khi user truy cập ứng dụng</li><li>Prefetch trước 10 reels</li><li>Xử lý để trigger play video ngay trong hàm chuyển tab</li></ul>
-        <pre class="pc-code"><code><span class="t-kw">const</span> navigateFromTab = (path: <span class="t-type">string</span>) <span class="t-op">=&gt;</span> {
-  <span class="t-kw">const</span> navigateToTab = () <span class="t-op">=&gt;</span>
-    <span class="t-fn">navigate</span>(path, { replace: <span class="t-lit">true</span>, animate: <span class="t-lit">false</span> });
-
-  <span class="t-kw">if</span> (
-    path <span class="t-op">===</span> <span class="t-str">'/reels'</span> <span class="t-op">&amp;&amp;</span>
-    currentPath <span class="t-op">!==</span> <span class="t-str">'/reels'</span> <span class="t-op">&amp;&amp;</span>
-    useReelsStore.<span class="t-fn">getState</span>().activeProductId <span class="t-op">===</span> <span class="t-lit">null</span>
-  ) {
-    <span class="t-kw">const</span> hasFirstReel = <span class="t-type">Boolean</span>(
-      queryClient.<span class="t-fn">getQueryData</span>&lt;<span class="t-type">InfiniteData</span>&lt;<span class="t-type">ReelsPage</span>&gt;&gt;(reelKeys.<span class="t-fn">all</span>())
-        <span class="t-op">?.</span>pages[0]<span class="t-op">?.</span>data.length,
-    );
-    <span class="t-kw">if</span> (hasFirstReel <span class="t-op">&amp;&amp;</span> <span class="t-fn">isReelsPageLoaded</span>()) {
-<span class="hl-block">      <span class="t-fn">flushSync</span>(() <span class="t-op">=&gt;</span> {
-        useReelsStore.<span class="t-fn">getState</span>().<span class="t-fn">setMuted</span>(<span class="t-lit">false</span>);
-        <span class="t-fn">navigateToTab</span>();
-      });
-</span>      <span class="t-kw">return</span>;
-    }
-  }
-  <span class="t-fn">navigateToTab</span>();
-};</code></pre>
+        <ul class="pc-list"><li>Tạo một global video element khi user truy cập ứng dụng</li><li>Prefetch trước 10 reels</li><li>Xử lý để trigger play video ngay trong hàm chuyển tab</li><li>Dùng lại global video element, chỉ thay <code>src</code> khi user chuyển video</li></ul>
       </div>
       <div class="fix pc-card">
         <div class="fix-no">03 · Kết quả</div>
