@@ -313,6 +313,11 @@
   .flow-step b { font-size: 21px; white-space: nowrap; }
   .flow-step .detail { display: block; margin-top: 6px; font-size: 17px; line-height: 1.35; color: var(--text-2); }
   .flow-step .phone { width: 270px; }
+  .steps-row.five { gap: 22px; }
+  .steps-row.five .flow-step { width: 276px; }
+  .steps-row.five .flow-step figcaption { height: 150px; }
+  .steps-row.five .flow-step b { font-size: 20px; white-space: normal; }
+  .steps-row.five .flow-step .phone { width: 236px; }
   .phone { background: #1f2329; padding: 7px; border-radius: 30px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16); }
   .phone img, .phone video { display: block; width: 100%; aspect-ratio: 462 / 1000; object-fit: cover; object-position: top; border-radius: 24px; }
   .lt { display: grid; grid-template-columns: 1fr 520px; gap: 48px; height: 100%; align-items: start; }
@@ -1060,7 +1065,7 @@
 <section class="slide">
   <div class="s-title">Đăng tin</div>
   <div class="body">
-    <div class="steps-row"><figure class="flow-step"><figcaption><span class="no">1</span><b>Thêm ảnh, video</b><span class="detail">Chọn tối đa 10 ảnh và 1 video. App tự động optimize ảnh và video trước khi upload.</span></figcaption><div class="phone"><img src="assets/app/sell-uploaded.jpg?v=1791294818" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Upload trong lúc nhập tin</b><span class="detail">Media được upload ngay khi sẵn sàng, người dùng vẫn có thể tiếp tục nhập thông tin.</span></figcaption><div class="phone"><img src="assets/app/sell-processing.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">3</span><b>Đăng tin</b><span class="detail">Hoàn tất thông tin và nhấn Đăng tin. Không cần chờ server xử lý media.</span></figcaption><div class="phone"><img src="assets/app/sell-filled.jpg?v=1791294818" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">4</span><b>Xử lý &amp; hiển thị</b><span class="detail">Server xử lý nốt ảnh, video. Tin tự động xuất hiện trên feed khi hoàn tất.</span></figcaption><div class="phone"><img src="assets/app/posted.jpg?v=1791294585" alt=""></div></figure></div>
+    <div class="steps-row five"><figure class="flow-step"><figcaption><span class="no">1</span><b>Thêm ảnh, video</b><span class="detail">App tự động optimize và upload ảnh, video mà không block UI.</span></figcaption><div class="phone"><img src="assets/app/sell-uploaded.jpg?v=1791294818" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Nhập tin</b><span class="detail">Người dùng có thể tiếp tục nhập tin khi media đang được xử lý.</span></figcaption><div class="phone"><img src="assets/app/sell-processing.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">3</span><b>Chuyển trang</b><span class="detail">Hoặc thậm chí là navigate sang các trang khác.</span></figcaption><div class="phone"><img src="assets/app/sell-navigate.jpg?v=1791900000" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">4</span><b>Đăng tin</b><span class="detail">Hoàn tất thông tin và nhấn Đăng tin. Không cần chờ server xử lý media.</span></figcaption><div class="phone"><img src="assets/app/sell-filled.jpg?v=1791294818" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">5</span><b>Xử lý &amp; hiển thị</b><span class="detail">Server xử lý nốt ảnh, video. Tin tự động xuất hiện trên feed khi hoàn tất.</span></figcaption><div class="phone"><img src="assets/app/posted.jpg?v=1791294585" alt=""></div></figure></div>
   </div>
   <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-post-listing.png?v=1791262996" data-title="3. Đăng tin">3. Đăng tin</button></div>
 </section>
