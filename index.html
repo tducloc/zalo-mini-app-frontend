@@ -704,6 +704,7 @@
   .need-do .nd-done { background: var(--pale); border-color: transparent; }
   .need-do .nd-arrow { display: grid; place-items: center; font-size: 26px; color: var(--muted); }
   .need-do + .callout { margin-top: 28px; }
+  .goals.single { grid-template-columns: minmax(0, 1100px); justify-content: center; }
   .goals.early { gap: 28px; height: auto; }
   .goals.early .goal { padding: 28px 34px; }
   .goals.early .goal p { margin-bottom: 0; }
@@ -1073,7 +1074,7 @@
 <section class="slide">
   <div class="s-title">Đăng tin: Technical Challenge</div>
   <div class="body">
-    <div class="goals"><div class="goal"><div class="goal-no">01 — Client-side Media Optimization</div><h3>Tối ưu ảnh và video ngay trên thiết bị</h3><p>Resize, compress và transcode media trước khi upload, giúp giảm dung lượng truyền tải và tải xử lý trên server.</p><div class="metrics"><div class="metric"><b>1600 px</b><span>Cạnh dài tối đa của ảnh</span></div><div class="metric"><b>H.264</b><span>Video tối đa 1080p</span></div></div></div><div class="goal"><div class="goal-no">02 — Non-blocking Media Processing</div><h3>Optimize media không làm gián đoạn UI</h3><p>Xử lý ảnh/video trên background thread, đảm bảo người dùng vẫn có thể nhập thông tin, chuyển tab và thao tác bình thường.</p></div></div>
+    <div class="goals single"><div class="goal"><div class="goal-no">Client-side Media Optimization</div><h3>Tối ưu ảnh và video ngay trên thiết bị, không làm gián đoạn UI</h3><p>Resize, compress và transcode trước khi upload.<br>Người dùng vẫn có thể nhập tin hoặc chuyển sang tab khác.</p><div class="metrics"><div class="metric"><b>1600 px</b><span>Cạnh dài tối đa của ảnh</span></div><div class="metric"><b>H.264</b><span>Video tối đa 1080p</span></div><div class="metric"><b>Web Worker</b><span>Nén ảnh ngoài main thread</span></div></div></div></div>
   </div>
 </section>
 
