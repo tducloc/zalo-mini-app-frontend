@@ -1,10 +1,11 @@
 import { Volume2, VolumeX } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ProductDetail } from '@/features/products/types/product';
 import { isPlayRefused } from '@/features/reels/utils/reel-player';
 import { videoPool } from '@/lib/video-pool';
 import { useDetailSoundStore } from '@/stores/detail-sound';
+import { thumbHashUrl } from '@/utils/thumbhash';
 
 // Half on screen, as Reels counts its detail pane as shown. The reel has stopped by then,
 // so the two never play together.
@@ -27,6 +28,7 @@ export default function GalleryVideo({
   title,
   isActive,
   isCovered,
+  canShowBlur,
   slideClass,
   onOpen,
 }: {
@@ -34,6 +36,8 @@ export default function GalleryVideo({
   title: string;
   isActive: boolean;
   isCovered: boolean;
+  /** The ThumbHash blur may stand in while the poster loads. */
+  canShowBlur: boolean;
   slideClass: string;
   onOpen: () => void;
 }) {
@@ -42,6 +46,11 @@ export default function GalleryVideo({
   const isMuted = useDetailSoundStore((state) => state.isMuted);
   const setMuted = useDetailSoundStore((state) => state.setMuted);
   const src = item.mediumUrl;
+  const [loadedPoster, setLoadedPoster] = useState<string | null>(null);
+  const placeholderUrl = useMemo(
+    () => (canShowBlur ? thumbHashUrl(item.placeholder) : null),
+    [canShowBlur, item.placeholder],
+  );
 
   useEffect(() => {
     const host = hostRef.current;
@@ -131,7 +140,17 @@ export default function GalleryVideo({
         type="button"
         onClick={onOpen}
       >
-        {item.thumbnailUrl && <img alt="" className={fillClass} src={item.thumbnailUrl} />}
+        {placeholderUrl && item.thumbnailUrl && item.thumbnailUrl !== loadedPoster && (
+          <img alt="" aria-hidden className={fillClass} src={placeholderUrl} />
+        )}
+        {item.thumbnailUrl && (
+          <img
+            alt=""
+            className={fillClass}
+            src={item.thumbnailUrl}
+            onLoad={() => setLoadedPoster(item.thumbnailUrl)}
+          />
+        )}
         <div ref={hostRef} className="absolute inset-0" />
       </button>
       <button

@@ -1,15 +1,18 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import GalleryVideo from '@/features/products/components/gallery/gallery-video';
 import MediaLightbox from '@/features/products/components/gallery/media-lightbox';
 import { ProductDetail } from '@/features/products/types/product';
+import { thumbHashUrl } from '@/utils/thumbhash';
 
 type ProductMedia = ProductDetail['media'];
 
 const slideClass =
   'relative block aspect-square w-full shrink-0 snap-center overflow-hidden border-0 bg-black p-0';
 // Media keeps its own aspect ratio; the black slide shows around it.
-const contentClass = 'block aspect-square w-full object-contain';
+const contentClass = 'relative block aspect-square w-full object-contain';
+// The ThumbHash blur behind a photo while it downloads.
+const blurClass = 'absolute inset-0 size-full object-contain';
 
 export default function ProductMediaGallery({
   media,
@@ -55,36 +58,30 @@ export default function ProductMediaGallery({
           onScroll={handleScroll}
           className="flex size-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {media.map((item, index) =>
-            item.type === 'VIDEO' ? (
+          {media.map((item, index) => {
+            // Only the slides that load eagerly decode their blur, so a long gallery adds no work.
+            const isNear = Math.abs(index - activeIndex) <= 1;
+            return item.type === 'VIDEO' ? (
               <GalleryVideo
                 key={item.id}
                 item={item}
                 title={productTitle}
                 isActive={index === activeIndex}
                 isCovered={isLightboxOpen}
+                canShowBlur={isNear}
                 slideClass={slideClass}
                 onOpen={() => setIsLightboxOpen(true)}
               />
             ) : (
-              <button
+              <GalleryPhoto
                 key={item.id}
-                aria-label="Phóng to ảnh"
-                className={slideClass}
-                type="button"
-                onClick={() => setIsLightboxOpen(true)}
-              >
-                {/* One image per slide: swapping a thumbnail for the larger
-                    file mid-swipe changed its aspect ratio and made it jump. */}
-                <img
-                  alt={productTitle}
-                  className={contentClass}
-                  loading={Math.abs(index - activeIndex) <= 1 ? 'eager' : 'lazy'}
-                  src={item.mediumUrl ?? item.thumbnailUrl ?? ''}
-                />
-              </button>
-            ),
-          )}
+                item={item}
+                title={productTitle}
+                isNear={isNear}
+                onOpen={() => setIsLightboxOpen(true)}
+              />
+            );
+          })}
         </div>
 
         <span
@@ -104,5 +101,42 @@ export default function ProductMediaGallery({
         />
       )}
     </>
+  );
+}
+
+function GalleryPhoto({
+  item,
+  title,
+  isNear,
+  onOpen,
+}: {
+  item: ProductMedia[number];
+  title: string;
+  isNear: boolean;
+  onOpen: () => void;
+}) {
+  const src = item.mediumUrl ?? item.thumbnailUrl ?? '';
+  // The blur only stands in while the photo loads; then it is dropped from the DOM.
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const placeholderUrl = useMemo(
+    () => (isNear ? thumbHashUrl(item.placeholder) : null),
+    [isNear, item.placeholder],
+  );
+
+  return (
+    <button aria-label="Phóng to ảnh" className={slideClass} type="button" onClick={onOpen}>
+      {placeholderUrl && src !== loadedSrc && (
+        <img alt="" aria-hidden className={blurClass} src={placeholderUrl} />
+      )}
+      {/* One image per slide: swapping a thumbnail for the larger
+          file mid-swipe changed its aspect ratio and made it jump. */}
+      <img
+        alt={title}
+        className={contentClass}
+        loading={isNear ? 'eager' : 'lazy'}
+        src={src}
+        onLoad={() => setLoadedSrc(src)}
+      />
+    </button>
   );
 }
