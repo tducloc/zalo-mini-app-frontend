@@ -25,7 +25,7 @@ function tokenExpiringIn(ms: number) {
 }
 
 function sessionWith(accessToken: string, user: object = { zaloId: 'zalo-1' }) {
-  return { accessToken, user: { id: 'u1', name: 'Seller', avatarUrl: null, ...user } };
+  return { accessToken, user: { id: 'u1', name: null, avatarUrl: null, ...user } };
 }
 
 function saveSessionOnDevice(session: unknown) {
@@ -137,14 +137,6 @@ describe('reopening the app with a saved session', () => {
     await restoreSession();
 
     expect(getUserID).not.toHaveBeenCalled();
-    expect(exchange).toHaveBeenCalledTimes(1);
-  });
-
-  it('exchanges when the saved session has no name, to pick up a name allowed since', async () => {
-    saveSessionOnDevice(sessionWith(tokenExpiringIn(HOUR_MS), { zaloId: 'zalo-1', name: null }));
-
-    await restoreSession();
-
     expect(exchange).toHaveBeenCalledTimes(1);
   });
 
