@@ -16,11 +16,10 @@ export async function getLocations(signal?: AbortSignal) {
 
 // Module-level so React Query keeps its result across renders instead of reading again.
 function readSavedLocations() {
-  const saved = readNativeCache<unknown>(CACHE_KEY, {
+  return readNativeCache<LocationResponse[]>(CACHE_KEY, {
     version: CACHE_VERSION,
     maxAgeMs: CACHE_MAX_AGE_MS,
-  })?.data;
-  return Array.isArray(saved) ? (saved as LocationResponse[]) : undefined;
+  });
 }
 
 export function useLocations({ enabled = true }: { enabled?: boolean } = {}) {

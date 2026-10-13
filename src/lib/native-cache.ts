@@ -13,11 +13,6 @@ interface ReadOptions {
   maxAgeMs?: number;
 }
 
-export interface CacheHit<T> {
-  data: T;
-  savedAt: number;
-}
-
 function isEnvelope(value: unknown): value is CacheEnvelope<unknown> {
   if (typeof value !== 'object' || value === null) {
     return false;
@@ -42,10 +37,7 @@ export function removeNativeCache(key: string) {
  * The saved value, or undefined. A value that is missing, corrupt, from another
  * version or past `maxAgeMs` is removed. Never throws: a failing store reads as empty.
  */
-export function readNativeCache<T>(
-  key: string,
-  { version, maxAgeMs }: ReadOptions,
-): CacheHit<T> | undefined {
+export function readNativeCache<T>(key: string, { version, maxAgeMs }: ReadOptions): T | undefined {
   let raw: string | null;
   try {
     raw = nativeStorage.getItem(key);
@@ -70,7 +62,7 @@ export function readNativeCache<T>(
     return undefined;
   }
 
-  return { data: envelope.data as T, savedAt: envelope.savedAt };
+  return envelope.data as T;
 }
 
 /** Overwrites the value under `key`. Never throws. */

@@ -136,16 +136,6 @@ describe.each([
     expect(result.current.isPending).toBe(true);
   });
 
-  it('ignores a saved value that is not a list', () => {
-    save(key, { [key]: saved });
-    serve({ [url]: fresh });
-
-    const { result } = renderHook(useHook, { wrapper: wrapper() });
-
-    expect(result.current.data).toBeUndefined();
-    expect(result.current.isPending).toBe(true);
-  });
-
   it('reads the saved copy once while the request is pending', () => {
     save(key, saved);
     serve({ [url]: fresh });

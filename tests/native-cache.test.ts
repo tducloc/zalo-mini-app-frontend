@@ -31,13 +31,10 @@ afterEach(() => {
 });
 
 describe('native cache', () => {
-  it('returns what was written with its save time', () => {
+  it('returns what was written', () => {
     writeNativeCache(KEY, { a: [1, 2] }, 1);
 
-    expect(readNativeCache(KEY, { version: 1, maxAgeMs: HOUR_MS })).toEqual({
-      data: { a: [1, 2] },
-      savedAt: Date.now(),
-    });
+    expect(readNativeCache(KEY, { version: 1, maxAgeMs: HOUR_MS })).toEqual({ a: [1, 2] });
   });
 
   it('drops a value saved under another version', () => {
@@ -50,7 +47,7 @@ describe('native cache', () => {
   it('drops an expired value and keeps one at the limit', () => {
     writeNativeCache(KEY, 'x', 1);
     vi.advanceTimersByTime(HOUR_MS);
-    expect(readNativeCache(KEY, { version: 1, maxAgeMs: HOUR_MS })?.data).toBe('x');
+    expect(readNativeCache(KEY, { version: 1, maxAgeMs: HOUR_MS })).toBe('x');
 
     vi.advanceTimersByTime(1);
     expect(readNativeCache(KEY, { version: 1, maxAgeMs: HOUR_MS })).toBeUndefined();
@@ -61,7 +58,7 @@ describe('native cache', () => {
     writeNativeCache(KEY, 'x', 1);
     vi.advanceTimersByTime(1000 * HOUR_MS);
 
-    expect(readNativeCache(KEY, { version: 1 })?.data).toBe('x');
+    expect(readNativeCache(KEY, { version: 1 })).toBe('x');
   });
 
   it.each(['{not json', '"text"', '{"v":1,"savedAt":"now","data":1}', '{"v":1,"savedAt":1}'])(

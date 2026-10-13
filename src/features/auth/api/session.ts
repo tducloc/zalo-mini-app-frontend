@@ -46,20 +46,18 @@ export function discardSavedSession() {
   removeNativeCache(SESSION_CACHE_KEY);
 }
 
-function withTimeout<T>(start: () => Promise<T>, timeoutMs: number, message: string) {
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string) {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error(message)), timeoutMs);
 
-    start()
-      .then(resolve, reject)
-      .finally(() => clearTimeout(timer));
+    promise.then(resolve, reject).finally(() => clearTimeout(timer));
   });
 }
 
 /** The SDK's Zalo access token, failing after a timeout instead of hanging. */
 export function requestSdkToken() {
   return withTimeout(
-    () => getAccessToken(),
+    getAccessToken(),
     SDK_TOKEN_TIMEOUT_MS,
     'Zalo phản hồi chậm. Vui lòng thử lại.',
   );
@@ -70,25 +68,19 @@ export function requestSdkToken() {
  * same user. Any doubt returns undefined, so sign-in falls back to the normal exchange.
  */
 async function readSavedSession(): Promise<Session | undefined> {
-  const saved = readNativeCache<Session>(SESSION_CACHE_KEY, { version: SESSION_CACHE_VERSION });
-  const savedZaloId = saved?.data.user?.zaloId;
+  const session = readNativeCache<Session>(SESSION_CACHE_KEY, { version: SESSION_CACHE_VERSION });
 
   if (
-    !saved ||
-    !saved.data.user?.id ||
-    !savedZaloId ||
-    !hasLifetimeLeft(saved.data.accessToken, MIN_SAVED_TOKEN_LIFETIME_MS)
+    !session?.user?.id ||
+    !session.user.zaloId ||
+    !hasLifetimeLeft(session.accessToken, MIN_SAVED_TOKEN_LIFETIME_MS)
   ) {
     return undefined;
   }
 
   try {
-    const zaloId = await withTimeout(
-      () => getUserID(),
-      SDK_USER_ID_TIMEOUT_MS,
-      'Zalo phản hồi chậm.',
-    );
-    return zaloId === savedZaloId ? saved.data : undefined;
+    const zaloId = await withTimeout(getUserID(), SDK_USER_ID_TIMEOUT_MS, 'Zalo phản hồi chậm.');
+    return zaloId === session.user.zaloId ? session : undefined;
   } catch (error) {
     warnInDev('auth', 'saved session not reused', error);
     return undefined;

@@ -17,11 +17,10 @@ export async function getCategories(signal?: AbortSignal) {
 
 // Module-level so React Query keeps its result across renders instead of reading again.
 function readSavedCategories() {
-  const saved = readNativeCache<unknown>(CACHE_KEY, {
+  return readNativeCache<CategoryResponse[]>(CACHE_KEY, {
     version: CACHE_VERSION,
     maxAgeMs: CACHE_MAX_AGE_MS,
-  })?.data;
-  return Array.isArray(saved) ? (saved as CategoryResponse[]) : undefined;
+  });
 }
 
 /**
