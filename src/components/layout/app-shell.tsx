@@ -1,5 +1,5 @@
 import { type PropsWithChildren, useCallback, useEffect } from 'react';
-import { createPortal, flushSync } from 'react-dom';
+import { createPortal } from 'react-dom';
 import { type InfiniteData, useQueryClient } from '@tanstack/react-query';
 import { EventName, events, getSystemInfo } from 'zmp-sdk';
 import { Icon, useLocation, useNavigate } from 'zmp-ui';
@@ -125,13 +125,11 @@ export default function AppShell({ children }: PropsWithChildren) {
       const hasFirstReel = Boolean(
         queryClient.getQueryData<InfiniteData<ReelsPage>>(reelKeys.all())?.pages[0]?.data.length,
       );
-      // Sound needs the first reel mounted inside the tap. Otherwise the page starts muted.
+      // Sound needs the first reel's play() inside the tap. React renders a tap's update and
+      // runs its effects before the tap's event ends, so unmuting here is enough. Otherwise
+      // the page starts muted.
       if (hasFirstReel && isReelsPageLoaded()) {
-        flushSync(() => {
-          useReelsStore.getState().setMuted(false);
-          navigateToTab();
-        });
-        return;
+        useReelsStore.getState().setMuted(false);
       }
     }
     navigateToTab();

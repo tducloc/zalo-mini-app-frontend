@@ -35,8 +35,8 @@ export function useReelPlayback(
 
   const isActive = slot === 'active' && isAppVisible;
 
-  // A reel that mounts on screen plays in its first effects, which the Reels tab tap runs
-  // inside the tap (flushSync): the one moment WebKit allows sound.
+  // A reel that mounts on screen plays in its first effects, which React runs before the
+  // Reels tab tap's event ends: the one moment WebKit allows sound.
   // Including off screen. A paused start paints the play icon for one frame when the
   // reel becomes active. Idle reels still have no source.
   const [status, dispatch] = useReducer(reelPlayer, 'loading');
