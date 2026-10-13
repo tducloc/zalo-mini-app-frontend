@@ -1,5 +1,9 @@
 import axios from 'axios';
-vi.mock('zmp-sdk', () => ({ getAccessToken: vi.fn() }));
+vi.mock('zmp-sdk', () => ({
+  getAccessToken: vi.fn(),
+  getUserID: vi.fn(),
+  nativeStorage: { getItem: () => null, setItem: () => undefined, removeItem: () => undefined },
+}));
 const session = { accessToken: 'jwt-new', user: { id: 'u1', name: null, avatarUrl: null } };
 let http: any, apiClient: any, restoreSession: any, getSession: any, getAccessToken: any;
 const response = (config: any, status: number, data = {}) => {

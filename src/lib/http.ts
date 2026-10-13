@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { getSession, restoreSession } from '@/features/auth/api/session';
+import { discardSavedSession, getSession, restoreSession } from '@/features/auth/api/session';
 import { apiClient } from '@/lib/api-client';
 
 declare module 'axios' {
@@ -8,6 +8,12 @@ declare module 'axios' {
     retriedAfterRefresh?: boolean;
     sessionUserId?: string;
   }
+}
+
+// The saved token just failed, so signing in again must not reuse it.
+function renewSession() {
+  discardSavedSession();
+  return restoreSession();
 }
 
 export const http = axios.create(apiClient.defaults);
@@ -39,7 +45,7 @@ http.interceptors.response.use(
     const session =
       current && request.headers.Authorization !== `Bearer ${current.accessToken}`
         ? current
-        : await restoreSession();
+        : await renewSession();
     if (request.signal?.aborted) throw new axios.CanceledError();
     if (request.sessionUserId && request.sessionUserId !== session.user.id) {
       throw new Error('Tài khoản đã thay đổi. Vui lòng thực hiện lại thao tác.');

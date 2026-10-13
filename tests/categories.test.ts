@@ -1,3 +1,5 @@
+vi.mock('zmp-sdk', () => ({ nativeStorage: {} }));
+
 import { getCategories } from '@/features/categories/api/get-categories';
 import { apiClient } from '@/lib/api-client';
 
