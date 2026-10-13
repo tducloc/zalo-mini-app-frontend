@@ -15,6 +15,7 @@ const SDK_USER_ID_TIMEOUT_MS = 3_000;
 // A token about to expire would only fail on the first request.
 const MIN_SAVED_TOKEN_LIFETIME_MS = 60_000;
 const SESSION_CACHE_KEY = 'session';
+// Bump when `Session` changes shape, so old saved sessions are dropped.
 const SESSION_CACHE_VERSION = 1;
 // Automatic retries wait this long after a failure; a manual retry does not.
 const RETRY_COOLDOWN_MS = 5_000;

@@ -136,6 +136,29 @@ describe.each([
     expect(result.current.isPending).toBe(true);
   });
 
+  it('ignores a saved value that is not a list', () => {
+    save(key, { [key]: saved });
+    serve({ [url]: fresh });
+
+    const { result } = renderHook(useHook, { wrapper: wrapper() });
+
+    expect(result.current.data).toBeUndefined();
+    expect(result.current.isPending).toBe(true);
+  });
+
+  it('reads the saved copy once while the request is pending', () => {
+    save(key, saved);
+    serve({ [url]: fresh });
+    const getItem = vi.spyOn(nativeStorage, 'getItem');
+
+    const { rerender } = renderHook(useHook, { wrapper: wrapper() });
+    rerender();
+    rerender();
+
+    expect(getItem.mock.calls.filter(([read]) => read === key)).toHaveLength(1);
+    getItem.mockRestore();
+  });
+
   it('reports a failed request as an error, keeping the saved copy for the next open', async () => {
     save(key, saved);
     apiClient.defaults.adapter = async () => {
