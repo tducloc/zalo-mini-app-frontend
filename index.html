@@ -1,4 +1,1567 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Chợ Zalo · UI Review</title>  <script type="module" crossorigin src="./assets/showcase-CeVeDNqy.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/showcase-oexR6XRD.css">
-</head><body><div id="app"></div></body></html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zalo Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #0068ff;
+    --blue-title: #1f4fd8;
+    --navy-1: #2a4fd0;
+    --navy-2: #1636a8;
+    --navy-3: #0d2585;
+    --text: #1a1a1a;
+    --text-2: #5c5c5c;
+    --muted: #9b9b9b;
+    --border: #e0e0e0;
+    --surface: #f5f5f5;
+    --pale: #e6f0ff;
+    --charcoal: #23262b;
+    --todo: #ff8c00;
+    --todo-bg: #fff8ee;
+    --stage-bg: #2b2d31;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--stage-bg);
+    font-family: 'Be Vietnam Pro', 'Inter', 'Segoe UI', Arial, sans-serif;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* One 1600×900 slide at a time, scaled to fit the window. */
+  .slide {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1600px;
+    height: 900px;
+    background: #fff;
+    overflow: hidden;
+    display: none;
+    transform-origin: center;
+  }
+  .slide.active { display: block; }
+
+  /* Cover and section slides */
+  .slide.dark {
+    background: linear-gradient(160deg, var(--navy-1) 0%, var(--navy-2) 55%, var(--navy-3) 100%);
+    color: #fff;
+  }
+  .dark .tag { position: absolute; top: 40px; left: 72px; font-size: 18px; color: #9fc0ff; }
+  .dark .hashtag { position: absolute; top: 40px; right: 72px; font-size: 18px; color: #dbe6ff; }
+  .dark .wordmark { position: absolute; top: 150px; left: 72px; font-size: 104px; font-weight: 600; letter-spacing: -2px; }
+  .dark .heading { position: absolute; top: 300px; left: 72px; font-size: 52px; font-weight: 500; }
+  .dark .byline { position: absolute; top: 390px; left: 72px; font-size: 22px; font-weight: 600; color: #dbe6ff; }
+  .dark svg.waves { position: absolute; inset: 0; pointer-events: none; }
+
+  /* Content slides */
+  .s-title { position: absolute; top: 44px; left: 64px; font-size: 30px; font-weight: 500; color: var(--blue-title); }
+  .brand { position: absolute; top: 30px; right: 64px; font-size: 46px; font-weight: 600; color: var(--blue); letter-spacing: -1px; }
+  .footer { position: absolute; bottom: 26px; right: 64px; font-size: 16px; color: var(--blue-title); }
+  .pg { position: absolute; bottom: 26px; left: 64px; font-size: 16px; color: var(--muted); }
+  .dark .pg { color: #9fc0ff; }
+  .body { position: absolute; top: 120px; left: 64px; right: 64px; bottom: 80px; font-size: 22px; line-height: 1.5; }
+
+  .cols { display: grid; gap: 40px; height: 100%; }
+  .cols.c2 { grid-template-columns: 1fr 1fr; }
+  .cols.c3 { grid-template-columns: repeat(3, 1fr); }
+  .cols.side { grid-template-columns: 1fr 1.25fr; }
+  .lead { font-size: 26px; font-weight: 500; margin: 0 0 16px; }
+  ul { margin: 0; padding-left: 28px; }
+  li { margin: 4px 0; }
+  h3 { font-size: 24px; font-weight: 600; margin: 0 0 10px; }
+
+  .todo {
+    position: relative;
+    border: 2px dashed var(--todo);
+    background: var(--todo-bg);
+    border-radius: 12px;
+    padding: 36px 24px 18px;
+    font-size: 20px;
+    color: var(--text-2);
+  }
+  .todo::before {
+    content: 'TODO';
+    position: absolute;
+    top: 10px;
+    left: 24px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+    background: var(--todo);
+    border-radius: 4px;
+    padding: 1px 8px;
+  }
+  .todo.fill { height: 100%; }
+  .src { font-size: 15px; color: var(--muted); margin-top: 10px; }
+
+  .cols:has(> .stat) { align-items: center; }
+  .stat { border-top: 4px solid var(--charcoal); padding-top: 24px; }
+  .stat .num { font-size: 64px; font-weight: 700; line-height: 1.1; color: var(--text); }
+  .stat .num.accent { color: var(--blue); }
+  .stat .what { font-size: 24px; margin-top: 12px; }
+
+  .s-note { position: absolute; top: 52px; left: 330px; font-size: 18px; color: var(--text-2); }
+  .persona { display: flex; flex-direction: column; gap: 14px; }
+  .stories { display: flex; flex-direction: column; gap: 10px; }
+  .stories .todo { padding: 30px 20px 10px; font-size: 18px; }
+  .phases { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 24px; height: 100%; }
+  .phase { border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; font-size: 20px; }
+  .phase h3 { margin-bottom: 8px; }
+  .phase ul { padding-left: 22px; }
+  .phase-no { font-size: 15px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
+  .phase.done { border: 2px solid var(--blue); background: var(--pale); }
+  .badge { display: inline-block; margin-left: 8px; font-size: 13px; letter-spacing: 0; text-transform: none; color: #fff; background: #06c755; border-radius: 6px; padding: 1px 8px; }
+
+  .body > :is(.cols, .chain):has(+ .callout) { height: auto; align-items: start; }
+  .body:has(> .points), .body:has(> .roadmap) { display: flex; flex-direction: column; justify-content: center; padding-bottom: 40px; }
+  .points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; }
+  .point { text-align: center; padding: 0 12px; }
+  .point .ico { width: 104px; height: 104px; padding: 28px; border-radius: 50%; background: var(--pale); stroke: var(--blue); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .point h3 { margin: 24px 0 12px; font-size: 30px; }
+  .point p { margin: 0; font-size: 23px; color: var(--text-2); }
+  .conclusion { margin-top: 64px; text-align: center; font-size: 28px; font-weight: 700; font-style: italic; color: #e5322d; }
+  .src.center { text-align: center; margin-top: 24px; }
+  .roadmap { position: relative; display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-top: 8px; }
+  .roadmap::before { content: ''; position: absolute; left: 0; right: 0; top: 11px; height: 2px; background: var(--border); }
+  .phase-col { position: relative; padding: 36px 16px 16px; border-radius: 12px; }
+  .phase-col .dot { position: absolute; top: 4px; left: 16px; width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 3px solid var(--muted); }
+  .phase-col.now { background: var(--pale); }
+  .phase-col.now .dot { background: var(--blue); border-color: var(--blue); }
+  .phase-col h3 { font-size: 24px; margin: 6px 0 12px; }
+  .phase-col ul { padding-left: 20px; font-size: 19px; }
+  .phase-col li { margin: 6px 0; }
+  .phase-col .badge { margin-left: 0; display: inline-block; margin-top: 6px; }
+  table.compare.support td, table.compare.support th { font-size: 20px; padding: 12px 14px; }
+  table.compare.choice td, table.compare.choice th { font-size: 18px; }
+  tr.chosen td { background: #e8f8ee; font-weight: 600; }
+  tr.chosen td:first-child { box-shadow: inset 4px 0 0 #06c755; }
+  .todo-inline { color: var(--todo); font-weight: 600; }
+  .card ul { padding-left: 22px; font-size: 20px; }
+  .card li { margin: 6px 0; }
+  .chain { display: grid; grid-template-columns: repeat(3, 1fr); gap: 56px; }
+  .chain .link { position: relative; border-top: 4px solid var(--charcoal); padding-top: 18px; }
+  .chain .link:not(:last-child)::after { content: '→'; position: absolute; right: -44px; top: 60px; font-size: 36px; color: var(--muted); }
+  .kicker { font-size: 15px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-2); }
+  .chain .num { font-size: 60px; font-weight: 700; line-height: 1.15; }
+  .chain .what { font-size: 22px; margin-top: 8px; }
+  .personas h3 { margin-bottom: 16px; }
+  .pain { border-left: 4px solid var(--border); padding: 4px 0 4px 16px; margin-bottom: 22px; font-size: 21px; }
+  table.mapping td, table.mapping th { font-size: 20px; padding: 12px 16px; }
+  table.mapping td:first-child { font-weight: 600; width: 22%; }
+  .ctx { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+  .ctx-card { position: relative; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 18px; padding: 30px 30px 24px; background: #fff; min-height: 540px; }
+  .ctx-card:not(:last-child)::after { content: '→'; position: absolute; right: -32px; top: 50%; transform: translateY(-50%); font-size: 28px; color: var(--muted); }
+  .ctx-head { display: flex; align-items: center; gap: 12px; }
+  .ctx-head .ico { width: 44px; height: 44px; padding: 10px; border-radius: 50%; background: var(--pale); stroke: var(--blue); fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .ctx-visual { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; margin-top: 40px; }
+  .ctx-visual .big { font-size: 64px; font-weight: 700; line-height: 1.05; color: var(--blue); }
+  .ctx-visual .sub { font-size: 21px; color: var(--text-2); margin-top: 4px; }
+  .ctx-visual .pill { align-self: flex-start; margin-top: 18px; padding: 8px 16px; border-radius: 999px; background: var(--pale); font-size: 18px; font-weight: 600; }
+  .ctx-card p { margin: 16px 0 4px; font-size: 22px; }
+  .ctx.plain .ctx-card::after { content: none; }
+  .ctx.plain .ctx-card { min-height: 500px; }
+  .donut-row { display: flex; align-items: center; gap: 20px; }
+  .donut-row .sub { font-size: 20px; }
+  .donut-wrap { flex: none; position: relative; width: 150px; height: 150px; }
+  .donut { width: 150px; height: 150px; }
+  .donut circle { fill: none; stroke-width: 6; }
+  .donut .track { stroke: #e6e9ee; }
+  .donut .arc { stroke: var(--blue); stroke-linecap: round; }
+  .donut-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 38px; font-weight: 700; color: var(--blue); }
+  .bars { margin-top: 16px; display: grid; gap: 8px; }
+  .bars.gap { margin-top: 22px; }
+  .bars-cap { font-size: 15px; color: var(--text-2); margin-bottom: 2px; }
+  .bars.gap .bar-row { grid-template-columns: 1fr auto; row-gap: 6px; }
+  .bars.gap .bar-row .bar { grid-column: 1 / -1; grid-row: 2; height: 12px; }
+  .bar-row { display: grid; grid-template-columns: 100px 1fr 48px; align-items: center; gap: 10px; font-size: 18px; color: var(--text-2); }
+  .bar-row b { color: var(--text); text-align: right; }
+  .bar { height: 10px; border-radius: 999px; background: #eef0f3; overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 999px; background: var(--blue); }
+  .bar-row.muted .bar i { background: #b8bfca; }
+  .ctx-visual.zalo { flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; }
+  .ctx-visual.zalo .big { font-size: 52px; white-space: nowrap; }
+  .mini-phone { flex: none; width: 140px; height: 240px; border-radius: 22px; border: 3px solid #1f2329; padding: 14px 10px; background: #f6f8fb; }
+  .mini-bar { font-size: 12px; font-weight: 700; color: var(--blue); margin-bottom: 10px; }
+  .mini-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .mini-grid .tile { height: 38px; border-radius: 8px; background: #d9e6ff; }
+  .mini-grid .tile:nth-child(3n) { background: #c4d8ff; }
+  .mini-grid .tile.empty { display: flex; align-items: center; justify-content: center; background: #fff; border: 2px dashed var(--blue); color: var(--blue); font-weight: 700; font-size: 16px; }
+  .body:has(> .ctx) .callout { margin-top: 32px; }
+  .mini-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
+  .mini-stats div { background: var(--pale); border-radius: 12px; padding: 12px 14px; }
+  .mini-stats b { display: block; font-size: 26px; color: var(--blue); }
+  .mini-stats span { font-size: 15px; color: var(--text-2); }
+  .no-app { display: flex; align-items: center; gap: 18px; margin-top: 18px; }
+  .no-app .mini-phone { width: 104px; height: 168px; padding: 10px 8px; border-radius: 18px; }
+  .no-app .mini-grid .tile { height: 24px; }
+  .no-app span { font-size: 19px; }
+  .chat-mock { border: 1px solid var(--border); border-radius: 14px; background: #f6f8fb; padding: 14px; display: grid; gap: 10px; }
+  .chat-top { font-size: 15px; font-weight: 700; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .msg { justify-self: start; max-width: 94%; background: #fff; border: 1px solid var(--border); border-radius: 12px 12px 12px 4px; padding: 8px 12px; font-size: 16px; }
+  .msg.old { opacity: 0.35; }
+  .msg.warn { display: flex; align-items: center; gap: 8px; background: #fff1f0; border-color: #ffccc7; color: #c4271c; font-weight: 600; }
+  .msg.warn .ico { width: 18px; height: 18px; flex: none; fill: none; stroke: #c4271c; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .steps-mock { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .steps-mock span { background: var(--pale); border-radius: 999px; padding: 10px 18px; font-size: 19px; font-weight: 600; }
+  .steps-mock i { font-style: normal; color: var(--muted); padding-left: 22px; transform: rotate(90deg); }
+  .ctx-visual.center { align-items: center; }
+  .body:has(> .ctx) .src { margin-top: 10px; }
+  .cp-label { font-size: 16px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-2); margin-bottom: 10px; }
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 26px; }
+  .stat-row .stat { background: var(--pale); border: 0; border-radius: 14px; padding: 16px 20px; }
+  .stat b { display: block; font-size: 40px; line-height: 1.1; color: var(--blue); }
+  .stat span { display: block; margin-top: 4px; font-size: 17px; color: var(--text-2); }
+  .prob-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .prob { display: flex; flex-direction: column; gap: 14px; border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+  .prob p { margin: auto 0 0; font-size: 19px; }
+  .prob .chat-mock { padding: 10px; gap: 7px; }
+  .prob .msg { font-size: 14px; padding: 6px 10px; }
+  .steps-mock.row { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px; padding: 22px 0; }
+  .steps-mock.row span { font-size: 16px; padding: 8px 14px; }
+  .steps-mock.row i { padding: 0; transform: none; }
+  .prob .no-app { margin: 0; justify-content: center; }
+  .prob .no-app .mini-phone { width: 90px; height: 146px; padding: 8px 6px; border-radius: 14px; }
+  .prob .no-app .mini-grid { gap: 5px; }
+  .prob .no-app .mini-grid .tile { height: 20px; border-radius: 5px; font-size: 12px; }
+  .prob .no-app .mini-bar { font-size: 10px; margin-bottom: 6px; }
+  .body:has(> .prob-row) .callout { margin-top: 20px; }
+  table.compare.matrix.icons td, table.compare.matrix.icons th { font-size: 24px; padding: 16px 18px; }
+  table.compare.matrix.icons td:not(:first-child), table.compare.matrix.icons th:not(:first-child) { text-align: center; }
+  table.compare.matrix.icons th:first-child { width: 330px; }
+  table.compare.matrix.icons .mk { width: 40px; height: 40px; padding: 5px; margin: 0; }
+  table.compare.matrix.icons td:first-child { font-weight: 600; }
+  .phase-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .phase-card { border: 1px solid var(--border); border-radius: 16px; padding: 20px 26px; }
+  .phase-card.now { background: var(--pale); border-color: var(--blue); }
+  .phase-top { display: flex; align-items: center; gap: 10px; }
+  .phase-card .phase-no { font-size: 15px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-2); }
+  .phase-card .badge { margin: 0; }
+  .phase-card h3 { font-size: 26px; margin: 6px 0 10px; }
+  .phase-card ul { margin: 0; padding-left: 22px; font-size: 20px; }
+  .phase-card li { margin: 4px 0; }
+  .arch-fig { height: calc(100% - 40px); }
+  .arch-fig img { max-height: 100%; }
+  .shapes { height: 14px; width: auto; vertical-align: -1px; margin-left: 8px; }
+  .dark .hashtag .shapes { height: 16px; }
+  .overview { display: grid; grid-template-columns: 1fr 360px; gap: 40px; align-items: start; }
+  .shots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .shot { margin: 0; }
+  .shot img { display: block; width: 100%; aspect-ratio: 390 / 844; object-fit: cover; object-position: top; border-radius: 18px; border: 1px solid var(--border); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08); }
+  .shot figcaption { margin-top: 12px; font-size: 16.5px; line-height: 1.35; color: var(--text-2); }
+  .shot .no { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-right: 8px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 15px; font-weight: 700; }
+  .overview .challenges li { font-size: 18px; }
+  table.compare.matrix td, table.compare.matrix th { font-size: 19px; padding: 9px 14px; vertical-align: middle; }
+  table.compare.matrix { table-layout: fixed; }
+  table.compare.matrix th:first-child { width: 250px; }
+  .matrix .cell { display: flex; align-items: center; }
+  .matrix .cell .mk { flex: none; }
+  table.compare.matrix th.ours { background: var(--blue); color: #fff; }
+  table.compare.matrix td.ours { background: var(--pale); }
+  .mk { width: 28px; height: 28px; padding: 3px; border-radius: 50%; vertical-align: middle; margin-right: 10px; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .mk.y { background: #e3f6ea; stroke: #0f9d58; }
+  .mk.p { background: #fdf1dc; stroke: #d48806; }
+  .mk.n { background: #f0f1f3; stroke: #9aa0a8; }
+  .matrix .note { font-size: 16px; color: var(--text-2); vertical-align: middle; }
+  .legend { margin-top: 12px; font-size: 16px; color: var(--text-2); }
+  .legend .mk { width: 22px; height: 22px; padding: 2px; margin-right: 4px; }
+  .body:has(> .matrix) .callout { margin-top: 18px; }
+  .result-side { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 28px; align-items: start; }
+  .card.result img { display: block; max-height: 380px; margin: 4px auto 12px; border-radius: 14px; border: 1px solid var(--border); }
+  .card.result p { font-size: 18px; margin: 0 0 8px; }
+  code { font-size: 0.9em; }
+  .steps { margin: 0; padding-left: 28px; font-size: 21px; }
+  .steps li { margin-bottom: 14px; padding-left: 6px; }
+  .challenges { list-style: none; padding: 0; margin: 0; }
+  .challenges li { border-left: 4px solid var(--blue); background: var(--pale); border-radius: 0 10px 10px 0; padding: 12px 18px; margin-bottom: 14px; font-size: 19px; }
+  .challenges b { display: block; font-size: 21px; margin-bottom: 4px; }
+  .callout { margin-top: 48px; border-left: 4px solid var(--blue); background: var(--pale); padding: 16px 24px; border-radius: 0 12px 12px 0; font-size: 22px; }
+  .stack h3 { margin-top: 8px; }
+  .stack p { margin: 0 0 20px; font-size: 20px; }
+  .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-top: 40px; }
+  .step { position: relative; border-top: 4px solid var(--charcoal); padding-top: 20px; }
+  .step-no { font-size: 56px; font-weight: 700; line-height: 1; color: var(--blue); margin-bottom: 12px; }
+  .step p { font-size: 20px; color: var(--text-2); margin: 0; }
+  .step:not(:last-child)::after { content: '→'; position: absolute; right: -20px; top: -24px; font-size: 28px; background: #fff; padding: 0 4px; color: var(--muted); }
+  .cols:has(> .card) { align-items: start; }
+
+  .diagram-links { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; }
+  .diagram-btn { font: inherit; font-size: 15px; font-weight: 500; color: var(--text); background: #fff; border: 1.5px solid var(--border); border-radius: 999px; padding: 6px 16px; cursor: pointer; white-space: nowrap; }
+  .diagram-btn::before { content: '⧉ '; color: var(--blue); }
+  .diagram-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .lightbox { position: fixed; inset: 0; z-index: 20; background: rgba(20, 22, 26, 0.92); display: none; flex-direction: column; }
+  .lightbox.open { display: flex; }
+  .lightbox-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; color: #fff; font-size: 16px; }
+  .lightbox-bar button { font: inherit; color: #fff; background: #3a3d42; border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+  .lightbox-scroll { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: flex-start; padding: 0 20px 20px; }
+  .lightbox img { background: #fff; border-radius: 8px; max-width: 100%; height: auto; }
+  .lightbox img.fit { max-height: calc(100vh - 80px); width: auto; }
+  @media print { .diagram-links, .lightbox { display: none !important; } }
+  .steps-row { display: flex; justify-content: center; gap: 34px; height: 100%; }
+  .steps-row:has(> :nth-child(2):last-child) { gap: 140px; }
+  .flow-step { margin: 0; width: 330px; display: flex; flex-direction: column; }
+  .flow-step figcaption { height: 118px; margin-bottom: 12px; }
+  .flow-step .no { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-right: 10px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 17px; font-weight: 700; vertical-align: 2px; }
+  .flow-step b { font-size: 21px; white-space: nowrap; }
+  .flow-step .detail { display: block; margin-top: 6px; font-size: 17px; line-height: 1.35; color: var(--text-2); }
+  .flow-step .phone { width: 270px; }
+  .phone { background: #1f2329; padding: 7px; border-radius: 30px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16); }
+  .phone img, .phone video { display: block; width: 100%; aspect-ratio: 462 / 1000; object-fit: cover; object-position: top; border-radius: 24px; }
+  .lt { display: grid; grid-template-columns: 1fr 520px; gap: 48px; height: 100%; align-items: start; }
+  .score-row { display: flex; align-items: center; gap: 22px; margin-bottom: 22px; }
+  .ring { width: 96px; height: 96px; border-radius: 50%; background: conic-gradient(#0cce6b 0 95%, #e6f7ee 95% 100%); display: grid; place-items: center; }
+  .ring span { width: 78px; height: 78px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: 34px; font-weight: 700; color: #0a8f4d; }
+  .score-label { font-size: 28px; font-weight: 700; }
+  .score-sub { font-size: 17px; color: var(--text-2); }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .tiles .tile { background: var(--pale); border-radius: 14px; padding: 18px 20px; }
+  .tile-top { display: flex; align-items: center; justify-content: space-between; }
+  .tile-top b { font-size: 32px; color: var(--blue); line-height: 1.1; }
+  .tile .ok { width: 26px; height: 26px; border-radius: 50%; background: #0cce6b; color: #fff; font-size: 16px; font-weight: 700; display: grid; place-items: center; }
+  .tile-name { font-size: 18px; font-weight: 700; margin-top: 4px; }
+  .tile-goal { font-size: 15px; color: var(--text-2); }
+  .how { margin-top: 26px; }
+  .how h3 { font-size: 22px; margin: 0 0 8px; }
+  .how ul { margin: 0; padding-left: 22px; font-size: 20px; }
+  .how li { margin: 6px 0; }
+  .proof { margin: 0; border: 1px solid var(--border); border-radius: 14px; padding: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); }
+  .proof img { display: block; width: 100%; }
+  .proof figcaption { margin-top: 8px; font-size: 15px; color: var(--text-2); text-align: center; }
+  .vl { display: grid; grid-template-columns: 300px 1fr 400px; gap: 44px; height: 100%; align-items: start; }
+  .vl-pic { display: flex; flex-direction: column; gap: 6px; }
+  .vl-zone, .vl-screen { position: relative; padding: 6px; border-radius: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .vl-zone span, .vl-screen span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 700; background: #fff; padding: 2px 8px; border-radius: 8px; }
+  .vl-zone.gone { border: 2px dashed #c9ced6; }
+  .vl-zone.gone span { color: var(--muted); }
+  .vl-zone.buf { background: var(--pale); }
+  .vl-zone.buf span { color: var(--blue); }
+  .vl-screen { border: 4px solid #1f2329; border-radius: 18px; padding: 8px; }
+  .vl-screen span { color: #1f2329; }
+  .vrow { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .vrow i { height: 44px; border-radius: 6px; }
+  .vrow.on i { background: var(--blue); opacity: 0.85; }
+  .vrow.off i { background: #eef0f3; }
+  .vl-total { margin-top: 6px; text-align: center; font-size: 17px; color: var(--text-2); }
+  .vl-text h3, .vl-result h3 { font-size: 22px; margin: 0 0 10px; }
+  .vl-problem { background: #fff4e5; border-left: 4px solid #f5a524; border-radius: 0 10px 10px 0; padding: 12px 16px; margin-bottom: 22px; }
+  .vl-problem h3 { margin-bottom: 4px; }
+  .vl-problem p { margin: 0; font-size: 19px; }
+  .vl-steps { list-style: none; counter-reset: s; padding: 0; margin: 0; }
+  .vl-steps li { counter-increment: s; position: relative; padding-left: 46px; margin-bottom: 14px; }
+  .vl-steps li::before { content: counter(s); position: absolute; left: 0; top: 2px; width: 30px; height: 30px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 16px; font-weight: 700; display: grid; place-items: center; }
+  .vl-steps b { display: block; font-size: 21px; }
+  .vl-steps span { font-size: 18px; color: var(--text-2); }
+  .shot-slot { height: 420px; border: 2px dashed #c9ced6; border-radius: 14px; display: grid; place-items: center; padding: 24px; text-align: center; font-size: 17px; color: #b25e00; }
+  .ss { display: grid; grid-template-columns: 1fr 420px; gap: 48px; height: 100%; align-items: start; }
+  .fixes { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .fix { border: 1px solid var(--border); border-top: 5px solid var(--blue); border-radius: 16px; padding: 30px 30px; min-height: 240px; }
+  .fix-no { font-size: 17px; font-weight: 700; letter-spacing: 2px; color: var(--blue); }
+  .fix h3 { font-size: 27px; margin: 8px 0 10px; }
+  .fix p { font-size: 20px; color: var(--text-2); margin: 0; }
+  .ss-head { font-size: 34px; font-weight: 700; margin: -6px 0 22px; }
+  .ss { height: calc(100% - 70px); }
+  .ss-note { font-size: 18px; color: var(--text-2); margin: 0 0 12px; }
+  .ss .shot-slot { height: 330px; }
+  .ss { grid-template-columns: 1fr; gap: 28px; }
+  .ss .fixes { grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .ss .fix { min-height: 0; padding: 22px 22px; }
+  .ss .fix h3 { font-size: 23px; }
+  .ss .fix p { font-size: 18px; }
+  .ss .vl-result { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: center; }
+  .ss .vl-result h3 { grid-column: 1; }
+  .ss .proof img { width: 100%; }
+  .psr { display: grid; grid-template-columns: 1fr 40px 1fr 40px 1.3fr; align-items: stretch; align-content: center; height: 100%; }
+  .psr-col { border-radius: 18px; padding: 28px 28px 10px; border: 1px solid var(--border); border-top-width: 6px; }
+  .psr-col.problem { border-top-color: #f5a524; background: #fffaf2; }
+  .psr-col.solution { border-top-color: var(--blue); background: #f5f9ff; }
+  .psr-col.result { border-top-color: #12a150; background: #f4fbf6; }
+  .psr-tag { font-size: 16px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-2); margin-bottom: 16px; }
+  .psr-item { margin-bottom: 24px; }
+  .psr-item b { display: block; font-size: 24px; margin-bottom: 6px; }
+  .psr-item span { display: block; font-size: 19px; line-height: 1.45; color: var(--text-2); }
+  .psr-item code { font-size: 16px; background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 0 5px; }
+  .psr-arrow { display: grid; place-items: center; font-size: 30px; color: var(--muted); }
+  .psr-result { display: grid; grid-template-columns: 170px 1fr; gap: 18px; align-items: start; }
+  .psr-result img { width: 170px; border-radius: 18px; border: 6px solid #1f2329; }
+  .psr-result .todo-inline { margin-top: 6px; font-size: 15px; }
+  .ra { display: grid; grid-template-columns: 1fr 330px; gap: 44px; height: 100%; align-items: start; }
+  .ra-problem { background: var(--pale); border-left: 5px solid var(--blue); border-radius: 0 12px 12px 0; padding: 14px 20px; font-size: 19px; margin-bottom: 22px; }
+  .ra-problem b, .ra-prefetch b { margin-right: 8px; }
+  .ra code { font-size: 16px; background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 0 5px; }
+  .lane { border-radius: 16px; padding: 16px 20px; margin-bottom: 16px; }
+  .lane.bad { background: #f4f6f9; }
+  .lane.good { background: var(--pale); }
+  .lane-head { font-size: 21px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .lane-tag { font-size: 14px; font-weight: 700; color: #fff; border-radius: 999px; padding: 3px 12px; }
+  .lane.bad .lane-tag { background: #8a94a6; }
+  .lane.good .lane-tag { background: var(--blue); }
+  .lane .tiles { display: flex; gap: 10px; align-items: center; }
+  .rtile { width: 86px; height: 120px; border-radius: 12px; background: #1f2329; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .rtile .ri { font-size: 26px; }
+  .rtile .rl { font-size: 14px; opacity: 0.85; }
+  .rtile.blocked { background: #fff; color: #9aa3b2; border: 2px dashed #b8c0cc; }
+  .lane.good .rtile { background: var(--blue); }
+  .lane.bad .rtile:not(.blocked) { background: #5b6472; }
+  .rgap { font-size: 24px; color: var(--muted); padding: 0 4px; }
+  .lane-note { margin-top: 10px; font-size: 17px; color: var(--text-2); }
+  .shared-bar { margin-top: 10px; width: max-content; background: var(--blue); color: #fff; font-size: 16px; font-weight: 700; border-radius: 999px; padding: 5px 16px; }
+  .shared-bar code { background: rgba(255,255,255,0.2); border: 0; color: #fff; }
+  .ra-prefetch { font-size: 18px; color: var(--text-2); }
+  .ra-result { border: 1px solid var(--border); border-top: 6px solid var(--blue); border-radius: 18px; padding: 22px 24px; }
+  .ra-result h3 { font-size: 22px; margin: 0 0 14px; }
+  .ra-result img { display: block; width: 150px; margin: 0 auto 16px; border-radius: 18px; border: 6px solid #1f2329; }
+  .ra-stat { margin-bottom: 12px; }
+  .ra-stat b { display: block; font-size: 24px; color: var(--blue); }
+  .ra-stat span { display: block; font-size: 16px; color: var(--text-2); }
+  .ra-stat .todo-inline { font-size: 14px; margin-top: 4px; }
+  .fix.fix-problem { border-top-color: #b8c0cc; background: #f7f8fa; }
+  .fix.fix-problem .fix-no { color: var(--text-2); }
+  .fix code { font-size: 16px; background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 0 5px; }
+  .rr { display: grid; grid-template-columns: 120px 120px 1fr 1fr; gap: 32px; align-items: center; background: var(--pale); border-radius: 18px; padding: 20px 28px; }
+  .rr h3 { font-size: 22px; margin: 0; }
+  .rr img { width: 120px; border-radius: 16px; border: 5px solid #1f2329; }
+  .rr-stat b { display: block; font-size: 30px; color: var(--blue); }
+  .rr-stat span { display: block; font-size: 17px; color: var(--text-2); }
+  .rr-stat .todo-inline { font-size: 15px; margin-top: 4px; }
+  .pc { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 24px; height: 100%; align-content: center; }
+  .pc-card { padding: 30px 30px 14px; }
+  .pc-item { margin: 16px 0 22px; }
+  .pc-item b { display: block; font-size: 25px; margin-bottom: 6px; }
+  .pc-item span { display: block; font-size: 19px; line-height: 1.45; color: var(--text-2); }
+  .pc-item code { font-size: 16px; background: var(--pale); border-radius: 6px; padding: 0 5px; }
+  .pc-result { display: grid; grid-template-columns: 140px 1fr; gap: 22px; align-items: start; margin-top: 16px; }
+  .pc-result img { width: 140px; border-radius: 18px; border: 6px solid #1f2329; }
+  .pc-result .pc-item { margin-top: 0; }
+  .pc-result .pc-item b { color: var(--blue); }
+  .pc-result .todo-inline { font-size: 15px; margin-top: 4px; }
+  .why { display: grid; gap: 34px; height: 100%; align-content: center; }
+  .why-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .why-mode { border: 1px solid var(--border); border-top: 6px solid var(--blue); border-radius: 18px; padding: 26px 28px; }
+  .why-mode.muted { border-top-color: #b8c0cc; background: #f7f8fa; }
+  .why-mode.muted .fix-no { color: var(--text-2); }
+  .why-mode h3 { font-size: 27px; margin: 8px 0 10px; }
+  .why-mode p { font-size: 19px; color: var(--text-2); margin: 0; }
+  .why-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  .why-stat { background: var(--pale); border-radius: 18px; padding: 20px 22px; }
+  .why-stat b { display: block; font-size: 38px; color: var(--blue); line-height: 1.1; }
+  .why-stat span { display: block; font-size: 17px; margin-top: 6px; }
+  .why-stat i { display: block; font-size: 15px; color: var(--text-2); margin-top: 8px; font-style: normal; }
+  .ws { display: grid; grid-template-columns: 1fr 1.25fr; grid-template-rows: repeat(4, 1fr); gap: 18px; height: calc(100% - 20px); }
+  .ws-tile:not(.hero) { flex-direction: row; align-items: center; justify-content: flex-start; gap: 28px; }
+  .ws-tile:not(.hero) b { flex: 0 0 340px; white-space: nowrap; font-size: 54px; }
+  .ws-tile:not(.hero) span { margin-top: 0; }
+  .ws-tile { background: var(--pale); border-radius: 22px; padding: 30px 34px; display: flex; flex-direction: column; justify-content: center; }
+  .ws-tile b { font-size: 60px; line-height: 1; color: var(--blue); }
+  .ws-tile span { font-size: 21px; margin-top: 12px; color: var(--text); line-height: 1.4; }
+  .ws-tile.hero { grid-row: span 4; background: var(--blue); }
+  .ws-tile.hero b { font-size: 150px; color: #fff; }
+  .ws-tile.hero span { color: #fff; font-size: 27px; }
+  .ws-tile.muted { background: #f4f6f9; }
+  .ws-tile.muted b { color: #5b6472; }
+  .video-thumb { position: relative; padding: 0; border: 0; background: none; cursor: pointer; display: block; }
+  .video-thumb img { display: block; }
+  .video-thumb .play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%; background: rgba(0, 104, 255, 0.92); color: #fff; font-size: 22px; display: grid; place-items: center; padding-left: 4px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3); }
+  .video-modal { position: fixed; inset: 0; z-index: 1000; background: rgba(0, 0, 0, 0.85); display: grid; place-items: center; }
+  .video-modal video { max-height: 92vh; max-width: 92vw; border-radius: 16px; }
+  .video-modal button { position: absolute; top: 18px; right: 22px; font: 16px sans-serif; color: #fff; background: #3a3d42; border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+  .pc-wrap { display: grid; gap: 24px; height: 100%; align-content: center; }
+  .pc-wrap .pc { height: auto; }
+  .constraints { display: flex; align-items: stretch; gap: 14px; background: var(--pale); border-radius: 18px; padding: 16px 20px; }
+  .constraints-label { font-size: 17px; font-weight: 700; color: var(--blue); width: 130px; display: flex; align-items: center; line-height: 1.3; }
+  .constraints .chip { flex: 1; background: #fff; border-radius: 12px; padding: 10px 14px; }
+  .constraints .chip b { display: block; font-size: 24px; color: var(--blue); white-space: nowrap; }
+  .constraints .chip span { font-size: 15px; color: var(--text-2); }
+  .spec { border-top: 1px solid var(--border); padding-top: 12px; margin-bottom: 14px; }
+  .spec-title { font-size: 15px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
+  .spec-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 17px; }
+  .spec-row span { color: var(--text-2); }
+  .spec-row b { color: var(--blue); text-align: right; }
+
+  .photo-opt .body { top: 158px; bottom: 140px; }
+  .photo-opt .pc { grid-template-columns: 1.05fr 1.2fr .95fr; align-content: stretch; }
+  .photo-opt .pc-card { padding: 30px; }
+  .photo-opt .pc-item { margin: 24px 0; }
+  .photo-opt .pc-item b { font-size: 27px; }
+  .photo-opt .pc-item span { font-size: 21px; line-height: 1.5; }
+  .photo-opt .spec { margin-top: 32px; padding-top: 20px; }
+  .photo-opt .spec-title { color: var(--muted); letter-spacing: .5px; }
+  .photo-opt .spec-row { padding: 9px 0; border-bottom-style: solid; border-bottom-color: #f0f0f0; font-size: 18px; }
+  .photo-opt .spec-row b { color: var(--text-2); font-weight: 500; }
+  .photo-opt .stage { margin-top: 24px; }
+  .photo-opt .stage-label { font-size: 17px; font-weight: 600; color: var(--blue); }
+  .photo-opt .stage .pc-item { margin: 12px 0 20px; }
+  .photo-opt .stage .pc-item b { font-size: 25px; }
+  .photo-opt .server-stage { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 28px; }
+  .photo-opt .result-number { display: block; margin-top: 38px; color: var(--blue); font-size: 88px; font-weight: 700; letter-spacing: -4px; line-height: 1.1; }
+  .photo-opt .result-caption { margin: 14px 0 0; color: var(--text-2); font-size: 22px; line-height: 1.5; }
+  .photo-opt .quality-result { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); }
+
+  .image-formats .body { top: 120px; }
+  .format-decisions { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .format-decisions > div { background: var(--pale); border-left: 4px solid var(--blue); padding: 16px 22px; border-radius: 0 10px 10px 0; }
+  .format-use { display: inline-block; font-size: 19px; color: var(--blue-title); margin-right: 20px; }
+  .format-decisions b { color: var(--blue); font-size: 28px; }
+  .format-decisions p { margin: 6px 0 0; font-size: 19px; color: var(--text-2); }
+  .image-formats .format-decisions { margin-bottom: 14px; }
+  .format-input { margin-bottom: 14px; font-size: 18px; color: var(--muted); }
+  .image-formats table { table-layout: fixed; }
+  .image-formats table.choice th, .image-formats table.choice td { font-size: 19px; padding: 14px 16px; vertical-align: middle; }
+  .image-formats table.choice th { font-size: 18px; }
+  .image-formats .header-note { font-size: 14px; font-weight: 400; color: #d6dce7; }
+  .image-formats tr.chosen td { background: var(--pale); font-weight: 400; }
+  .image-formats tr.chosen td:first-child { box-shadow: inset 4px 0 0 var(--blue); color: var(--blue); font-weight: 700; }
+  .image-formats td strong { font-size: 23px; font-weight: 600; color: var(--text); }
+  .image-formats .format-ratio { display: block; font-size: 16px; color: var(--muted); }
+
+  .testing-proof .cols { height: 100%; gap: 28px; align-items: stretch; }
+  .testing-proof .card { padding: 34px 32px; }
+  .testing-proof .card h3 { font-size: 30px; margin-bottom: 18px; }
+  .testing-proof .card ul { font-size: 24px; line-height: 1.4; }
+  .testing-proof .card li { margin: 16px 0; }
+  .test-evidence { margin: 24px 0 0; }
+  .test-evidence img { display: block; width: 100%; border: 1px solid var(--border); border-radius: 10px; }
+
+  table.compare.worker td, table.compare.worker th { font-size: 24px; padding: 14px 18px; }
+  .slide.extra { z-index: 30; box-shadow: 0 0 0 100vmax rgba(20, 22, 26, 0.6); }
+  .extra-close { position: absolute; top: 36px; right: 150px; z-index: 2; font: 500 16px/1 inherit; font-family: inherit; color: var(--text); background: #fff; border: 1.5px solid var(--border); border-radius: 999px; padding: 8px 18px; cursor: pointer; }
+  .extra-close:hover { border-color: var(--blue); color: var(--blue); }
+  body.grid .slide.extra, .slide.extra:not(.active) { display: none; }
+  @media print { .slide.extra { display: none !important; } }
+  #extra-error-screens .body { display: flex; flex-direction: column; justify-content: center; }
+  .err-groups { display: flex; justify-content: center; gap: 32px; }
+  .err-group h3 { margin: 0 0 14px; font-size: 20px; color: var(--blue-title); }
+  .err-row { display: flex; gap: 16px; }
+  .err-step { margin: 0; width: 194px; display: flex; flex-direction: column; }
+  .err-step figcaption { height: 84px; margin-bottom: 8px; }
+  .err-step b { display: block; font-size: 18px; }
+  .err-step .detail { display: block; margin-top: 4px; font-size: 15px; line-height: 1.35; color: var(--text-2); }
+  .err-step .phone { padding: 5px; border-radius: 22px; }
+  .err-step .phone img { border-radius: 18px; }
+  .photo-opt .pc-item b, .photo-opt .pc-item span { text-wrap: balance; }
+  .quality-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .quality-pair figure { margin: 0; }
+  .quality-pair img { display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+  .quality-pair figcaption { margin-top: 6px; font-size: 15px; color: var(--muted, #6b7280); text-align: center; }
+  .video-opt .fix-no + .pc-item { margin-top: 18px; }
+  .video-opt .pc-item { margin: 14px 0; }
+  .video-opt .spec { margin-top: 18px; padding-top: 14px; }
+  .video-opt .spec-row { padding: 6px 0; }
+  .retro .cols { height: 100%; gap: 28px; align-items: stretch; }
+  .retro .card, .retro .todo { padding: 34px 32px; }
+  .retro .card h3 { font-size: 30px; margin-bottom: 18px; }
+  .retro .card ul { font-size: 24px; line-height: 1.4; }
+  .retro .card li { margin: 16px 0; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; height: 100%; align-content: center; }
+  .retro-problem { font-size: 26px; color: var(--text-2); margin: 0 0 28px; }
+  .retro-problem b { color: var(--text); }
+  .stat-grid .stat { border: 1px solid var(--border); border-top: 6px solid var(--blue); border-radius: 18px; padding: 26px 30px; background: #fff; }
+  .stat-grid .stat i { display: block; font-style: normal; font-size: 17px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .stat-grid .stat b { display: block; font-size: 52px; color: var(--blue); line-height: 1.1; margin-bottom: 12px; }
+  .stat-grid .stat span { font-size: 22px; color: var(--text-2); line-height: 1.4; }
+  .retro-list { font-size: 30px; line-height: 1.45; margin: 30px 0 0; padding-left: 36px; }
+  .retro-list li { margin: 22px 0; }
+  .retro .cols.c2 { height: 100%; gap: 32px; align-items: stretch; }
+  .refs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 36px; }
+  .refs h3 { font-size: 20px; color: var(--blue); margin: 0 0 8px; }
+  .refs h3 + ol { margin-top: 0; }
+  .refs ol { margin: 0 0 16px; padding-left: 22px; font-size: 15px; line-height: 1.28; }
+  .refs li { margin: 0 0 5px; }
+  .refs ol:last-child { margin-bottom: 0; }
+  .refs a { display: block; color: var(--muted); font-size: 12px; text-decoration: none; word-break: break-all; }
+  .refs a:hover { color: var(--blue); }
+  .px-slide .body { display: flex; flex-direction: column; justify-content: center; gap: 34px; }
+  .px-slide .stat-grid { height: auto; }
+  .px-concept { display: grid; grid-template-columns: 520px 1fr; gap: 44px; align-items: center; border: 1px solid var(--border); border-radius: 18px; padding: 28px 36px; background: #fff; }
+  .px-demo { display: grid; gap: 14px; justify-items: start; }
+  .px-row { display: grid; grid-template-columns: 110px 330px; align-items: center; }
+  .px-tag { font-size: 17px; font-weight: 600; color: var(--text-2); }
+  .px-css { height: 64px; display: grid; place-items: center; background: var(--pale); border: 2px solid var(--blue); border-radius: 10px; font-size: 20px; font-weight: 700; color: var(--blue); }
+  .px-real { height: 64px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .px-real i { background: var(--blue); border-radius: 6px; }
+  .px-cap { margin-left: 110px; font-size: 19px; font-weight: 600; color: var(--text); }
+  .px-text h3 { font-size: 30px; margin: 0 0 16px; }
+  .px-formula { font-size: 26px; font-weight: 600; margin-bottom: 12px; }
+  .px-formula.ex { margin: 0; display: inline-block; padding: 10px 18px; background: var(--pale); border-radius: 10px; font-weight: 500; }
+  .px-formula b { color: var(--blue); }
+  .px-text p { font-size: 22px; color: var(--text-2); margin: 0 0 10px; line-height: 1.45; }
+  .px-text .px-ex { margin: 0; padding: 10px 16px; background: var(--pale); border-radius: 10px; color: var(--text); }
+  .px-slide .stat-grid .stat b { font-size: 46px; }
+  .px-slide .stat-grid .stat span.f { display: block; font-size: 21px; padding: 8px 0; border-top: 1px dashed var(--border); }
+  .px-slide .stat-grid .stat span.f:first-of-type { color: var(--text); font-weight: 600; }
+  .video-why .stat-grid .stat b { margin-bottom: 18px; }
+  .video-why .stat-grid .stat span.f { padding: 12px 0; text-wrap: balance; }
+  .video-why .stat-grid .stat span.f:first-of-type { color: var(--text-2); font-weight: 400; }
+  .compare.vmaf { margin-top: 10px; }
+  .video-len .body, .video-codec .body { display: flex; flex-direction: column; justify-content: center; gap: 26px; }
+  table.compare.vt td, table.compare.vt th { font-size: 22px; padding: 14px 16px; vertical-align: middle; }
+  table.compare.vt { table-layout: fixed; }
+  table.compare.vt td:first-child { white-space: normal; }
+  .video-len tr.chosen td, .video-codec tr.chosen td { background: var(--pale); font-weight: 400; }
+  .video-len tr.chosen td:first-child, .video-codec tr.chosen td:first-child { box-shadow: inset 4px 0 0 var(--blue); color: var(--blue); font-weight: 700; }
+  .vt-notes { margin: 0; font-size: 24px; line-height: 1.55; }
+  .video-len .body { gap: 22px; }
+  .vl-keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .vl-key { border: 1px solid var(--border); border-top: 6px solid var(--blue); border-radius: 16px; padding: 16px 24px 14px; background: #fff; }
+  .vl-key b { display: block; font-size: 40px; line-height: 1.1; color: var(--blue); }
+  .vl-key span { display: block; margin-top: 6px; font-size: 20px; line-height: 1.35; color: var(--text); }
+  .vl-key em { display: block; margin-top: 6px; font-style: normal; font-size: 15px; color: var(--muted); }
+  .vl-keys, .vl-table, .vl-take { flex: none; }
+  .vl-table { border: 1px solid var(--border); border-radius: 16px; padding: 16px 22px 14px; background: #fff; }
+  .vl-cap { display: flex; justify-content: space-between; align-items: center; font-size: 17px; font-weight: 600; color: var(--text-2); margin-bottom: 10px; }
+  .vl-legend { font-weight: 500; color: var(--muted); }
+  .vl-legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; background: var(--pale); box-shadow: inset 3px 0 0 var(--blue); margin-right: 8px; vertical-align: -2px; }
+  table.compare.vl { display: table; width: 100%; height: auto; margin: 0; }
+  table.compare.vl tbody { display: table-row-group; }
+  table.compare.vl td, table.compare.vl th { font-size: 20px; padding: 11px 16px; }
+  table.compare.vl tr.in td { background: var(--pale); }
+  table.compare.vl tr.in td:first-child { box-shadow: inset 4px 0 0 var(--blue); color: var(--blue); font-weight: 700; }
+  table.compare.vl tr.out td { color: var(--text-2); }
+  .vl-num { display: inline-block; min-width: 112px; font-weight: 600; }
+  .vl-bar { display: inline-block; width: calc(100% - 120px); height: 9px; border-radius: 5px; background: #eef1f5; vertical-align: middle; }
+  .vl-bar i { display: block; height: 100%; border-radius: 5px; background: var(--blue); }
+  tr.out .vl-bar i { background: #9fb3d9; }
+  .vl-take { margin-top: 14px; font-size: 21px; color: var(--text); }
+  table.compare.vc { display: table; width: 100%; height: auto; margin: 0; }
+  table.compare.vc tbody { display: table-row-group; }
+  table.compare.vc td, table.compare.vc th { font-size: 20px; padding: 16px 16px; line-height: 1.45; vertical-align: top; }
+  table.compare.vc th { vertical-align: middle; }
+  table.compare.vc td:first-child { font-size: 22px; }
+  .vc-take { font-size: 24px; color: var(--text); padding: 18px 24px; background: var(--pale); border-radius: 14px; }
+  .vc-take b { color: var(--blue); }
+  .vc-grid { display: grid; grid-template-columns: .8fr 1.7fr; gap: 28px; }
+  .vc-card { border: 1px solid var(--border); border-top: 6px solid var(--blue); border-radius: 18px; padding: 26px 30px; background: #fff; }
+  .vc-card > i { display: block; font-style: normal; font-size: 17px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .vc-card > b { display: block; font-size: 46px; color: var(--blue); line-height: 1.1; margin-bottom: 16px; }
+  .video-codec .format-ratio { display: block; font-size: 15px; color: var(--muted); }
+  .vc-card .f { display: block; font-size: 21px; color: var(--text-2); line-height: 1.4; padding: 12px 0; border-top: 1px dashed var(--border); text-wrap: balance; }
+  .vc-card table.compare.vt td, .vc-card table.compare.vt th { font-size: 19px; padding: 11px 12px; }
+  .compare.vmaf td, .compare.vmaf th { font-size: 22px; }
+  .vmaf-notes { margin: 28px 0 0; font-size: 24px; line-height: 1.6; }
+  .goals { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; height: 100%; align-content: center; }
+  .goal { border: 1px solid var(--border); border-top: 6px solid var(--blue); border-radius: 18px; padding: 34px 38px; background: #fff; display: flex; flex-direction: column; }
+  .goal-no { font-size: 18px; font-weight: 700; letter-spacing: 2px; color: var(--blue); }
+  .goal h3 { font-size: 30px; margin: 10px 0 12px; text-wrap: balance; }
+  .goal p { font-size: 22px; color: var(--text-2); margin: 0 0 26px; }
+  .metrics { display: flex; gap: 16px; flex-wrap: wrap; margin-top: auto; }
+  .early-start .body { display: flex; flex-direction: column; justify-content: center; }
+  .early-start .mp4 { margin-bottom: 0; padding: 36px 40px 32px; }
+  .early-start .mp4-title { font-size: 22px; margin-bottom: 26px; }
+  .mp4-title span { margin-left: 14px; font-size: 17px; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--muted); }
+  .early-start .mp4-row { grid-template-columns: 300px 1fr; margin-bottom: 22px; }
+  .early-start .mp4-label { font-size: 27px; }
+  .early-start .mp4-label span { font-size: 20px; }
+  .early-start .mp4-bar { height: 76px; border-radius: 12px; }
+  .early-start .mp4-bar .box { font-size: 23px; }
+  .early-start .mp4-bar .ftyp { width: 100px; }
+  .early-start .mp4-bar .moov { width: 180px; }
+  .early-start .mp4-legend { font-size: 21px; margin-top: 26px; padding-top: 22px; grid-template-columns: auto auto auto; justify-content: space-between; }
+  .early-start .mp4-legend div { flex-wrap: nowrap; white-space: nowrap; align-items: center; }
+  .early-start .mp4-legend .sw { width: 18px; height: 18px; }
+  .mp4 { border: 1px solid var(--border); border-radius: 18px; padding: 24px 30px 22px; margin-bottom: 36px; }
+  .mp4-title { font-size: 18px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--blue); margin-bottom: 16px; }
+  .mp4-row { display: grid; grid-template-columns: 250px 1fr; gap: 24px; align-items: center; margin-bottom: 14px; }
+  .mp4-label { font-size: 21px; font-weight: 700; }
+  .mp4-label span { display: block; font-size: 17px; font-weight: 400; color: var(--text-2); margin-top: 2px; }
+  .mp4-bar { display: flex; height: 54px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+  .mp4-bar .box { display: grid; place-items: center; font: 600 18px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .mp4-bar .ftyp { width: 80px; background: #eef1f5; color: var(--text-2); border-right: 1px solid var(--border); }
+  .mp4-bar .moov { width: 140px; background: var(--blue); color: #fff; }
+  .mp4-bar .mdat { flex: 1; background: #f7f8fa; color: var(--text-2); border-right: 1px solid var(--border); border-left: 1px solid var(--border); }
+  .mp4-legend { display: grid; grid-template-columns: 1fr 1.9fr 1.2fr; gap: 16px; margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--border); font-size: 18px; color: var(--text-2); }
+  .mp4-legend div { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .mp4-legend b { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); }
+  .mp4-legend .hl b { color: var(--blue); }
+  .mp4-legend em { font-style: normal; font-weight: 600; color: var(--text); }
+  .mp4-legend .sw { width: 14px; height: 14px; border-radius: 4px; align-self: center; flex: none; }
+  .mp4-legend .sw.ftyp { background: #eef1f5; border: 1px solid var(--border); }
+  .mp4-legend .sw.moov { background: var(--blue); }
+  .mp4-legend .sw.mdat { background: #f7f8fa; border: 1px solid var(--border); }
+  .need-do { display: grid; grid-template-columns: 1fr 48px 1fr; gap: 14px 0; align-items: stretch; }
+  .need-do .nd-head { font-size: 18px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--blue); padding: 0 4px 4px; }
+  .need-do .nd-need, .need-do .nd-done { border: 1px solid var(--border); border-radius: 14px; padding: 18px 24px; font-size: 22px; line-height: 1.4; background: #fff; display: flex; align-items: center; }
+  .need-do .nd-need { font-weight: 600; }
+  .need-do .nd-done { background: var(--pale); border-color: transparent; }
+  .need-do .nd-arrow { display: grid; place-items: center; font-size: 26px; color: var(--muted); }
+  .need-do + .callout { margin-top: 28px; }
+  .goals.early { gap: 28px; height: auto; }
+  .goals.early .goal { padding: 28px 34px; }
+  .goals.early .goal p { margin-bottom: 0; }
+  .goals.early + .callout { margin-top: 28px; }
+  .goals.even .metrics { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .metric { background: var(--pale); border-radius: 14px; padding: 14px 18px; min-width: 120px; }
+  .metric b { display: block; font-size: 34px; color: var(--blue); line-height: 1.1; }
+  .metric span { font-size: 17px; color: var(--text-2); }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 20px 24px;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 18px; }
+  th { background: var(--charcoal); color: #fff; font-weight: 600; text-align: left; padding: 10px 12px; }
+  td { border-bottom: 1px solid var(--border); padding: 10px 12px; vertical-align: top; }
+  table.compare th, table.compare td { font-size: 16px; padding: 8px 10px; }
+  table.compare td:first-child { font-weight: 600; white-space: nowrap; }
+  td.unverified { color: var(--todo); }
+  td.ours, th.ours { background: var(--pale); }
+  th.ours { background: var(--blue); }
+
+  .figure { height: 100%; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .figure img { max-width: 100%; max-height: 100%; object-fit: contain; border: 1px solid var(--border); border-radius: 8px; }
+
+  .agenda { list-style: none; padding: 0; margin: 0; width: 900px; }
+  .agenda li { border-bottom: 2px solid #c9d8f5; padding: 10px 0; font-size: 22px; color: var(--blue-title); }
+
+  .chip { display: inline-block; font-size: 15px; font-weight: 600; border-radius: 6px; padding: 2px 10px; margin-right: 6px; }
+  .chip.p0 { background: var(--charcoal); color: #fff; }
+  .chip.p1 { background: var(--pale); color: var(--blue-title); }
+  .chip.p2 { background: var(--surface); color: var(--text-2); }
+
+  /* Navigation controls */
+  .hud {
+    position: fixed;
+    bottom: 12px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 13px;
+    color: #c8c8c8;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .hud:hover, .hud:focus-within { opacity: 1; }
+  .hud button {
+    background: #3a3d42;
+    color: #eee;
+    border: 0;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  /* Overview grid (press G) */
+  body.grid { overflow: auto; }
+  body.grid .slide {
+    display: inline-block;
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none !important;
+    zoom: 0.2;
+    margin: 40px;
+    cursor: pointer;
+    outline: 12px solid transparent;
+  }
+  body.grid .slide.active { outline-color: var(--todo); }
+  body.grid .hud { display: none; }
+
+  @page { size: 1600px 900px; margin: 0; }
+  @media print {
+    body { background: #fff; overflow: visible; }
+    .slide { display: block; position: relative; top: auto; left: auto; transform: none !important; break-after: page; }
+    .hud { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<section class="slide dark">
+  <div class="tag">&lt;Team/&gt;</div>
+  <div class="hashtag">#embracing_challenges <svg class="shapes" width="85" height="18" viewBox="0 0 85 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect y="1" width="16" height="16" rx="2" fill="#88F2DE"/><rect x="53" width="12.7279" height="12.7279" rx="2" transform="rotate(45 53 0)" fill="#88F2DE"/><rect x="22" y="1" width="16" height="16" rx="8" fill="#1843EF"/><path d="M74.3331 3C75.1029 1.66667 77.0274 1.66667 77.7972 3L83.8594 13.5C84.6292 14.8333 83.6669 16.5 82.1273 16.5H70.003C68.4634 16.5 67.5011 14.8333 68.2709 13.5L74.3331 3Z" fill="#1843EF"/></svg></div>
+  <div class="wordmark">Zalo Marketplace</div>
+  <div class="heading">Mini App v1.0</div>
+  <div class="byline">• By [loctd3] | 14.10.2026</div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Content</div>
+  <div class="body">
+    <ul class="agenda">
+      <li>#1. Tổng quan</li>
+      <li>#2. Kiến trúc hệ thống</li>
+      <li>#3. Tính năng &amp; thách thức kỹ thuật</li>
+      <li>#4. Test &amp; Observability</li>
+      <li>#5. Retrospective</li>
+      <li>#6. Demo</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide dark">
+  <div class="hashtag">#embracing_challenges <svg class="shapes" width="85" height="18" viewBox="0 0 85 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect y="1" width="16" height="16" rx="2" fill="#88F2DE"/><rect x="53" width="12.7279" height="12.7279" rx="2" transform="rotate(45 53 0)" fill="#88F2DE"/><rect x="22" y="1" width="16" height="16" rx="8" fill="#1843EF"/><path d="M74.3331 3C75.1029 1.66667 77.0274 1.66667 77.7972 3L83.8594 13.5C84.6292 14.8333 83.6669 16.5 82.1273 16.5H70.003C68.4634 16.5 67.5011 14.8333 68.2709 13.5L74.3331 3Z" fill="#1843EF"/></svg></div>
+  <div class="wordmark">Zalo Marketplace</div>
+  <div class="heading">#1. Tổng quan</div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Đặt vấn đề</div>
+  <div class="body">
+    <div class="ctx">
+      <div class="ctx-card">
+        <div class="ctx-head"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9h18"/><path d="M9 20v-6h6v6"/></svg><span class="kicker">Thị trường đồ cũ</span></div>
+        <div class="ctx-visual"><div class="big">1,28 tỷ USD</div><div class="sub">quy mô thị trường đồ cũ Việt Nam năm 2025</div><div class="pill">Tăng 13,7% so với năm 2024</div></div>
+        <div class="src">Research and Markets, 6/2025 (ước tính).</div>
+      </div>
+      <div class="ctx-card">
+        <div class="ctx-head"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span class="kicker">Social commerce</span></div>
+        <div class="ctx-visual"><div class="donut-row"><div class="donut-wrap"><svg class="donut" viewBox="0 0 42 42" aria-hidden="true">
+          <circle cx="21" cy="21" r="15.915" class="track"/>
+          <circle cx="21" cy="21" r="15.915" class="arc" stroke-dasharray="71 29" stroke-dashoffset="25"/>
+        </svg><span class="donut-num">71%</span></div><div class="sub">người Việt được khảo sát từng mua hàng qua mạng xã hội</div></div>
+          <div class="mini-stats"><div><b>12 triệu+</b><span>người dùng Chợ Tốt</span></div><div><b>55 triệu</b><span>lượt truy cập Chợ Tốt mỗi tháng</span></div></div>
+        </div>
+        <div class="src">PwC Voice of the Consumer 2024, 515 người Việt. Mô tả app Chợ Tốt trên Google Play, 10/2026.</div>
+      </div>
+      <div class="ctx-card">
+        <div class="ctx-head"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg><span class="kicker">Zalo</span></div>
+        <div class="ctx-visual"><div class="big">81,3 triệu</div><div class="sub">người dùng Zalo mỗi tháng</div>
+          <div class="no-app"><div class="mini-phone" aria-hidden="true">
+          <div class="mini-bar">Mini App</div>
+          <div class="mini-grid"><span class="tile"></span><span class="tile"></span><span class="tile"></span><span class="tile"></span><span class="tile"></span><span class="tile"></span><span class="tile"></span><span class="tile empty">?</span></div>
+        </div><span>Kho Mini App của Zalo <b>chưa có chợ đồ cũ</b></span></div>
+        </div>
+        <div class="src">VNG, quý 2/2026 (VietnamPlus 30/7/2026). Kho Mini App trên app Zalo, 10/2026.</div>
+      </div>
+    </div>
+    <div class="callout">Cơ hội là đưa chợ đồ cũ vào Zalo, nơi đã có sẵn 81,3 triệu người dùng mỗi tháng.</div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Sản phẩm tương tự</div>
+  <div class="body">
+    <table class="compare matrix icons"><tr><th></th><th class="">Chợ Tốt</th><th class="">Facebook Marketplace</th><th class="">Nhóm Facebook</th></tr><tr><td>Không cần cài app</td><td class=""><svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>Không cần đăng ký</td><td class=""><svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>Dễ tiếp cận</td><td class=""><svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk n" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8"/></svg></td></tr><tr><td>Đăng tin với video</td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk n" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>Miễn phí</td><td class=""><svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>An toàn</td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk n" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8"/></svg></td></tr></table>
+    <div class="legend"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg> Có &nbsp;&nbsp; <svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg> Một phần &nbsp;&nbsp; <svg class="mk n" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8"/></svg> Không</div>
+    <div class="callout">Chưa có lựa chọn nào đủ cả 6 tiêu chí.</div>
+    <div class="src">Nguồn: trang trợ giúp và kho ứng dụng chính thức, báo chí; tra ngày 6/10/2026. Facebook Marketplace không tải được video ở Việt Nam (kiểm trên app). Chi tiết từng ô: plans/research-competitors.md.</div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Giải pháp đề ra</div>
+  <div class="body">
+    <table class="compare matrix icons"><tr><th></th><th class="">Chợ Tốt</th><th class="">Facebook Marketplace</th><th class="">Nhóm Facebook</th><th class="ours">Zalo Marketplace</th></tr><tr><td>Không cần cài app</td><td class=""><svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class="ours"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>Không cần đăng ký</td><td class=""><svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class="ours"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>Dễ tiếp cận</td><td class=""><svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk n" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8"/></svg></td><td class="ours"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>Đăng tin với video</td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk n" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class="ours"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>Miễn phí</td><td class=""><svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class="ours"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>An toàn</td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk n" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8"/></svg></td><td class="ours"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr></table>
+    <div class="legend"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg> Có &nbsp;&nbsp; <svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg> Một phần &nbsp;&nbsp; <svg class="mk n" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8"/></svg> Không</div>
+    <div class="callout">Zalo Marketplace là chợ đồ cũ ngay trong Zalo, có đủ cả 6 tiêu chí.</div>
+    <div class="src">Nguồn: trang trợ giúp và kho ứng dụng chính thức, báo chí; tra ngày 6/10/2026. Facebook Marketplace không tải được video ở Việt Nam (kiểm trên app). Chi tiết từng ô: plans/research-competitors.md.</div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Feature breakdown</div>
+  <div class="body">
+    <div class="phase-grid"><div class="phase-card now"><div class="phase-top"><span class="phase-no">Phase 1</span><span class="badge">Đã xong</span></div><h3>Core marketplace</h3><ul><li>Feed, tìm kiếm, bộ lọc</li><li>Reels</li><li>Đăng tin có ảnh và video</li><li>Quản lý tin</li><li>Báo cáo, chia sẻ tin</li></ul></div><div class="phase-card"><div class="phase-top"><span class="phase-no">Phase 2</span></div><h3>Admin &amp; Fraud</h3><ul><li>Trang quản trị</li><li>Duyệt tin</li><li>Xử lý báo cáo</li><li>Quản lý tài khoản</li><li>Chống spam</li></ul></div><div class="phase-card"><div class="phase-top"><span class="phase-no">Phase 3</span></div><h3>Engagement</h3><ul><li>Tin yêu thích</li><li>Thông báo</li><li>Lịch sử xem tin và tìm kiếm</li><li>Gợi ý tin theo sở thích</li></ul></div><div class="phase-card"><div class="phase-top"><span class="phase-no">Phase 4</span></div><h3>Search &amp; Discovery</h3><ul><li>Mở rộng danh mục</li><li>Form đăng tin theo danh mục</li><li>Bộ lọc theo danh mục</li><li>Tìm kiếm nâng cao</li></ul></div><div class="phase-card"><div class="phase-top"><span class="phase-no">Phase 5</span></div><h3>Seller tools</h3><ul><li>Thống kê cho người bán</li><li>Tin ưu tiên (trả phí)</li><li>Duyệt tin nhanh (trả phí)</li><li>Hồ sơ và đánh giá người bán</li></ul></div><div class="phase-card"><div class="phase-top"><span class="phase-no">Phase 6</span></div><h3>AI</h3><ul><li>Gợi ý tìm kiếm bằng AI</li><li>Tìm kiếm bằng hình ảnh</li><li>AI kiểm tra tin</li><li>AI điền tin từ ảnh, video</li><li>AI trả lời người mua</li></ul></div></div>
+  </div>
+</section>
+
+<section class="slide dark">
+  <div class="hashtag">#embracing_challenges <svg class="shapes" width="85" height="18" viewBox="0 0 85 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect y="1" width="16" height="16" rx="2" fill="#88F2DE"/><rect x="53" width="12.7279" height="12.7279" rx="2" transform="rotate(45 53 0)" fill="#88F2DE"/><rect x="22" y="1" width="16" height="16" rx="8" fill="#1843EF"/><path d="M74.3331 3C75.1029 1.66667 77.0274 1.66667 77.7972 3L83.8594 13.5C84.6292 14.8333 83.6669 16.5 82.1273 16.5H70.003C68.4634 16.5 67.5011 14.8333 68.2709 13.5L74.3331 3Z" fill="#1843EF"/></svg></div>
+  <div class="wordmark">Zalo Marketplace</div>
+  <div class="heading">#2. Kiến trúc hệ thống</div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Architecture overview</div>
+  <div class="body">
+    <div class="figure arch-fig"><img src="assets/architecture-c4-simple.png?v=1791862400" alt="Kiến trúc: FE Mini App có Web Worker, ZMP SDK, API, PostgreSQL, Media worker, Zalo Open API, S3, CloudFront, Sentry"></div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/usecase-diagram.png?v=1791363476" data-title="Use cases">Use cases</button><button type="button" class="diagram-btn" data-img="assets/00-sign-in.png?v=1791363447" data-title="0. Đăng nhập">0. Đăng nhập</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Entity relationship diagram</div>
+  <div class="body">
+    <div class="figure arch-fig"><img src="assets/erd-db.png?v=1791382840" alt="ERD: User, Product, Media, Report, Category, Location"></div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/erd-db.png?v=1791382840" data-title="Phóng to ERD">Phóng to ERD</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Thiết bị hỗ trợ</div>
+  <div class="body">
+    <table class="compare support">
+      <tr><th></th><th>iPhone</th><th>Android</th></tr>
+      <tr><td>Zalo yêu cầu tối thiểu</td><td><b>iOS 15.1</b></td><td><b>Android 7.0</b></td></tr>
+      <tr><td>Thiết bị</td><td>iPhone 6s, iPhone SE (thế hệ 1) trở lên</td><td>Mọi máy Android 7.0 trở lên</td></tr>
+      <tr><td>Mini App chạy trong</td><td>WKWebView, nhân WebKit của iOS</td><td>Android WebView, nhân Chromium</td></tr>
+    </table>
+    <div class="src">Nguồn: Zalo trên App Store và Google Play (6/10/2026). Apple App Review Guidelines 2.5.6: app duyệt web phải dùng WebKit. Danh sách máy chạy iOS 15 (AppleInsider).</div>
+  </div>
+</section>
+
+<section class="slide dark">
+  <div class="hashtag">#embracing_challenges <svg class="shapes" width="85" height="18" viewBox="0 0 85 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect y="1" width="16" height="16" rx="2" fill="#88F2DE"/><rect x="53" width="12.7279" height="12.7279" rx="2" transform="rotate(45 53 0)" fill="#88F2DE"/><rect x="22" y="1" width="16" height="16" rx="8" fill="#1843EF"/><path d="M74.3331 3C75.1029 1.66667 77.0274 1.66667 77.7972 3L83.8594 13.5C84.6292 14.8333 83.6669 16.5 82.1273 16.5H70.003C68.4634 16.5 67.5011 14.8333 68.2709 13.5L74.3331 3Z" fill="#1843EF"/></svg></div>
+  <div class="wordmark">Zalo Marketplace</div>
+  <div class="heading">#3. Tính năng &amp; thách thức kỹ thuật</div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Feed</div>
+  <div class="body">
+    <div class="steps-row"><figure class="flow-step"><figcaption><span class="no">1</span><b>Mở app</b><span class="detail">Tin mới nhất hiện ngay, không phải đợi đăng nhập xong</span></figcaption><div class="phone"><img src="assets/app/feed-home.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Ảnh đang tải</b><span class="detail">Hiện tạm bản mờ, tải xong thì thay bằng ảnh thật</span></figcaption><div class="phone"><img src="assets/app/feed-blur.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">3</span><b>Cuộn xuống</b><span class="detail">Gần hết danh sách thì tự tải thêm tin</span></figcaption><div class="phone"><img src="assets/app/feed-more.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">4</span><b>Tin có video</b><span class="detail">Tự phát 3 giây xem trước, không có tiếng</span></figcaption><div class="phone"><video src="assets/app/feed-video.mp4" poster="assets/app/feed-video.jpg" autoplay muted loop playsinline></video></div></figure></div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/01-home-feed.png?v=1791262540" data-title="1. Feed">1. Feed</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Feed: tìm kiếm và lọc</div>
+  <div class="body">
+    <div class="steps-row"><figure class="flow-step"><figcaption><span class="no">1</span><b>Tìm kiếm</b><span class="detail">Hỗ trợ tìm kiếm không dấu, ví dụ "dong ho" vẫn ra "Đồng hồ"</span></figcaption><div class="phone"><img src="assets/app/feed-search.jpg?v=1791384761" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Lọc tin</b><span class="detail">Theo khu vực, danh mục, tình trạng, giá</span></figcaption><div class="phone"><img src="assets/app/feed-filter.jpg?v=1791384772" alt=""></div></figure></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Feed: Technical Challenge</div>
+  <div class="body">
+    <div class="goals even"><div class="goal"><div class="goal-no">01</div><h3>Loading time</h3><p>Mở app là thấy tin, không phải chờ.</p><div class="metrics"><div class="metric"><b>≤ 2,5 s</b><span>LCP</span></div><div class="metric"><b>&lt; 200 ms</b><span>TBT</span></div><div class="metric"><b>&lt; 250 KB</b><span>Initial JS (gzip)</span></div></div></div><div class="goal"><div class="goal-no">02</div><h3>Smooth scrolling</h3><p>Feed 5.000 tin, cuộn xa đến đâu cũng không giật, không bị layout shift.</p><div class="metrics"><div class="metric"><b>5.000</b><span>tin trong feed</span></div><div class="metric"><b>0</b><span>layout shift (CLS)</span></div></div></div></div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/01-home-feed.png?v=1791262540" data-title="1. Feed">1. Feed</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Feed: loading time</div>
+  <div class="body">
+    <div class="lt">
+      <div class="lt-left">
+        <div class="score-row">
+          <div class="ring"><span>95</span></div>
+          <div><div class="score-label">Performance</div><div class="score-sub">Công cụ đo hiệu suất của Zalo Mini App</div></div>
+        </div>
+        <div class="tiles">
+          <div class="tile"><div class="tile-top"><b>2,5 s</b><span class="ok">✓</span></div><div class="tile-name">LCP</div><div class="tile-goal">Mục tiêu ≤ 2,5 s</div></div>
+          <div class="tile"><div class="tile-top"><b>100 ms</b><span class="ok">✓</span></div><div class="tile-name">TBT</div><div class="tile-goal">Mục tiêu &lt; 200 ms</div></div>
+          <div class="tile"><div class="tile-top"><b>154 KB</b><span class="ok">✓</span></div><div class="tile-name">Initial JS (gzip)</div><div class="tile-goal">Mục tiêu &lt; 250 KB</div></div>
+        </div>
+        <div class="how"><h3>Cách làm</h3><ul>
+          <li><b>Code splitting</b> theo route, lúc đầu chỉ tải trang chủ</li>
+          <li><b>Thumbnail WebP</b> nhỏ cho ảnh trên feed</li>
+          <li><b>Gọi feed sớm</b> và preload ảnh hàng đầu trong lúc JS chính còn tải</li>
+          <li><b>Prefetch</b> các trang khác khi trình duyệt rảnh</li>
+        </ul></div>
+      </div>
+      <figure class="proof"><img src="assets/zalo-perf-feed.jpg?v=1791386833" alt="Báo cáo hiệu suất Zalo Mini App: Performance 95, LCP 2,5 s, TBT 100 ms, CLS 0"><figcaption>Báo cáo trên Zalo Mini App, 07/10/2026</figcaption></figure>
+    </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/01-home-feed.png?v=1791262540" data-title="1. Feed">1. Feed</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Feed: Smooth scrolling</div>
+  <div class="body">
+    <div class="ss-head">Tối ưu trải nghiệm cuộn Feed</div>
+    <div class="ss">
+      <div class="fixes">
+        <div class="fix"><div class="fix-no">01</div><h3>Kích thước card cố định</h3><p>Giữ bố cục ổn định, hạn chế layout shifting khi tải nội dung.</p></div>
+        <div class="fix"><div class="fix-no">02</div><h3>ThumbHash Placeholder</h3><p>Hiển thị ảnh xem trước dạng mờ trong lúc chờ ảnh gốc tải xong.</p></div>
+        <div class="fix"><div class="fix-no">03</div><h3>Virtual List</h3><p>Chỉ render các item trong viewport và một vùng đệm nhỏ, giảm tải DOM và memory.</p></div>
+        <div class="fix"><div class="fix-no">04</div><h3>Tối ưu video playback</h3><p>Giới hạn video phát đồng thời, giảm tiêu thụ tài nguyên và băng thông.</p></div>
+      </div>
+      <div class="vl-result"><div><h3>Kết quả</h3><p class="ss-note">Đánh giá độ mượt khi cuộn Feed bằng Chrome DevTools Performance (CPU throttling 4×).</p></div><figure class="proof"><img src="assets/scroll-60s-memory.png?v=1791429226" alt="Chrome DevTools Performance: cuộn feed 60 giây, Frames gần như toàn xanh, JS heap và DOM nodes lên xuống trong một khoảng cố định"><figcaption>Cuộn liên tục 60 s</figcaption></figure></div>
+    </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/scroll-60s-memory-full.png?v=1791429226" data-title="Phóng to kết quả">Phóng to kết quả</button><button type="button" class="diagram-btn" data-img="assets/01-home-feed.png?v=1791262540" data-title="1. Feed">1. Feed</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Reels</div>
+  <div class="body">
+    <div class="steps-row"><figure class="flow-step"><figcaption><span class="no">1</span><b>Reels Autoplay</b><span class="detail">Video đầu tiên tự động phát với âm thanh.</span></figcaption><div class="phone"><img src="assets/app/reels-play.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Swipe to Explore</b><span class="detail">Vuốt lên để khám phá video tiếp theo.</span></figcaption><div class="phone"><img src="assets/app/reels-next.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">3</span><b>Continuous Playback</b><span class="detail">Video tiếp tục autoplay khi người dùng chuyển nội dung.</span></figcaption><div class="phone"><img src="assets/app/reels-13.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">4</span><b>Product Detail</b><span class="detail">Vuốt trái để xem thông tin chi tiết sản phẩm.</span></figcaption><div class="phone"><img src="assets/app/detail.jpg?v=1791294585" alt=""></div></figure></div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/02-reels.png?v=1791262540" data-title="2. Reels">2. Reels</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Reels: Technical Challenge</div>
+  <div class="body">
+    <div class="goals"><div class="goal"><div class="goal-no">01</div><h3>Autoplay with Sound</h3><p>Video tự động phát kèm âm thanh ngay khi mở Reels, không cần nhấn Play.</p><div class="metrics"><div class="metric"><b>1 tap</b><span>Để bắt đầu xem Reels</span></div></div></div><div class="goal"><div class="goal-no">02</div><h3>Seamless Scrolling &amp; Playback</h3><p>Lướt qua hàng trăm video mượt mà, video tiếp theo tự động phát mà không cần thao tác thêm.</p><div class="metrics"><div class="metric"><b>0 extra taps</b><span>Để phát video tiếp theo</span></div><div class="metric"><b>100+ Reels</b><span>Lướt liên tục, không giật lag</span></div></div></div></div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/02-reels.png?v=1791262540" data-title="2. Reels">2. Reels</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Reels: Why Sound-On?</div>
+  <div class="body">
+    <div class="ws">
+      <div class="ws-tile hero"><b>88%</b><span>Người dùng TikTok được khảo sát coi âm thanh là phần thiết yếu của trải nghiệm</span></div>
+      <div class="ws-tile"><b>Sound-On</b><span>UX pattern được áp dụng trên các nền tảng short-form video lớn</span></div>
+      <div class="ws-tile"><b>+15%</b><span>Khả năng skip quảng cáo cao hơn khi sound-off</span></div>
+      <div class="ws-tile"><b>78%</b><span>Quan tâm hơn đến sản phẩm khi nhạc quảng cáo phù hợp</span></div>
+      <div class="ws-tile"><b>11.451 Reels</b><span>Nghiên cứu ghi nhận mối liên hệ giữa âm thanh và engagement</span></div>
+    </div>
+  </div>
+</section>
+<section class="slide">
+  <div class="s-title">Reels: Browser Autoplay Restrictions</div>
+  <div class="body">
+    <div class="pc">
+      <div class="fix pc-card">
+        <div class="fix-no">01 · Vấn đề</div>
+        <div class="pc-item"><b>Autoplay Policy</b><span>Browser/WebView hạn chế autoplay có âm thanh nếu chưa có user interaction.</span></div>
+        <div class="pc-item"><b>Autoplay trên Reels mới</b><span>Video element tạo sau lần tương tác ban đầu có thể bị chặn <code>play()</code>, khiến các Reels tải thêm không thể autoplay.</span></div>
+      </div>
+      <div class="fix pc-card">
+        <div class="fix-no">02 · Giải pháp</div>
+        <div class="pc-item"><b>Single Video Element</b><span>Dùng chung một <code>&lt;video&gt;</code> element cho toàn bộ Reels, chỉ thay đổi source khi chuyển video.</span></div>
+        <div class="pc-item"><b>Media Prefetching</b><span>Prefetch 10 Reels đầu tiên để có thể gọi <code>play()</code> ngay khi người dùng mở tab.</span></div>
+      </div>
+      <div class="fix pc-card">
+        <div class="fix-no">03 · Kết quả</div>
+        <div class="pc-result">
+          <button type="button" class="video-thumb" data-video="assets/demo-autoplay-with-sound.mp4" aria-label="Phát video demo autoplay có âm thanh"><img src="assets/demo-autoplay-poster.jpg?v=1791433938" alt="Reels đang phát trong Zalo trên iPhone"><span class="play">▶</span></button>
+          <div>
+            <div class="pc-item"><b>120 Reels</b><span>Lướt liên tục 120 Reels, video vẫn autoplay có âm thanh.</span></div>
+            <div class="pc-item"><b>Zalo iOS</b><span>Autoplay có âm thanh ngay khi mở tab Reels.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/02-reels.png?v=1791262540" data-title="2. Reels">2. Reels</button></div>
+</section>
+
+<section class="slide early-start">
+  <div class="s-title">Reels: Phát video sớm</div>
+  <div class="body">
+    <div class="mp4">
+      <div class="mp4-title">Một file MP4 gồm 3 phần chính</div>
+      <div class="mp4-row"><div class="mp4-label">Chưa xử lý<span>Metadata nằm cuối file</span></div><div class="mp4-bar"><span class="box ftyp">ftyp</span><span class="box mdat">mdat</span><span class="box moov">moov</span></div></div>
+      <div class="mp4-row"><div class="mp4-label">Đã xử lý<span>Metadata nằm ngay đầu file</span></div><div class="mp4-bar"><span class="box ftyp">ftyp</span><span class="box moov">moov</span><span class="box mdat">mdat</span></div></div>
+      <div class="mp4-legend">
+        <div><i class="sw ftyp"></i><b>ftyp</b>Loại file</div>
+        <div class="hl"><i class="sw moov"></i><b>moov</b>Metadata: thời lượng, codec, vị trí khung hình</div>
+        <div><i class="sw mdat"></i><b>mdat</b>Dữ liệu hình và tiếng</div>
+      </div>
+    </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/02-reels.png?v=1791262540" data-title="2. Reels">2. Reels</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Đăng tin</div>
+  <div class="body">
+    <div class="steps-row"><figure class="flow-step"><figcaption><span class="no">1</span><b>Thêm ảnh, video</b><span class="detail">Chọn tối đa 10 ảnh và 1 video. App tự động optimize ảnh và video trước khi upload.</span></figcaption><div class="phone"><img src="assets/app/sell-uploaded.jpg?v=1791294818" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Upload trong lúc nhập tin</b><span class="detail">Media được upload ngay khi sẵn sàng, người dùng vẫn có thể tiếp tục nhập thông tin.</span></figcaption><div class="phone"><img src="assets/app/sell-processing.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">3</span><b>Đăng tin</b><span class="detail">Hoàn tất thông tin và nhấn Đăng tin. Không cần chờ server xử lý media.</span></figcaption><div class="phone"><img src="assets/app/sell-filled.jpg?v=1791294818" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">4</span><b>Xử lý &amp; hiển thị</b><span class="detail">Server xử lý nốt ảnh, video. Tin tự động xuất hiện trên feed khi hoàn tất.</span></figcaption><div class="phone"><img src="assets/app/posted.jpg?v=1791294585" alt=""></div></figure></div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-post-listing.png?v=1791262996" data-title="3. Đăng tin">3. Đăng tin</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Đăng tin: Technical Challenge</div>
+  <div class="body">
+    <div class="goals"><div class="goal"><div class="goal-no">01 — Client-side Media Optimization</div><h3>Tối ưu ảnh và video ngay trên thiết bị</h3><p>Resize, compress và transcode media trước khi upload, giúp giảm dung lượng truyền tải và tải xử lý trên server.</p><div class="metrics"><div class="metric"><b>1600 px</b><span>Cạnh dài tối đa của ảnh</span></div><div class="metric"><b>H.264</b><span>Video tối đa 1080p</span></div></div></div><div class="goal"><div class="goal-no">02 — Non-blocking Media Processing</div><h3>Optimize media không làm gián đoạn UI</h3><p>Xử lý ảnh/video trên background thread, đảm bảo người dùng vẫn có thể nhập thông tin, chuyển tab và thao tác bình thường.</p></div></div>
+  </div>
+</section>
+
+<section class="slide photo-opt">
+  <div class="s-title">Đăng tin: Tối ưu ảnh</div>
+  <div class="body">
+    <div class="pc">
+      <div class="fix pc-card">
+        <div class="fix-no">01 · Vấn đề</div>
+        <div class="pc-item">
+          <b>Ảnh gốc nặng</b>
+          <span>10 ảnh × vài MB = vài chục MB phải upload.</span>
+        </div>
+
+        <div class="spec">
+          <div class="spec-title">Giới hạn đầu vào</div>
+          <div class="spec-row"><span>Số ảnh</span><b>tối đa 10 / tin</b></div>
+          <div class="spec-row"><span>Định dạng</span><b>JPEG, PNG, WebP</b></div>
+          <div class="spec-row"><span>Dung lượng</span><b>≤ 10 MB / ảnh</b></div>
+          <div class="spec-row"><span>Cạnh ngắn</span><b>≥ 600 px</b></div>
+        </div>
+      </div>
+
+      <div class="fix pc-card">
+        <div class="fix-no">02 · Giải pháp</div>
+        <div class="stage">
+          <div class="stage-label">Client · Trước khi upload</div>
+          <div class="pc-item">
+            <b>Resize 1600 px, JPEG 0.85</b>
+            <span>Chạy trong Web Worker, không block main thread.</span>
+          </div>
+        </div>
+
+        <div class="stage server-stage">
+          <div class="stage-label">Server · Sau khi upload</div>
+          <div class="pc-item">
+            <b>Nén lại, tạo thumbnail</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="fix pc-card">
+        <div class="fix-no">03 · Kết quả</div>
+        <strong class="result-number">6–12×</strong>
+        <p class="result-caption">Ảnh upload nhẹ hơn ảnh gốc.</p>
+
+        <div class="pc-item quality-result">
+          <b>Chất lượng gần như ảnh gốc</b>
+          <div class="quality-pair">
+            <figure><img src="assets/quality-original.jpg" alt="Ảnh gốc, phóng to 2 lần"><figcaption>Ảnh gốc</figcaption></figure>
+            <figure><img src="assets/quality-app.jpg" alt="Ảnh sau khi app và server nén, phóng to 2 lần"><figcaption>Sau khi nén</figcaption></figure>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-1-optimize-photos.png?v=1791453964" data-title="3.1 Tối ưu ảnh">3.1 Tối ưu ảnh</button><button type="button" class="diagram-btn" data-img="assets/03-3-upload-and-process.png?v=1791277004" data-title="3.3 Upload &amp; xử lý">3.3 Upload &amp; xử lý</button><button type="button" class="diagram-btn" data-extra="extra-image-worker">Đo số Web Worker</button></div>
+</section>
+<section class="slide px-slide">
+  <div class="s-title">Đăng tin: Ý nghĩa các con số</div>
+  <div class="body">
+    <div class="px-concept">
+      <div class="px-demo">
+        <div class="px-row"><span class="px-tag">CSS</span><div class="px-css">1 CSS pixel</div></div>
+        <div class="px-row"><span class="px-tag">Màn hình</span><div class="px-real"><i></i><i></i><i></i></div></div>
+        <div class="px-cap">DPR 3: 1 CSS pixel = 3 pixel thật</div>
+      </div>
+      <div class="px-text">
+        <h3>DPR (Device Pixel Ratio)</h3>
+        <div class="px-formula">DPR = pixel thật ÷ CSS pixel</div>
+        <div class="px-formula ex">iPhone 13: 1.170 ÷ 390 = <b>3</b></div>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><i>Ảnh chi tiết · cạnh dài</i><b>1600 px</b><span class="f">Vừa màn hình: 390 × 3 = 1.170 px</span><span class="f">Đủ để phóng to</span></div>
+      <div class="stat"><i>Thumbnail feed · vuông</i><b>600 px</b><span class="f">Card điện thoại: 172 × 3 = 516 px</span></div>
+      <div class="stat"><i>Ảnh gốc · tối đa</i><b>10 MB</b><span class="f">Chụp mặc định 12 MP: 1,5–6,2 MB</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Đăng tin: Chất lượng ảnh sau nén</div>
+  <div class="body">
+    <div class="figure" style="height: calc(100% - 36px);"><img src="assets/zoom4-and1-vase.png?v=2" alt="So sánh nén ảnh ở 1×, 2×, 3×: gửi gốc, app rồi server nén lại, app nén và server giữ nguyên; kèm SSIM, SSIMULACRA 2 và dung lượng"></div>
+    <div class="src">Ảnh Galaxy S23 Ultra (Wikimedia Commons)</div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Đăng tin: Chất lượng ảnh sau nén</div>
+  <div class="body">
+    <div class="figure" style="height: calc(100% - 36px);"><img src="assets/zoom4-ios3-phone.png?v=2" alt="Ảnh điện thoại có nhãn chữ và mã QR, so sánh nén ở 1×, 2×, 3×: gửi gốc, app rồi server nén lại, app nén và server giữ nguyên"></div>
+    <div class="src">Ảnh iPhone 13 Pro (Wikimedia Commons)</div>
+  </div>
+</section>
+
+<section class="slide image-formats">
+  <div class="s-title">Đăng tin: So sánh định dạng ảnh</div>
+  <div class="body">
+    <div class="format-input">Bộ data test: 8 ảnh gốc 1,5–4,5 MB, resize về 1600 px, test trên Mac M1, kết quả lấy trung vị.</div>
+    <table class="compare choice">
+      <colgroup><col style="width:13%"><col style="width:17%"><col style="width:13%"><col style="width:14%"><col style="width:20%"><col style="width:23%"></colgroup>
+      <tr><th>Định dạng</th><th>Dùng ở đâu</th><th>Dung lượng / ảnh</th><th>Thời gian nén / ảnh</th><th>Ưu điểm</th><th>Hạn chế</th></tr>
+      <tr class="chosen"><td>JPEG<span class="format-ratio">libjpeg-turbo</span></td><td>Client</td><td><strong>180 KiB</strong></td><td><strong>10 ms</strong></td><td>Nén nhanh nhất</td><td>Nặng hơn mozjpeg 19%</td></tr>
+      <tr class="chosen"><td>JPEG<span class="format-ratio">mozjpeg</span></td><td>Server · ảnh chi tiết</td><td><strong>152 KiB</strong></td><td><strong>98 ms</strong></td><td>Tương thích rộng<br>Nhẹ hơn libjpeg-turbo 16%</td><td>Nặng hơn AVIF / JPEG XL</td></tr>
+      <tr class="chosen"><td>WebP</td><td>Server · thumbnail feed</td><td><strong>149 KiB</strong></td><td><strong>126 ms</strong></td><td>Nhẹ hơn ở ảnh nhỏ</td><td>iPhone chưa nén được WebP</td></tr>
+      <tr><td>AVIF</td><td>Không dùng</td><td><strong>88 KiB</strong></td><td><strong>2.340 ms</strong></td><td>Nhẹ nhất trong phép đo</td><td>iOS 16+; cần JPEG fallback<br>Nén chậm nhất (~24× mozjpeg)</td></tr>
+      <tr><td>JPEG XL</td><td>Không dùng</td><td><strong>113 KiB</strong></td><td><strong>935 ms</strong><span class="format-ratio">Gồm khởi động CLI</span></td><td>Progressive decoding</td><td>Chrome Android chưa hỗ trợ<br>App chưa nén được JPEG XL</td></tr>
+    </table>
+
+  </div>
+</section>
+<section class="slide photo-opt video-opt">
+  <div class="s-title">Đăng tin: Tối ưu video</div>
+  <div class="body">
+    <div class="pc">
+      <div class="fix pc-card">
+        <div class="fix-no">01 · Vấn đề</div>
+        <div class="pc-item">
+          <b>Video nặng</b>
+          <span>Upload, xử lý và tải về đều lâu.</span>
+        </div>
+        <div class="pc-item">
+          <b>Android: không phải H.264</b>
+          <span>Ví dụ HEVC, nhiều máy không phát được.</span>
+        </div>
+
+        <div class="spec">
+          <div class="spec-title">Giới hạn đầu vào</div>
+          <div class="spec-row"><span>Số video</span><b>tối đa 1 / tin</b></div>
+          <div class="spec-row"><span>Định dạng</span><b>MP4, MOV · H.264</b></div>
+          <div class="spec-row"><span>Thời lượng</span><b>≤ 60 giây</b></div>
+          <div class="spec-row"><span>Dung lượng</span><b>≤ 150 MB</b></div>
+          <div class="spec-row"><span>Độ phân giải</span><b>≤ 1080p</b></div>
+        </div>
+      </div>
+
+      <div class="fix pc-card">
+        <div class="fix-no">02 · Giải pháp</div>
+        <div class="stage">
+          <div class="stage-label">Client · Trước khi upload</div>
+          <div class="pc-item">
+            <b>Android: chuyển sang H.264</b>
+            <span>1080p, 30 fps, bằng WebCodecs.</span>
+          </div>
+          <div class="pc-item">
+            <b>iPhone: giữ nguyên</b>
+            <span>iOS đã xuất sẵn H.264.</span>
+          </div>
+        </div>
+
+        <div class="stage server-stage">
+          <div class="stage-label">Server · Sau khi upload</div>
+          <div class="pc-item">
+            <b>Chuyển về 720p</b>
+            <span>Nếu trên 720p hoặc 4 Mbit/s.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fix pc-card">
+        <div class="fix-no">03 · Kết quả</div>
+        <strong class="result-number">5,7×</strong>
+        <p class="result-caption">Video 60 giây, 1080p → 720p: <span style="white-space: nowrap">136 → 24 MB</span>.</p>
+      </div>
+    </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-2-optimize-videos.png?v=1791272330" data-title="3.2 Tối ưu video">3.2 Tối ưu video</button><button type="button" class="diagram-btn" data-img="assets/03-3-upload-and-process.png?v=1791277004" data-title="3.3 Upload &amp; xử lý">3.3 Upload &amp; xử lý</button></div>
+</section>
+
+<section class="slide video-len">
+  <div class="s-title">Đăng tin: Vì sao video tối đa 60 giây</div>
+  <div class="body">
+    <div class="vl-keys">
+      <div class="vl-key"><b>72%</b><span>video TikTok dài dưới 60 giây</span><em>Fanpage Karma, 32.000 video</em></div>
+      <div class="vl-key"><b>21–34 giây</b><span>độ dài TikTok khuyên cho quảng cáo, tối đa 60 giây</span><em>TikTok for Business</em></div>
+      <div class="vl-key"><b>~35 giây</b><span>tương tác cao nhất khi thử video 10–60 giây</span><em>Reichstein &amp; Dost, 2025</em></div>
+    </div>
+    <div class="vl-table">
+      <div class="vl-cap">Hiệu quả theo độ dài · 32.000 video TikTok (Fanpage Karma, 2026)</div>
+      <table class="compare vt vl">
+        <colgroup><col style="width:22%"><col style="width:39%"><col style="width:39%"></colgroup>
+        <tr><th>Thời lượng</th><th>Tỉ lệ video</th><th>Xem hết</th></tr>
+        <tr><td>0–10 giây</td><td><span class="vl-num">14,3%</span><span class="vl-bar"><i style="width:45%"></i></span></td><td><span class="vl-num">15,4%</span><span class="vl-bar"><i style="width:100%"></i></span></td></tr><tr><td>11–30 giây</td><td><span class="vl-num">32%</span><span class="vl-bar"><i style="width:100%"></i></span></td><td><span class="vl-num">3,8%</span><span class="vl-bar"><i style="width:25%"></i></span></td></tr><tr><td>31–60 giây</td><td><span class="vl-num">25,7%</span><span class="vl-bar"><i style="width:80%"></i></span></td><td><span class="vl-num">3,5%</span><span class="vl-bar"><i style="width:23%"></i></span></td></tr><tr><td>61–90 giây</td><td><span class="vl-num">12,9%</span><span class="vl-bar"><i style="width:40%"></i></span></td><td><span class="vl-num">3,4%</span><span class="vl-bar"><i style="width:22%"></i></span></td></tr><tr><td>Trên 90 giây</td><td><span class="vl-num">15,2%</span><span class="vl-bar"><i style="width:48%"></i></span></td><td><span class="vl-num">1,3–2,6%</span><span class="vl-bar"><i style="width:17%"></i></span></td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="slide video-codec">
+  <div class="s-title">Đăng tin: Vì sao chọn H.264</div>
+  <div class="body">
+    <table class="compare vt vc">
+      <colgroup><col style="width:11%"><col style="width:15%"><col style="width:13%"><col style="width:30%"><col style="width:31%"></colgroup>
+      <tr><th>Codec</th><th>Trình duyệt hỗ trợ</th><th>Nhẹ hơn H.264</th><th>Điểm mạnh</th><th>Hạn chế</th></tr>
+      <tr class="chosen"><td>H.264</td><td><strong>97,5%</strong></td><td>Mốc so sánh</td><td>Hỗ trợ trên tất cả máy<br>Nén nhanh trên cả app và server</td><td>File nặng nhất trong 4 codec</td></tr>
+      <tr><td>H.265<span class="format-ratio">HEVC</span></td><td><strong>95%</strong><span class="format-ratio">75% có điều kiện</span></td><td>~50%</td><td>File nhẹ bằng khoảng một nửa<br>iPhone quay mặc định bằng H.265</td><td>Android: máy phải có chip giải mã H.265 và Chrome 107 (2022) trở lên</td></tr>
+      <tr><td>VP9</td><td><strong>97,3%</strong></td><td>~25%</td><td>Phát được trên Chrome và Android</td><td>iPhone từ iOS 17.4 mới phát được</td></tr>
+      <tr><td>AV1</td><td><strong>96%</strong><span class="format-ratio">17% có điều kiện</span></td><td>~50%</td><td>File nhẹ nhất<br>Phát được trên Chrome và Android</td><td>iPhone chỉ phát được từ 15 Pro trở lên<br>Nén chậm hơn H.264 khoảng 5.700 lần</td></tr>
+    </table>
+    <div class="src">Trình duyệt: Can I use (09/10/2026). H.265: Ohm et al. (2012), IEEE TCSVT. AV1, tốc độ nén: Facebook Engineering (2018); VP9 suy ra từ cùng bài.</div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Quản lý tin</div>
+  <div class="body">
+    <div class="steps-row"><figure class="flow-step"><figcaption><span class="no">1</span><b>Theo dõi theo trạng thái</b><span class="detail">Tin chia theo 5 tab: Đang hiển thị, Đang xử lý, Bị lỗi, Đã bán, Đã ẩn.</span></figcaption><div class="phone"><img src="assets/app/mine-list.jpg?v=1791514764" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Thao tác nhanh</b><span class="detail">Sửa tin, đánh dấu đã bán, ẩn và hiện lại tin ngay từ danh sách.</span></figcaption><div class="phone"><img src="assets/app/mine-options.jpg?v=1791514764" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">3</span><b>Báo tin bị lỗi</b><span class="detail">Tin có ảnh, video lỗi nằm ở tab Bị lỗi, kèm lý do và nút Sửa tin.</span></figcaption><div class="phone"><img src="assets/app/mine-failed.jpg?v=1791514764" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">4</span><b>Sửa tin</b><span class="detail">Chỉ cần thay file bị lỗi. Tin được xử lý lại rồi tự hiện lên feed.</span></figcaption><div class="phone"><img src="assets/app/mine-edit.jpg?v=1791514764" alt=""></div></figure></div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/04-my-listings.png?v=1791262540" data-title="4. Quản lý tin">4. Quản lý tin</button></div>
+</section>
+
+<section class="slide dark">
+  <div class="hashtag">#embracing_challenges <svg class="shapes" width="85" height="18" viewBox="0 0 85 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect y="1" width="16" height="16" rx="2" fill="#88F2DE"/><rect x="53" width="12.7279" height="12.7279" rx="2" transform="rotate(45 53 0)" fill="#88F2DE"/><rect x="22" y="1" width="16" height="16" rx="8" fill="#1843EF"/><path d="M74.3331 3C75.1029 1.66667 77.0274 1.66667 77.7972 3L83.8594 13.5C84.6292 14.8333 83.6669 16.5 82.1273 16.5H70.003C68.4634 16.5 67.5011 14.8333 68.2709 13.5L74.3331 3Z" fill="#1843EF"/></svg></div>
+  <div class="wordmark">Zalo Marketplace</div>
+  <div class="heading">#4. Test &amp; Observability</div>
+</section>
+
+
+
+<section class="slide testing-proof">
+  <div class="s-title">Testing và xử lý lỗi</div>
+  <div class="body">
+    <div class="cols c3">
+      <div class="card"><h3>Testing</h3><ul><li>Frontend: 429 unit và component test</li><li>Backend: 291 unit và integration test với DB</li><li>33 kịch bản E2E bằng Playwright</li><li>Manual testing trên máy Android và iOS thật</li></ul></div>
+      <div class="card"><h3>Xử lý lỗi</h3><ul><li>Hết phiên: tự đăng nhập lại</li><li>Mất mạng: mọi trang có màn hình lỗi kèm nút Thử lại, có mạng lại thì tự tải lại</li><li>Upload lỗi: thử lại tối đa 3 lần, mất mạng thì chờ có mạng</li><li>Worker nén ảnh crash: thử lại 1 lần, rồi dùng ảnh gốc</li><li>Worker server lỗi: thử lại 1 lần, file hỏng thì báo lỗi ngay</li><li>Bấm Đăng tin hai lần: vẫn chỉ tạo một tin</li></ul></div>
+      <div class="card"><h3>Theo dõi lỗi</h3><ul><li>Error boundary: hiện màn hình lỗi có nút Thử lại thay vì trắng trang</li><li>Sentry: ghi lại lỗi xảy ra trên máy người dùng</li></ul></div>
+    </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/testing-passed.png" data-title="Kết quả chạy test Vitest">Kết quả test</button><button type="button" class="diagram-btn" data-img="assets/00-sign-in.png?v=1791363447" data-title="0. Đăng nhập">0. Đăng nhập</button><button type="button" class="diagram-btn" data-img="assets/03-1-optimize-photos.png?v=1791453964" data-title="3.1 Tối ưu ảnh (khi lỗi)">3.1 Tối ưu ảnh (khi lỗi)</button><button type="button" class="diagram-btn" data-img="assets/03-4-upload-retry.png?v=1791277004" data-title="3.4 Thử lại khi upload lỗi">3.4 Thử lại khi upload lỗi</button><button type="button" class="diagram-btn" data-extra="extra-error-screens">Màn hình lỗi</button></div>
+</section>
+
+<section class="slide dark">
+  <div class="hashtag">#embracing_challenges <svg class="shapes" width="85" height="18" viewBox="0 0 85 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect y="1" width="16" height="16" rx="2" fill="#88F2DE"/><rect x="53" width="12.7279" height="12.7279" rx="2" transform="rotate(45 53 0)" fill="#88F2DE"/><rect x="22" y="1" width="16" height="16" rx="8" fill="#1843EF"/><path d="M74.3331 3C75.1029 1.66667 77.0274 1.66667 77.7972 3L83.8594 13.5C84.6292 14.8333 83.6669 16.5 82.1273 16.5H70.003C68.4634 16.5 67.5011 14.8333 68.2709 13.5L74.3331 3Z" fill="#1843EF"/></svg></div>
+  <div class="wordmark">Zalo Marketplace</div>
+  <div class="heading">#5. Retrospective</div>
+</section>
+
+<section class="slide retro">
+  <div class="s-title">Retrospective: Kết quả đạt được</div>
+  <div class="body">
+    <div class="stat-grid">
+      <div class="stat"><i>Sản phẩm</i><b>Phase 1</b><span>Marketplace cơ bản trong Zalo</span></div>
+      <div class="stat"><i>Feed · tải trang</i><b>95</b><span>Điểm performance</span></div>
+      <div class="stat"><i>Feed · cuộn</i><b>5.000 tin</b><span>Cuộn 60 s vẫn mượt</span></div>
+      <div class="stat"><i>Reels</i><b>120 Reels</b><span>Tự phát có âm thanh</span></div>
+      <div class="stat"><i>Đăng tin · ảnh</i><b>6–12×</b><span>Nhẹ hơn ảnh gốc</span></div>
+      <div class="stat"><i>Đăng tin · video</i><b>5,7×</b><span>Nhẹ hơn video gốc</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide retro">
+  <div class="s-title">Retrospective: Bài học</div>
+  <div class="body">
+    <ul class="retro-list">
+      <li>Phát triển một Zalo Mini App từ đầu đến triển khai</li>
+      <li>Đo performance để xác định phần cần tối ưu</li>
+      <li>Thiết kế hệ thống và triển khai hạ tầng trên AWS</li>
+      <li>Tối ưu ảnh/video để giảm dung lượng upload, giữ chất lượng phù hợp</li>
+      <li>Dùng Web Worker để chạy tác vụ nặng mà không block main thread</li>
+      <li>Kiểm thử trên cả iOS và Android để phát hiện khác biệt giữa hai nền tảng</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide retro">
+  <div class="s-title">Retrospective: Hướng phát triển</div>
+  <div class="body">
+    <ul class="retro-list">
+      <li>Tiếp tục phát triển các phase tiếp theo theo roadmap ở slide Feature breakdown</li>
+      <li>Load test server để biết ngưỡng chịu tải hiện tại</li>
+      <li>Video: chuyển sang định dạng HLS để hỗ trợ nhiều độ phân giải khác nhau</li>
+      <li>Ảnh: server tạo nhiều kích thước và định dạng khác nhau</li>
+      <li>CI/CD: tự chạy test mỗi PR và tự deploy</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide dark">
+  <div class="hashtag">#embracing_challenges <svg class="shapes" width="85" height="18" viewBox="0 0 85 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect y="1" width="16" height="16" rx="2" fill="#88F2DE"/><rect x="53" width="12.7279" height="12.7279" rx="2" transform="rotate(45 53 0)" fill="#88F2DE"/><rect x="22" y="1" width="16" height="16" rx="8" fill="#1843EF"/><path d="M74.3331 3C75.1029 1.66667 77.0274 1.66667 77.7972 3L83.8594 13.5C84.6292 14.8333 83.6669 16.5 82.1273 16.5H70.003C68.4634 16.5 67.5011 14.8333 68.2709 13.5L74.3331 3Z" fill="#1843EF"/></svg></div>
+  <div class="wordmark">Zalo Marketplace</div>
+  <div class="heading">#6. Demo</div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Demo</div>
+  <div class="body">
+    <div class="cols" style="grid-template-columns: repeat(4, 1fr); gap: 24px;">
+      <div class="todo">1. Feed: scroll, tìm kiếm, xem trước video</div>
+      <div class="todo">2. Reels: lướt, có tiếng, xem chi tiết</div>
+      <div class="todo">3. Đăng tin: chọn ảnh và video, đăng</div>
+      <div class="todo">4. Quản lý tin: đang xử lý, đã bán, ẩn tin</div>
+    </div>
+    <div class="src">Quay sẵn video dự phòng cho từng luồng.</div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/01-home-feed.png?v=1791262540" data-title="1. Feed">1. Feed</button><button type="button" class="diagram-btn" data-img="assets/02-reels.png?v=1791262540" data-title="2. Reels">2. Reels</button><button type="button" class="diagram-btn" data-img="assets/03-post-listing.png?v=1791262996" data-title="3. Đăng tin">3. Đăng tin</button><button type="button" class="diagram-btn" data-img="assets/04-my-listings.png?v=1791262540" data-title="4. Quản lý tin">4. Quản lý tin</button></div>
+</section>
+
+<section class="slide dark">
+  <div class="hashtag">#embracing_challenges <svg class="shapes" width="85" height="18" viewBox="0 0 85 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect y="1" width="16" height="16" rx="2" fill="#88F2DE"/><rect x="53" width="12.7279" height="12.7279" rx="2" transform="rotate(45 53 0)" fill="#88F2DE"/><rect x="22" y="1" width="16" height="16" rx="8" fill="#1843EF"/><path d="M74.3331 3C75.1029 1.66667 77.0274 1.66667 77.7972 3L83.8594 13.5C84.6292 14.8333 83.6669 16.5 82.1273 16.5H70.003C68.4634 16.5 67.5011 14.8333 68.2709 13.5L74.3331 3Z" fill="#1843EF"/></svg></div>
+  <div class="wordmark">Zalo Marketplace</div>
+  <div class="heading">Q&amp;A</div>
+  <div class="byline">Cảm ơn mọi người đã lắng nghe</div>
+</section>
+
+<section class="slide refs-slide">
+  <div class="s-title">References</div>
+  <div class="body">
+    <div class="refs"><div><h3>Thị trường và sản phẩm</h3><ol><li>Research and Markets, Vietnam Recommerce Market Report 2025 (GlobeNewswire, 25/6/2025)<a href="https://www.globenewswire.com/news-release/2025/06/25/3104863/0/en/Vietnam-Recommerce-Market-Report-2025-Forecast-to-2029-Vietnam-s-Recommerce-Market-to-Reach-USD-1-97-Billion-at-an-11-3-CAGR.html" target="_blank" rel="noopener">www.globenewswire.com/news-release/2025/06/25/…</a></li><li>PwC, Voice of the Consumer Survey 2024 (Việt Nam)<a href="https://www.pwc.com/vn/en/publications/vietnam-publications/voice-of-consumer-2024.html" target="_blank" rel="noopener">www.pwc.com/vn/en/publications/vietnam-publica…</a></li><li>VietnamPlus, Zalo có 81,3 triệu người dùng hằng tháng (30/7/2026)<a href="https://www.vietnamplus.vn/zalo-co-813-trieu-nguoi-dung-hang-thang-post1127226.vnp" target="_blank" rel="noopener">www.vietnamplus.vn/zalo-co-813-trieu-nguoi-dun…</a></li><li>Chợ Tốt trên Google Play<a href="https://play.google.com/store/apps/details?id=com.chotot.vn" target="_blank" rel="noopener">play.google.com/store/apps/details?id=com.chot…</a></li><li>Trợ giúp Chợ Tốt: đăng tin kèm video<a href="https://trogiup.chotot.com/nguoi-ban/huong-dan-dang-tin-co-kem-video-tren-cho-tot/" target="_blank" rel="noopener">trogiup.chotot.com/nguoi-ban/huong-dan-dang-ti…</a></li></ol><h3>Thiết bị hỗ trợ</h3><ol><li>Apple, iPhone 13 Tech Specs (2532 × 1170 pixel)<a href="https://support.apple.com/kb/SP851" target="_blank" rel="noopener">support.apple.com/kb/SP851</a></li><li>Zalo trên App Store (yêu cầu iOS 15.1)<a href="https://apps.apple.com/vn/app/zalo/id579523206" target="_blank" rel="noopener">apps.apple.com/vn/app/zalo/id579523206</a></li><li>Zalo trên Google Play<a href="https://play.google.com/store/apps/details?id=com.zing.zalo" target="_blank" rel="noopener">play.google.com/store/apps/details?id=com.zing…</a></li><li>Apple, App Review Guidelines 2.5.6<a href="https://developer.apple.com/app-store/review/guidelines/" target="_blank" rel="noopener">developer.apple.com/app-store/review/guidelines/</a></li><li>AppleInsider, What you need to run iOS 15 and iPadOS 15 (2021)<a href="https://appleinsider.com/articles/21/06/07/what-you-need-to-run-ios-15-and-ipados-15" target="_blank" rel="noopener">appleinsider.com/articles/21/06/07/what-you-ne…</a></li></ol></div><div><h3>Reels</h3><ol><li>TikTok × Kantar, How brands are making noise with sound on TikTok (2021)<a href="https://ads.tiktok.com/business/en-US/blog/kantar-report-how-brands-are-making-noise-and-driving-impact-with-sound-on-tiktok" target="_blank" rel="noopener">ads.tiktok.com/business/en-US/blog/kantar-repo…</a></li><li>TikTok Creative Center, Power Creative Elements (2022)<a href="https://ads.tiktok.com/business/creativecenter/quicktok/online/Power_Creative_Elements/pc/en" target="_blank" rel="noopener">ads.tiktok.com/business/creativecenter/quickto…</a></li><li>Meta for Business, Reels ads<a href="https://www.facebook.com/business/ads/facebook-instagram-reels-ads" target="_blank" rel="noopener">www.facebook.com/business/ads/facebook-instagr…</a></li><li>Yu, Hong, Egger (2026), The Sound of Reels, JHTR<a href="https://journals.sagepub.com/doi/10.1177/10963480261420340" target="_blank" rel="noopener">journals.sagepub.com/doi/10.1177/1096348026142…</a></li><li>Markarova, Kim (2024), TikTok Sound Branding, JDMCT<a href="https://doi.org/10.29056/jdmct.2024.06.04" target="_blank" rel="noopener">doi.org/10.29056/jdmct.2024.06.04</a></li><li>Chrome, Autoplay policy<a href="https://developer.chrome.com/blog/autoplay" target="_blank" rel="noopener">developer.chrome.com/blog/autoplay</a></li></ol><h3>Ảnh</h3><ol><li>Google, WebP Compression Study<a href="https://developers.google.com/speed/webp/docs/webp_study" target="_blank" rel="noopener">developers.google.com/speed/webp/docs/webp_study</a></li><li>Siipola, Is WebP really better than JPEG? (2020)<a href="https://siipo.la/blog/is-webp-really-better-than-jpeg" target="_blank" rel="noopener">siipo.la/blog/is-webp-really-better-than-jpeg</a></li><li>Samsung Community: JPEG Galaxy S25 Ultra (người dùng tự báo)<a href="https://eu.community.samsung.com/t5/galaxy-s25-series/heic-format-larger-than-jpg-s25-ultra/td-p/11828953" target="_blank" rel="noopener">eu.community.samsung.com/t5/galaxy-s25-series/…</a></li><li>Ảnh thử nghiệm: Wikimedia Commons<a href="https://commons.wikimedia.org/wiki/File:Smartphone_(54235966629).jpg" target="_blank" rel="noopener">commons.wikimedia.org/wiki/File:Smartphone_(54…</a></li></ol><h3>Performance</h3><ol><li>Chrome, Lighthouse 10.0<a href="https://developer.chrome.com/blog/lighthouse-10-0" target="_blank" rel="noopener">developer.chrome.com/blog/lighthouse-10-0</a></li><li>web.dev, Largest Contentful Paint<a href="https://web.dev/articles/lcp" target="_blank" rel="noopener">web.dev/articles/lcp</a></li><li>Chrome, Total Blocking Time<a href="https://developer.chrome.com/docs/lighthouse/performance/lighthouse-total-blocking-time" target="_blank" rel="noopener">developer.chrome.com/docs/lighthouse/performan…</a></li></ol></div><div><h3>Video</h3><ol><li>TikTok, Top Tips for Making TikTok Videos (2021)<a href="https://ads.tiktok.com/business/library/Top_Tips_One_Pager_SMB.pdf" target="_blank" rel="noopener">ads.tiktok.com/business/library/Top_Tips_One_…</a></li><li>Reichstein, Dost (2025): độ dài video và tương tác<a href="https://archives.marketing-trends-congress.com/2025/pages/PDF/060.pdf" target="_blank" rel="noopener">archives.marketing-trends-congress.com/2025/…</a></li><li>Fanpage Karma (2026): độ dài video TikTok<a href="https://www.fanpagekarma.com/insights/optimal-tiktok-video-length/" target="_blank" rel="noopener">www.fanpagekarma.com/insights/optimal-tiktok-…</a></li><li>Ohm et al. (2012), IEEE TCSVT: HEVC so với H.264<a href="https://doi.org/10.1109/TCSVT.2012.2221192" target="_blank" rel="noopener">doi.org/10.1109/TCSVT.2012.2221192</a></li><li>Facebook Engineering (2018): AV1, x264, VP9<a href="https://engineering.fb.com/2018/04/10/video-engineering/av1-beats-x264-and-libvpx-vp9-in-practical-use-case/" target="_blank" rel="noopener">engineering.fb.com/2018/04/10/video-engineeri…</a></li><li>Can I use: H.264, HEVC, VP9, AV1<a href="https://caniuse.com/hevc" target="_blank" rel="noopener">caniuse.com/mpeg4 · /hevc · /webm · /av1</a></li><li>Apple Newsroom (2023): A17 Pro giải mã AV1<a href="https://www.apple.com/newsroom/2023/09/apple-unveils-iphone-15-pro-and-iphone-15-pro-max/" target="_blank" rel="noopener">www.apple.com/newsroom/2023/09/apple-unveils-…</a></li></ol></div></div>
+  </div>
+</section>
+
+
+<section class="slide extra" id="extra-image-worker">
+  <button type="button" class="extra-close">Đóng (Esc)</button>
+  <div class="s-title">Số Web Worker trên iPhone</div>
+  <div class="body">
+    <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; height: calc(100% - 36px);">
+      <div class="figure"><img src="assets/image-worker-iphone.png" alt="Bảng đo trên iPhone trong Zalo: thời gian tối ưu và upload xong của 1×1, 1×2, 2×1, 2×2"></div>
+      <div>
+        <table class="compare worker">
+          <tr><th>Worker × ảnh</th><th>Tối ưu xong</th><th>Upload xong</th></tr>
+          <tr><td>1 × 1 (hiện tại)</td><td>1,4 s</td><td>5,6 s</td></tr>
+          <tr><td>1 × 2</td><td>1,4 s</td><td>4,4 s</td></tr>
+          <tr><td>2 × 1</td><td>1,1 s</td><td>6,2 s</td></tr>
+          <tr><td>2 × 2</td><td>1,4 s</td><td>7,2 s</td></tr>
+        </table>
+        <ul style="margin-top: 32px; font-size: 26px; line-height: 1.6;">
+          <li>Tối ưu ảnh chỉ chiếm 1,4 s, upload mới là phần lâu</li>
+          <li>Thêm worker nhanh hơn tối đa 0,3 s</li>
+          <li>Không lần nào bị tải lại trang → giữ 1 × 1</li>
+        </ul>
+      </div>
+    </div>
+    <div class="src">iPhone trong Zalo, bản Development ngày 8/10/2026, upload thật lên server production. 10 ảnh camera, 57 MB → 9,5 MB, mỗi cấu hình 1 lần.</div>
+  </div>
+</section>
+
+
+<section class="slide extra" id="extra-error-screens">
+  <button type="button" class="extra-close">Đóng (Esc)</button>
+  <div class="s-title">Màn hình khi có lỗi</div>
+  <div class="body">
+    <div class="err-groups"><div class="err-group"><h3>Mất mạng</h3><div class="err-row"><figure class="err-step"><figcaption><b>Mở app</b><span class="detail">Feed và danh mục có nút Thử lại</span></figcaption><div class="phone"><img src="assets/app/err-home-offline.jpg?v=1791858400" alt=""></div></figure><figure class="err-step"><figcaption><b>Chi tiết tin</b><span class="detail">Màn hình lỗi kèm nút Thử lại</span></figcaption><div class="phone"><img src="assets/app/err-detail-offline.jpg?v=1791858400" alt=""></div></figure><figure class="err-step"><figcaption><b>Reels</b><span class="detail">Màn hình lỗi kèm nút Thử lại</span></figcaption><div class="phone"><img src="assets/app/err-reels-offline.jpg?v=1791858400" alt=""></div></figure><figure class="err-step"><figcaption><b>Quản lý tin</b><span class="detail">Màn hình lỗi kèm nút Thử lại</span></figcaption><div class="phone"><img src="assets/app/err-my-listings-offline.jpg?v=1791858400" alt=""></div></figure><figure class="err-step"><figcaption><b>Upload ảnh</b><span class="detail">Chờ có mạng rồi tự tải tiếp</span></figcaption><div class="phone"><img src="assets/app/err-upload-offline.jpg?v=1791858400" alt=""></div></figure><figure class="err-step"><figcaption><b>Đăng tin</b><span class="detail">Báo chưa đăng, giữ nội dung để bấm lại</span></figcaption><div class="phone"><img src="assets/app/err-post-offline.jpg?v=1791858400" alt=""></div></figure></div></div><div class="err-group"><h3>Error boundary</h3><div class="err-row"><figure class="err-step"><figcaption><b>Lỗi khi hiển thị</b><span class="detail">Không trắng trang, thanh tab vẫn dùng được</span></figcaption><div class="phone"><img src="assets/app/err-error-boundary.jpg?v=1791858400" alt=""></div></figure></div></div></div>
+    <div class="src">App bản main (7480541) chạy local trong Chrome 375 × 812. Mất mạng giả lập bằng Playwright; error boundary: chặn tải code của trang Quản lý tin.</div>
+  </div>
+</section>
+
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lightbox-title">
+  <div class="lightbox-bar">
+    <span id="lightbox-title"></span>
+    <span><button type="button" id="lightbox-zoom">Phóng to</button> <button type="button" id="lightbox-close">Đóng (Esc)</button></span>
+  </div>
+  <div class="lightbox-scroll"><img id="lightbox-img" class="fit" alt=""></div>
+</div>
+
+<script>
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxZoom = document.getElementById('lightbox-zoom');
+
+  function openDiagram(button) {
+    lightboxImg.src = button.dataset.img;
+    lightboxImg.alt = button.dataset.title;
+    lightboxImg.classList.add('fit');
+    lightboxZoom.textContent = 'Phóng to';
+    document.getElementById('lightbox-title').textContent = button.dataset.title;
+    lightbox.classList.add('open');
+  }
+  function closeDiagram() {
+    lightbox.classList.remove('open');
+  }
+
+  document.querySelectorAll('.diagram-btn[data-img]').forEach((button) => button.addEventListener('click', () => openDiagram(button)));
+  document.getElementById('lightbox-close').addEventListener('click', closeDiagram);
+  lightboxZoom.addEventListener('click', () => {
+    const fitted = lightboxImg.classList.toggle('fit');
+    lightboxZoom.textContent = fitted ? 'Phóng to' : 'Vừa màn hình';
+  });
+  lightbox.addEventListener('click', (event) => {
+    if (event.target === lightbox || event.target.classList.contains('lightbox-scroll')) closeDiagram();
+  });
+  // While a diagram is open, keys belong to it: Esc closes, arrows do not change the slide.
+  document.addEventListener('keydown', (event) => {
+    if (!lightbox.classList.contains('open')) return;
+    if (event.key === 'Escape') closeDiagram();
+    event.stopImmediatePropagation();
+  }, true);
+</script>
+
+<div class="hud">
+  <button type="button" data-go="-1" aria-label="Slide trước">←</button>
+  <span id="counter"></span>
+  <button type="button" data-go="1" aria-label="Slide sau">→</button>
+  <button type="button" id="grid-toggle">G</button>
+</div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide:not(.extra)')];
+  const extras = [...document.querySelectorAll('.slide.extra')];
+  const counter = document.getElementById('counter');
+  let current = 0;
+
+  // Page numbers and the content-slide chrome, so each slide only holds its content.
+  slides.forEach((slide, index) => {
+    if (!slide.classList.contains('dark')) {
+      slide.insertAdjacentHTML('beforeend', '<div class="brand">Zalo</div><div class="footer">#embracing_challenges <svg class="shapes" width="85" height="18" viewBox="0 0 85 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect y="1" width="16" height="16" rx="2" fill="#88F2DE"/><rect x="53" width="12.7279" height="12.7279" rx="2" transform="rotate(45 53 0)" fill="#88F2DE"/><rect x="22" y="1" width="16" height="16" rx="8" fill="#1843EF"/><path d="M74.3331 3C75.1029 1.66667 77.0274 1.66667 77.7972 3L83.8594 13.5C84.6292 14.8333 83.6669 16.5 82.1273 16.5H70.003C68.4634 16.5 67.5011 14.8333 68.2709 13.5L74.3331 3Z" fill="#1843EF"/></svg></div>');
+    }
+    slide.insertAdjacentHTML('beforeend', `<div class="pg">${index + 1}</div>`);
+    slide.addEventListener('click', () => {
+      if (!document.body.classList.contains('grid')) return;
+      document.body.classList.remove('grid');
+      show(index);
+    });
+  });
+
+  // Dotted waves on the dark slides, like the ZPF template.
+  const WAVE_COLORS = ['#ffffff', '#9fc0ff', '#5fe0ff', '#ff7ab6', '#ffd36b'];
+  function waves() {
+    let seed = 7;
+    const random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    let dots = '';
+    for (let line = 0; line < 9; line++) {
+      for (let x = 0; x <= 1600; x += 14) {
+        const t = x / 1600;
+        const y = 860 - 260 * t * t - 40 * Math.sin(t * 7 + line * 0.5) - line * 14 * t;
+        const accent = random() < 0.03;
+        const color = accent ? WAVE_COLORS[2 + Math.floor(random() * 3)] : WAVE_COLORS[line % 2];
+        const radius = accent ? 3.5 : 1 + random() * 1.4;
+        dots += `<circle cx="${x}" cy="${y.toFixed(1)}" r="${radius.toFixed(1)}" fill="${color}" opacity="${(0.25 + 0.6 * t).toFixed(2)}"/>`;
+      }
+    }
+    return `<svg class="waves" viewBox="0 0 1600 900" aria-hidden="true">${dots}</svg>`;
+  }
+  document.querySelectorAll('.slide.dark').forEach((slide) => slide.insertAdjacentHTML('afterbegin', waves()));
+
+  function fit() {
+    const scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+    [...slides, ...extras].forEach((slide) => {
+      slide.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    });
+  }
+
+  function show(index) {
+    current = Math.max(0, Math.min(slides.length - 1, index));
+    slides.forEach((slide, i) => slide.classList.toggle('active', i === current));
+    counter.textContent = `${current + 1} / ${slides.length}`;
+    history.replaceState(null, '', `#${current + 1}`);
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (['ArrowRight', 'PageDown', ' '].includes(event.key)) show(current + 1);
+    else if (['ArrowLeft', 'PageUp'].includes(event.key)) show(current - 1);
+    else if (event.key === 'Home') show(0);
+    else if (event.key === 'End') show(slides.length - 1);
+    else if (event.key === 'g') document.body.classList.toggle('grid');
+    else if (event.key === 'f') document.documentElement.requestFullscreen?.();
+  });
+  document.querySelectorAll('[data-go]').forEach((button) => {
+    button.addEventListener('click', () => show(current + Number(button.dataset.go)));
+  });
+  document.getElementById('grid-toggle').addEventListener('click', () => document.body.classList.toggle('grid'));
+  window.addEventListener('resize', fit);
+
+  fit();
+  show(Number(location.hash.slice(1)) - 1 || 0);
+</script>
+<script>
+// Click a video thumbnail to play its video in a full-screen overlay; Esc or Đóng closes it.
+document.addEventListener('click', (event) => {
+  const thumb = event.target.closest('.video-thumb');
+  if (!thumb) return;
+  event.stopPropagation();
+  const modal = document.createElement('div');
+  modal.className = 'video-modal';
+  modal.innerHTML = `<video src="${thumb.dataset.video}" controls autoplay playsinline></video><button type="button">Đóng</button>`;
+  const close = () => { modal.remove(); document.removeEventListener('keydown', onKey, true); };
+  const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } else if (['ArrowLeft', 'ArrowRight', ' ', 'PageDown', 'PageUp'].includes(e.key)) e.stopPropagation(); };
+  modal.addEventListener('click', (e) => { if (e.target === modal || e.target.tagName === 'BUTTON') close(); });
+  document.addEventListener('keydown', onKey, true);
+  document.body.appendChild(modal);
+});
+</script>
+<script>
+  // Extra slides sit outside the deck order: only their button opens them.
+  extras.forEach((extra) => {
+    extra.insertAdjacentHTML('beforeend', '<div class="brand">Zalo</div>');
+    extra.querySelector('.extra-close').addEventListener('click', () => extra.classList.remove('active'));
+  });
+  document.querySelectorAll('.diagram-btn[data-extra]').forEach((button) =>
+    button.addEventListener('click', () => document.getElementById(button.dataset.extra).classList.add('active')));
+  document.addEventListener('keydown', (event) => {
+    const open = extras.find((extra) => extra.classList.contains('active'));
+    if (!open) return;
+    if (event.key === 'Escape') open.classList.remove('active');
+    event.stopImmediatePropagation();
+  }, true);
+</script>
+</body>
+</html>
