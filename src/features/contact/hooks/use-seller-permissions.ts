@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { getSession, refreshSellerProfile } from '@/features/auth/api/session';
+import { refreshSellerProfile } from '@/features/auth/api/session';
 import { useSession } from '@/features/auth/hooks/use-session';
 import { useMyPhoneNumber, useSharePhoneNumber } from '@/features/contact/api/phone-number';
 import { requestPhoneShare } from '@/features/contact/services/zalo-phone';
@@ -23,7 +23,8 @@ function skipsZaloPermissions() {
 /**
  * Exchange the phone token before refreshing the name. The token expires in two minutes.
  * The name refresh calls Zalo again without touching the sign-in error, and still runs
- * when the phone exchange fails, which then rethrows.
+ * when the phone exchange fails, which then rethrows. It runs even when the session has a
+ * name: Zalo's revoke webhook clears the name on the server, not in the session.
  */
 async function saveGranted(
   granted: SellerPermissions,
@@ -35,7 +36,7 @@ async function saveGranted(
       await sharePhone();
     }
   } finally {
-    if (granted.name && !getSession()?.user.name) {
+    if (granted.name) {
       await refreshSellerProfile();
     }
   }
