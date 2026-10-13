@@ -70,9 +70,12 @@ export function requestSdkToken() {
 async function readSavedSession(): Promise<Session | undefined> {
   const session = readNativeCache<Session>(SESSION_CACHE_KEY, { version: SESSION_CACHE_VERSION });
 
+  // Only the exchange asks Zalo for the name, and Zalo can answer without it right after the
+  // seller allows it, so a session without a name always exchanges again.
   if (
     !session?.user?.id ||
     !session.user.zaloId ||
+    !session.user.name ||
     !hasLifetimeLeft(session.accessToken, MIN_SAVED_TOKEN_LIFETIME_MS)
   ) {
     return undefined;
