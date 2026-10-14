@@ -61,7 +61,7 @@ export default function HomeHeader({
 
   return (
     <header ref={headerRef} className={headerClass}>
-      <h1 className={titleClass}>Chợ Zalo</h1>
+      <h1 className={titleClass}>Chợ 2Hand</h1>
       <div className="flex items-center gap-2">
         <form className={searchFormClass} role="search" onSubmit={handleSubmit}>
           <Icon icon="zi-search" />

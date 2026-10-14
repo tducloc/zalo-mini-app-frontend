@@ -74,7 +74,7 @@ describe('ProductContactAction', () => {
         type: 'user',
         id: 'zalo_seller',
         message:
-          'Chào bạn, mình quan tâm tin "Sofa góc chữ L" trên Chợ Zalo. Sản phẩm còn không ạ?',
+          'Chào bạn, mình quan tâm tin "Sofa góc chữ L" trên Chợ 2Hand. Sản phẩm còn không ạ?',
       }),
     );
     expect(openProfile).not.toHaveBeenCalled();

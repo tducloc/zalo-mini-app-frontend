@@ -1,4 +1,4 @@
-# Chợ Zalo — UI contract
+# Chợ 2Hand — UI contract
 
 Canonical reference: the existing HomePage, AppShell curved footer and fixed blue home header. Screens in showcase.html render these same components. Do not regenerate UI as bitmap designs.
 
