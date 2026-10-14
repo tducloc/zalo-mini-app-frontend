@@ -1,6 +1,7 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { Icon } from 'zmp-ui';
 
+import CardThumbnail from '@/components/card-thumbnail';
 import Price from '@/components/price';
 import {
   listingCardClass,
@@ -10,10 +11,7 @@ import {
 import type { ProductCard } from '@/features/products/types/product';
 import { videoPool } from '@/lib/video-pool';
 import { formatShortRelativeTime } from '@/utils/format';
-import { thumbHashUrl } from '@/utils/thumbhash';
 
-// Square 400×400 thumbnails; the attributes reserve space before the image loads.
-const THUMBNAIL_SIZE = 400;
 /** Times a preview plays before the card shows its cover again. */
 const PREVIEW_PLAYS = 2;
 const FADE_MS = 200;
@@ -47,18 +45,6 @@ export default memo(function ListingCard({
   onPreviewRefused: () => void;
   onPreviewFinished: (productId: string) => void;
 }) {
-  // Remember WHICH url failed, so a changed thumbnail (e.g. an edited listing)
-  // is tried again instead of keeping the placeholder forever.
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const shouldShowImage = Boolean(product.thumbnailUrl) && product.thumbnailUrl !== failedUrl;
-  // The placeholder only stands in while the photo loads; then it is dropped from the DOM.
-  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
-  const isImageLoaded = shouldShowImage && product.thumbnailUrl === loadedUrl;
-  const placeholderUrl = useMemo(
-    () => (canShowBlur ? thumbHashUrl(product.placeholder) : null),
-    [canShowBlur, product.placeholder],
-  );
-
   return (
     <button
       ref={cardRef}
@@ -68,34 +54,11 @@ export default memo(function ListingCard({
       onClick={() => onOpen(product.id)}
     >
       <div className={listingImageClass}>
-        {placeholderUrl && shouldShowImage && !isImageLoaded && (
-          <img
-            alt=""
-            aria-hidden
-            className="absolute inset-0 size-full object-cover"
-            src={placeholderUrl}
-          />
-        )}
-        {shouldShowImage ? (
-          <img
-            alt=""
-            className="relative block size-full object-cover"
-            decoding="async"
-            height={THUMBNAIL_SIZE}
-            loading={isAboveFold ? 'eager' : 'lazy'}
-            src={product.thumbnailUrl ?? undefined}
-            width={THUMBNAIL_SIZE}
-            onError={() => setFailedUrl(product.thumbnailUrl)}
-            onLoad={() => setLoadedUrl(product.thumbnailUrl)}
-          />
-        ) : (
-          <span
-            className="grid size-full place-items-center text-marketplace-subtle"
-            aria-hidden="true"
-          >
-            <Icon icon="zi-photo" size={28} />
-          </span>
-        )}
+        <CardThumbnail
+          loading={isAboveFold ? 'eager' : 'lazy'}
+          placeholder={canShowBlur ? product.placeholder : null}
+          src={product.thumbnailUrl}
+        />
         {isPreviewActive && product.previewUrl && (
           // A new clip starts hidden again, not over the old one's last frame.
           <CardPreview

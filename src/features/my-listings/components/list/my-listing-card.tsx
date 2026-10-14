@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { Icon } from 'zmp-ui';
 
+import CardThumbnail from '@/components/card-thumbnail';
 import Price from '@/components/price';
 import { actionLabels } from '@/features/my-listings/constants/messages';
 import {
@@ -9,9 +9,6 @@ import {
 } from '@/features/my-listings/constants/styles';
 import { ListingAction, StatusTone, type MyListing } from '@/features/my-listings/types/my-listing';
 import { getListingActions, getStatusLine } from '@/features/my-listings/utils/my-listing';
-
-// Square 400×400 thumbnails shown at 88px; the attributes reserve space before the image loads.
-const THUMBNAIL_SIZE = 400;
 
 const statusToneClass: Record<StatusTone, string> = {
   [StatusTone.Muted]: 'text-marketplace-muted',
@@ -35,10 +32,6 @@ export default function MyListingCard({
   onOpenActions: (listing: MyListing) => void;
   onAction: (listingId: string, action: ListingAction) => void;
 }) {
-  // Remember WHICH url failed, so a changed thumbnail (e.g. after an edit) is tried again.
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const shouldShowImage = Boolean(listing.thumbnailUrl) && listing.thumbnailUrl !== failedUrl;
-
   const statusLine = getStatusLine(listing);
   const hasActions = getListingActions(listing.status).length > 0;
   const isFailed = listing.status === 'FAILED';
@@ -52,26 +45,9 @@ export default function MyListingCard({
         type="button"
         onClick={() => onOpen(listing.id)}
       />
-      <div className={myListingThumbnailClass}>
-        {shouldShowImage ? (
-          <img
-            alt=""
-            className="block size-full object-cover"
-            decoding="async"
-            height={THUMBNAIL_SIZE}
-            loading="lazy"
-            src={listing.thumbnailUrl ?? undefined}
-            width={THUMBNAIL_SIZE}
-            onError={() => setFailedUrl(listing.thumbnailUrl)}
-          />
-        ) : (
-          <span
-            className="grid size-full place-items-center text-marketplace-subtle"
-            aria-hidden="true"
-          >
-            <Icon icon="zi-photo" size={28} />
-          </span>
-        )}
+      {/* Positioned for the blur, so it lets taps through to the open button below. */}
+      <div className={`pointer-events-none relative ${myListingThumbnailClass}`}>
+        <CardThumbnail placeholder={listing.placeholder} src={listing.thumbnailUrl} />
       </div>
 
       <div className="min-w-0 flex-1">

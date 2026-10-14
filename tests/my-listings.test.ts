@@ -29,6 +29,7 @@ function listing(overrides: Partial<MyListing> = {}): MyListing {
     price: 6_990_000,
     status: 'PUBLISHED',
     thumbnailUrl: null,
+    placeholder: null,
     hasVideo: false,
     failedMedia: [],
     createdAt: hoursAgo(10),
