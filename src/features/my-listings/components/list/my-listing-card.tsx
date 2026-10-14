@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Icon } from 'zmp-ui';
 
 import Price from '@/components/price';
@@ -9,6 +9,7 @@ import {
 } from '@/features/my-listings/constants/styles';
 import { ListingAction, StatusTone, type MyListing } from '@/features/my-listings/types/my-listing';
 import { getListingActions, getStatusLine } from '@/features/my-listings/utils/my-listing';
+import { thumbHashUrl } from '@/utils/thumbhash';
 
 // Square 400×400 thumbnails shown at 88px; the attributes reserve space before the image loads.
 const THUMBNAIL_SIZE = 400;
@@ -38,6 +39,10 @@ export default function MyListingCard({
   // Remember WHICH url failed, so a changed thumbnail (e.g. after an edit) is tried again.
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const shouldShowImage = Boolean(listing.thumbnailUrl) && listing.thumbnailUrl !== failedUrl;
+  // The blur only stands in while the photo loads; then it is dropped from the DOM.
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
+  const isImageLoaded = shouldShowImage && listing.thumbnailUrl === loadedUrl;
+  const placeholderUrl = useMemo(() => thumbHashUrl(listing.placeholder), [listing.placeholder]);
 
   const statusLine = getStatusLine(listing);
   const hasActions = getListingActions(listing.status).length > 0;
@@ -52,17 +57,27 @@ export default function MyListingCard({
         type="button"
         onClick={() => onOpen(listing.id)}
       />
-      <div className={myListingThumbnailClass}>
+      {/* Positioned for the blur, so it lets taps through to the open button below. */}
+      <div className={`pointer-events-none relative ${myListingThumbnailClass}`}>
+        {placeholderUrl && shouldShowImage && !isImageLoaded && (
+          <img
+            alt=""
+            aria-hidden
+            className="absolute inset-0 size-full object-cover"
+            src={placeholderUrl}
+          />
+        )}
         {shouldShowImage ? (
           <img
             alt=""
-            className="block size-full object-cover"
+            className="relative block size-full object-cover"
             decoding="async"
             height={THUMBNAIL_SIZE}
             loading="lazy"
             src={listing.thumbnailUrl ?? undefined}
             width={THUMBNAIL_SIZE}
             onError={() => setFailedUrl(listing.thumbnailUrl)}
+            onLoad={() => setLoadedUrl(listing.thumbnailUrl)}
           />
         ) : (
           <span

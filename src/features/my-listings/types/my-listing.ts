@@ -18,6 +18,8 @@ export interface MyListing {
   price: number;
   status: ProductStatus;
   thumbnailUrl: string | null;
+  /** ThumbHash of the thumbnail, null on older rows. */
+  placeholder: string | null;
   hasVideo: boolean;
   failedMedia: FailedMedia[];
   createdAt: string;
