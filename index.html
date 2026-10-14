@@ -526,7 +526,7 @@
   .image-formats .format-decisions { margin-bottom: 14px; }
   .format-input { margin-bottom: 14px; font-size: 18px; color: var(--muted); }
   .image-formats table { table-layout: fixed; }
-  .image-formats table.choice th, .image-formats table.choice td { font-size: 19px; padding: 14px 16px; vertical-align: middle; }
+  .image-formats table.choice th, .image-formats table.choice td { font-size: 19px; padding: 13px 16px; vertical-align: middle; line-height: 1.4; }
   .image-formats table.choice th { font-size: 18px; }
   .image-formats .header-note { font-size: 14px; font-weight: 400; color: #d6dce7; }
   .image-formats tr.chosen td { background: var(--pale); font-weight: 400; }
@@ -1182,13 +1182,14 @@
   <div class="body">
     <div class="format-input">Bộ data test: 8 ảnh gốc 1,5–4,5 MB, resize về 1600 px, test trên Mac M1, kết quả lấy trung vị.</div>
     <table class="compare choice">
-      <colgroup><col style="width:13%"><col style="width:17%"><col style="width:13%"><col style="width:14%"><col style="width:20%"><col style="width:23%"></colgroup>
+      <colgroup><col style="width:12%"><col style="width:17%"><col style="width:12%"><col style="width:12%"><col style="width:25%"><col style="width:22%"></colgroup>
       <tr><th>Định dạng</th><th>Dùng ở đâu</th><th>Dung lượng / ảnh</th><th>Thời gian nén / ảnh</th><th>Ưu điểm</th><th>Hạn chế</th></tr>
-      <tr class="chosen"><td>JPEG<span class="format-ratio">libjpeg-turbo</span></td><td>Client</td><td><strong>180 KiB</strong></td><td><strong>10 ms</strong></td><td>Nén nhanh nhất</td><td>Nặng hơn mozjpeg 19%</td></tr>
-      <tr class="chosen"><td>JPEG<span class="format-ratio">mozjpeg</span></td><td>Server · ảnh chi tiết</td><td><strong>152 KiB</strong></td><td><strong>98 ms</strong></td><td>Tương thích rộng<br>Nhẹ hơn libjpeg-turbo 16%</td><td>Nặng hơn AVIF / JPEG XL</td></tr>
-      <tr class="chosen"><td>WebP</td><td>Server · thumbnail feed</td><td><strong>149 KiB</strong></td><td><strong>126 ms</strong></td><td>Nhẹ hơn ở ảnh nhỏ</td><td>iPhone chưa nén được WebP</td></tr>
-      <tr><td>AVIF</td><td>Không dùng</td><td><strong>88 KiB</strong></td><td><strong>2.340 ms</strong></td><td>Nhẹ nhất trong phép đo</td><td>iOS 16+; cần JPEG fallback<br>Nén chậm nhất (~24× mozjpeg)</td></tr>
-      <tr><td>JPEG XL</td><td>Không dùng</td><td><strong>113 KiB</strong></td><td><strong>935 ms</strong><span class="format-ratio">Gồm khởi động CLI</span></td><td>Progressive decoding</td><td>Chrome Android chưa hỗ trợ<br>App chưa nén được JPEG XL</td></tr>
+      <tr class="chosen"><td>JPEG<span class="format-ratio">libjpeg-turbo</span></td><td>Client</td><td><strong>180 KiB</strong></td><td><strong>10 ms</strong></td><td>Tương thích rộng<br>Nén nhanh nhất</td><td>Nặng nhất, trừ PNG<br>Không có nền trong suốt</td></tr>
+      <tr class="chosen"><td>JPEG<span class="format-ratio">mozjpeg</span></td><td>Server · ảnh chi tiết</td><td><strong>152 KiB</strong></td><td><strong>98 ms</strong></td><td>Tương thích rộng<br>Nhẹ hơn libjpeg-turbo<br>Ảnh lớn nhẹ ngang WebP</td><td>Nén chậm hơn libjpeg-turbo<br>Không có nền trong suốt</td></tr>
+      <tr class="chosen"><td>WebP</td><td>Server · thumbnail feed</td><td><strong>149 KiB</strong></td><td><strong>126 ms</strong></td><td>Ảnh nhỏ nhẹ hơn JPEG<br>Có nền trong suốt</td><td>iPhone không nén được</td></tr>
+      <tr><td>AVIF</td><td>Không dùng</td><td><strong>88 KiB</strong></td><td><strong>2.340 ms</strong></td><td>Nhẹ nhất ở cùng chất lượng</td><td>iOS 15 không xem được<br>Nén chậm nhất</td></tr>
+      <tr><td>JPEG XL</td><td>Không dùng</td><td><strong>113 KiB</strong></td><td><strong>865 ms</strong></td><td>Hiện dần khi đang tải<br>Đổi từ JPEG không mất gì</td><td>iOS 15–16 chưa xem được<br>Điện thoại không nén được</td></tr>
+      <tr><td>PNG</td><td>Không dùng</td><td><strong>2.765 KiB</strong></td><td><strong>139 ms</strong></td><td>Không mất chất lượng<br>Có nền trong suốt</td><td>Nặng nhất</td></tr>
     </table>
 
   </div>
