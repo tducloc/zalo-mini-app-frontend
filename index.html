@@ -567,6 +567,9 @@
   .video-opt .pc-item { margin: 14px 0; }
   .video-opt .spec { margin-top: 18px; padding-top: 14px; }
   .video-opt .spec-row { padding: 6px 0; }
+  .video-opt .result-label { margin-top: 30px; font-size: 17px; font-weight: 600; color: var(--blue); }
+  .video-opt .result-label + .result-number { margin-top: 4px; }
+  .video-opt .result-caption + .spec { margin-top: 32px; }
   .retro .cols { height: 100%; gap: 28px; align-items: stretch; }
   .retro .card, .retro .todo { padding: 34px 32px; }
   .retro .card h3 { font-size: 30px; margin-bottom: 18px; }
@@ -1074,7 +1077,7 @@
 <section class="slide">
   <div class="s-title">Đăng tin: Technical Challenge</div>
   <div class="body">
-    <div class="goals single"><div class="goal"><div class="goal-no">Client-side Media Optimization</div><h3>Tối ưu ảnh và video ngay trên thiết bị, không làm gián đoạn UI</h3><p>Resize, compress và transcode trước khi upload.<br>Người dùng vẫn có thể nhập tin hoặc chuyển sang tab khác.</p><div class="metrics"><div class="metric"><b>1600 px</b><span>Cạnh dài tối đa của ảnh</span></div><div class="metric"><b>H.264</b><span>Video tối đa 1080p</span></div><div class="metric"><b>Web Worker</b><span>Nén ảnh ngoài main thread</span></div></div></div></div>
+    <div class="goals single"><div class="goal"><div class="goal-no">Client-side Media Optimization</div><h3>Tối ưu ảnh và video ngay trên thiết bị, không làm gián đoạn UI</h3><p>Resize, compress và transcode trước khi upload.<br>Người dùng vẫn có thể nhập tin hoặc chuyển sang tab khác.</p><div class="metrics"><div class="metric"><b>1600 px</b><span>Cạnh dài tối đa của ảnh</span></div><div class="metric"><b>H.264</b><span>Video tối đa 1080p</span></div></div></div></div>
   </div>
 </section>
 
@@ -1205,12 +1208,12 @@
           <span>Upload, xử lý và tải về đều lâu.</span>
         </div>
         <div class="pc-item">
-          <b>Android: không phải H.264</b>
-          <span>Ví dụ HEVC, nhiều máy không phát được.</span>
+          <b>Android: gửi nguyên file gốc</b>
+          <span>Có thể là HEVC, nhiều máy không phát được.</span>
         </div>
 
         <div class="spec">
-          <div class="spec-title">Giới hạn đầu vào</div>
+          <div class="spec-title">Server chỉ nhận</div>
           <div class="spec-row"><span>Số video</span><b>tối đa 1 / tin</b></div>
           <div class="spec-row"><span>Định dạng</span><b>MP4, MOV · H.264</b></div>
           <div class="spec-row"><span>Thời lượng</span><b>≤ 60 giây</b></div>
@@ -1229,7 +1232,7 @@
           </div>
           <div class="pc-item">
             <b>iPhone: giữ nguyên</b>
-            <span>iOS đã xuất sẵn H.264.</span>
+            <span>Bộ chọn file của iOS đã chuyển HEVC sang H.264.</span>
           </div>
         </div>
 
@@ -1239,13 +1242,25 @@
             <b>Chuyển về 720p</b>
             <span>Nếu trên 720p hoặc 4 Mbit/s.</span>
           </div>
+          <div class="pc-item">
+            <b>Dời moov lên đầu</b>
+            <span>Mọi video, phát được khi chưa tải hết.</span>
+          </div>
         </div>
       </div>
 
       <div class="fix pc-card">
         <div class="fix-no">03 · Kết quả</div>
+        <div class="result-label">Nhẹ hơn</div>
         <strong class="result-number">5,7×</strong>
-        <p class="result-caption">Video 60 giây, 1080p → 720p: <span style="white-space: nowrap">136 → 24 MB</span>.</p>
+        <p class="result-caption">Clip thử 60 giây, 1080p 18 Mbit/s → 720p: <span style="white-space: nowrap">136 → 24 MB</span>.</p>
+
+        <div class="spec">
+          <div class="spec-title">Hiệu quả</div>
+          <div class="spec-row"><span>Lưu trữ, băng thông</span><b>−82%</b></div>
+          <div class="spec-row"><span>Phát khi chưa tải hết</span><b>faststart</b></div>
+          <div class="spec-row"><span>Trình duyệt phát H.264</span><b>97,5%</b></div>
+        </div>
       </div>
     </div>
   </div>
