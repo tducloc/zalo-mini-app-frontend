@@ -82,11 +82,6 @@ export default function MyListingCard({
         <p className={`m-0 mt-1 text-caption leading-[18px] ${statusToneClass[statusLine.tone]}`}>
           {statusLine.label}
         </p>
-        {statusLine.hint && (
-          <p className="m-0 mt-0.5 text-caption leading-[18px] text-marketplace-muted">
-            {statusLine.hint}
-          </p>
-        )}
         {isFailed && (
           <button
             className={editButtonClass}

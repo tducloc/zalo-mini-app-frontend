@@ -1,7 +1,5 @@
 import { AxiosError, AxiosHeaders } from 'axios';
 
-import { mediaErrorMessage } from '@/features/listings/constants/messages';
-import { MediaError } from '@/features/media/types/upload';
 import {
   ListingAction,
   StatusTone,
@@ -115,7 +113,7 @@ describe('getStatusLine', () => {
     });
   });
 
-  it('says which file failed and what to do, in the create form’s words', () => {
+  it('says which file failed', () => {
     const failedVideo = listing({
       status: 'FAILED',
       failedMedia: [{ id: 'm1', type: 'VIDEO', error: 'VIDEO_NOT_PLAYABLE' }],
@@ -123,7 +121,6 @@ describe('getStatusLine', () => {
     expect(getStatusLine(failedVideo, now)).toEqual({
       label: 'Video bị lỗi',
       tone: StatusTone.Danger,
-      hint: mediaErrorMessage(MediaError.VideoNotPlayable),
     });
 
     const failedPhoto = listing({
@@ -133,7 +130,7 @@ describe('getStatusLine', () => {
     expect(getStatusLine(failedPhoto, now).label).toBe('Ảnh bị lỗi');
   });
 
-  it('counts several failed files, and reads an unknown code as a processing failure', () => {
+  it('counts several failed files', () => {
     const line = getStatusLine(
       listing({
         status: 'FAILED',
@@ -145,13 +142,14 @@ describe('getStatusLine', () => {
       now,
     );
     expect(line.label).toBe('2 tệp bị lỗi');
-    expect(line.hint).toBe(mediaErrorMessage(MediaError.ProcessingFailed));
   });
 
   it('still explains a failed listing that lists no failed file', () => {
     const line = getStatusLine(listing({ status: 'FAILED' }), now);
-    expect(line.tone).toBe(StatusTone.Danger);
-    expect(line.hint).toBe(mediaErrorMessage(null));
+    expect(line).toEqual({
+      label: 'Xử lý ảnh, video không thành công',
+      tone: StatusTone.Danger,
+    });
   });
 
   it('dates published, sold and hidden listings by their own timestamp', () => {
