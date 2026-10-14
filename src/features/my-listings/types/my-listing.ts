@@ -56,8 +56,6 @@ export enum StatusTone {
 export interface StatusLine {
   label: string;
   tone: StatusTone;
-  /** A second line: what to do about a failed file. */
-  hint?: string;
 }
 
 export interface TabBadge {

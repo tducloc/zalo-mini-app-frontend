@@ -1,8 +1,5 @@
 import type { InfiniteData } from '@tanstack/react-query';
 
-import { mediaErrorMessage } from '@/features/listings/constants/messages';
-import { MediaError } from '@/features/media/types/upload';
-import { toMediaError } from '@/features/media/utils/media-error';
 import {
   statusChangeErrors,
   STATUS_CHANGE_FAILED,
@@ -47,18 +44,17 @@ export function getTabBadge(
 
 function describeFailure(failedMedia: FailedMedia[]): StatusLine {
   const [first] = failedMedia;
-  const hint = mediaErrorMessage(toMediaError(first?.error));
 
   if (failedMedia.length > 1) {
-    return { label: `${failedMedia.length} tệp bị lỗi`, tone: StatusTone.Danger, hint };
+    return { label: `${failedMedia.length} tệp bị lỗi`, tone: StatusTone.Danger };
   }
 
   if (first) {
     const label = first.type === 'VIDEO' ? 'Video bị lỗi' : 'Ảnh bị lỗi';
-    return { label, tone: StatusTone.Danger, hint };
+    return { label, tone: StatusTone.Danger };
   }
 
-  return { label: 'Xử lý ảnh, video không thành công', tone: StatusTone.Danger, hint };
+  return { label: 'Xử lý ảnh, video không thành công', tone: StatusTone.Danger };
 }
 
 /** Where a listing stands, in the words of its card. */
