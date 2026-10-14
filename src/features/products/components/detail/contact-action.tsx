@@ -10,7 +10,7 @@ import { zaloBuildQuery } from '@/lib/zalo-launch';
  * Zalo build (Development, Testing or live) the buyer is using.
  */
 export function chatGreeting(title: string, productId: string) {
-  const greeting = `Chào bạn, mình quan tâm tin "${title}" trên Chợ Zalo. Sản phẩm còn không ạ?`;
+  const greeting = `Chào bạn, mình quan tâm tin "${title}" trên Chợ 2Hand. Sản phẩm còn không ạ?`;
   if (!window.APP_ID) {
     return greeting;
   }
