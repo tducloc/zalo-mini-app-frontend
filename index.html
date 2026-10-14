@@ -1106,12 +1106,17 @@
             <b>Resize 1600 px, JPEG 0.85</b>
             <span>Chạy trong Web Worker, không block main thread.</span>
           </div>
+          <div class="pc-item">
+            <b>Direct Upload</b>
+            <span>Upload trực tiếp lên S3 qua Presigned URL.</span>
+          </div>
         </div>
 
         <div class="stage server-stage">
           <div class="stage-label">Server · Sau khi upload</div>
           <div class="pc-item">
-            <b>Nén lại, tạo thumbnail</b>
+            <b>Background Worker</b>
+            <span>Xóa metadata (EXIF/GPS), nén mozjpeg, generate thumbnail WebP 600px.</span>
           </div>
         </div>
       </div>
@@ -1159,7 +1164,7 @@
 <section class="slide">
   <div class="s-title">Đăng tin: Chất lượng ảnh sau nén</div>
   <div class="body">
-    <div class="figure" style="height: calc(100% - 36px);"><img src="assets/zoom4-and1-vase.png?v=2" alt="So sánh nén ảnh ở 1×, 2×, 3×: gửi gốc, app rồi server nén lại, app nén và server giữ nguyên; kèm SSIM, SSIMULACRA 2 và dung lượng"></div>
+    <div class="figure" style="height: calc(100% - 36px);"><img src="assets/zoom4-and1-vase.png?v=4" alt="So sánh nén ảnh ở 1×, 2×, 3×: gửi gốc, app rồi server nén lại, app nén và server giữ nguyên; kèm SSIM, SSIMULACRA 2 và dung lượng"></div>
     <div class="src">Ảnh Galaxy S23 Ultra (Wikimedia Commons)</div>
   </div>
 </section>
@@ -1167,7 +1172,7 @@
 <section class="slide">
   <div class="s-title">Đăng tin: Chất lượng ảnh sau nén</div>
   <div class="body">
-    <div class="figure" style="height: calc(100% - 36px);"><img src="assets/zoom4-ios3-phone.png?v=2" alt="Ảnh điện thoại có nhãn chữ và mã QR, so sánh nén ở 1×, 2×, 3×: gửi gốc, app rồi server nén lại, app nén và server giữ nguyên"></div>
+    <div class="figure" style="height: calc(100% - 36px);"><img src="assets/zoom4-ios3-phone.png?v=4" alt="Ảnh điện thoại có nhãn chữ và mã QR, so sánh nén ở 1×, 2×, 3×: gửi gốc, app rồi server nén lại, app nén và server giữ nguyên"></div>
     <div class="src">Ảnh iPhone 13 Pro (Wikimedia Commons)</div>
   </div>
 </section>
