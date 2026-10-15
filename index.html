@@ -380,13 +380,10 @@
   .ss-steps .flow-step { width: 353px; }
   .ss-steps .flow-step figcaption { height: 104px; }
   .ss-steps .flow-step .phone { width: 262px; }
-  .ss-result { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 28px; }
+  .ss-result { height: 100%; display: flex; flex-direction: column; gap: 20px; }
   .ss-result .ss-note { font-size: 22px; margin: 0; }
-  .ss-result .proof img { width: 100%; }
-  .ss-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-  .ss-stats div { background: var(--pale); border-radius: 14px; padding: 18px 24px; }
-  .ss-stats b { display: block; font-size: 32px; color: var(--blue); }
-  .ss-stats span { font-size: 19px; color: var(--text-2); }
+  .ss-result .proof { flex: 1; min-height: 0; align-self: center; }
+  .ss-result .proof img { height: 100%; width: auto; }
   .ss { display: grid; grid-template-columns: 1fr 420px; gap: 48px; height: 100%; align-items: start; }
   .fixes { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   .fix { border: 1px solid var(--border); border-top: 5px solid var(--blue); border-radius: 16px; padding: 30px 30px; min-height: 240px; }
@@ -500,6 +497,167 @@
   .ws-tile.hero b { font-size: 150px; color: #fff; }
   .ws-tile.hero span { color: #fff; font-size: 27px; }
   .ws-tile.muted { background: #f4f6f9; }
+  .so { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 30px; }
+  .so-def { display: flex; align-items: center; gap: 48px; background: var(--blue); color: #fff; border-radius: 22px; padding: 40px 48px; }
+  .so-def b { font-size: 96px; line-height: 1; letter-spacing: -2px; white-space: nowrap; }
+  .so-def span { font-size: 28px; line-height: 1.45; }
+  .so-why { font-size: 28px; font-weight: 700; margin-top: 10px; }
+  .so-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .so-stats div { background: var(--pale); border-radius: 22px; padding: 30px 34px; }
+  .so-stats b { display: block; font-size: 72px; line-height: 1; color: var(--blue); }
+  .so-stats span { display: block; margin-top: 14px; font-size: 23px; line-height: 1.4; }
+  .ap-problem { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 36px; }
+  table.compare.ap-policy td, table.compare.ap-policy th { font-size: 26px; padding: 26px 28px; }
+  table.compare.ap-policy th:first-child { width: 280px; }
+  .ap-problem code, .ap-fixes code { font-size: 0.9em; background: var(--pale); border-radius: 6px; padding: 0 6px; }
+  .ap-fixes { height: 100%; grid-template-columns: 1fr 1fr; align-content: center; }
+  .ap-fixes .fix h3 { font-size: 34px; }
+  .ap-fixes .fix p { font-size: 24px; }
+  .ap-result { gap: 64px; }
+  .fa4 { height: 100%; display: grid; grid-template-columns: 390px 1fr; gap: 36px; align-items: center; }
+  .fa4 .figure img { border: 0; border-radius: 0; }
+  .fa3 { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 22px; padding: 26px; border: 1px solid var(--border); border-radius: 18px; }
+  .fa3-row { border-radius: 14px; }
+  .fa3-ui { background: var(--pale); border: 1px solid #dbe6fb; padding: 26px; }
+  .fa3-features { border: 1px solid var(--border); padding: 26px; }
+  .fa3-two { display: grid; grid-template-columns: 1fr 1fr; padding: 8px 0; }
+  .fa3-item { text-align: center; }
+  .fa3-item b { display: block; font-size: 32px; font-weight: 600; color: var(--text); }
+  .fa3-item span { display: block; margin-top: 8px; font-size: 23px; color: var(--text-2); }
+  .fa3-item i { display: block; margin-top: 6px; font-style: normal; font-size: 19px; letter-spacing: .3px; color: var(--text-2); }
+  .fa3-arrow { text-align: center; font-size: 26px; line-height: 1; color: var(--text-2); margin: -8px 0; }
+  .fa2 { height: calc(100% - 60px); display: grid; grid-template-columns: 390px 1fr; gap: 44px; align-items: center; }
+  .fa2-tree { margin: 0; padding: 22px 24px; background: #0d1117; color: #8b949e; border-radius: 14px; font: 17px/1.6 ui-monospace, "SF Mono", Menlo, monospace; }
+  .fa2-tree b { color: #79c0ff; font-weight: 600; }
+  .fa2-note { margin: 16px 0 0; font-size: 19px; line-height: 1.45; color: var(--text-2); }
+  .fa2-note b { color: var(--text); font-weight: 600; }
+  .fa2-diagram { display: grid; grid-template-columns: 180px 1fr; gap: 16px; }
+  .fa2-band ul { margin: 0; padding: 0; list-style: none; font-size: 19px; font-weight: 500; line-height: 1.6; color: var(--text); }
+  .fa2-band { border-radius: 14px; background: var(--pale); padding: 20px 18px; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+  .fa2-main { display: flex; flex-direction: column; }
+  .fa2-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .fa2-box { border: 1px solid var(--border); border-radius: 14px; padding: 14px 20px; background: #fff; }
+  .fa2-box.infra { background: #f7f8fa; }
+  .fa2-box b, .fa2-band b { display: block; font-size: 21px; font-weight: 600; color: var(--blue); }
+  .fa2-box span, .fa2-band span { display: block; margin-top: 4px; font-size: 18px; font-weight: 500; line-height: 1.4; color: var(--text); }
+  .fa2-box i, .fa2-band i { display: block; margin-top: 4px; font-style: normal; font-size: 16px; line-height: 1.4; color: var(--text-2); }
+  .fa2-arrows { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; text-align: center; font-size: 20px; line-height: 30px; color: var(--muted, #9aa3af); }
+  .fa2-principles { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding-top: 14px; border-top: 1px solid var(--border); font-size: 19px; color: var(--text-2); }
+  .fa2-principles b { margin-right: 12px; color: var(--blue); font-weight: 600; }
+  .eh2 { height: 100%; display: grid; grid-template-columns: 1fr auto; gap: 56px; align-items: center; }
+  table.eh2-table { width: 100%; border-collapse: collapse; }
+  .eh2-table th { background: none; text-align: left; vertical-align: top; width: 200px; padding: 24px 24px 24px 0; font-size: 22px; font-weight: 600; line-height: 1.4; color: var(--blue); border-bottom: 1px solid var(--border); }
+  .eh2-table tr:first-child th, .eh2-table tr:first-child td { border-top: 1px solid var(--border); }
+  .eh2-table td { padding: 24px 0; border-bottom: 1px solid var(--border); }
+  .eh2-table td b { display: block; font-size: 23px; font-weight: 600; line-height: 1.4; color: var(--text); }
+  .eh2-table td span { display: block; margin-top: 6px; font-size: 19px; font-weight: 400; line-height: 1.45; color: var(--text-2); }
+  .eh2-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 28px; }
+  .eh2-tags span { padding: 8px 16px; border-radius: 999px; background: var(--pale); color: var(--blue); font-size: 17px; font-weight: 600; }
+  .eh2-tags span.eh2-arrow { padding: 0; background: none; color: var(--muted, #9aa3af); font-weight: 400; }
+  .eh2 .eh-shots { gap: 20px; align-items: flex-start; height: auto; }
+  .eh2 .eh-shots figure { flex: 0 0 250px; }
+  .eh2 .eh-shots figure:first-child:nth-last-child(3), .eh2 .eh-shots figure:first-child:nth-last-child(3) ~ figure { flex-basis: 215px; }
+  .eh2 .eh-shots:has(> figure:nth-child(3)) { gap: 16px; }
+  .eh2 .eh-shots figcaption { font-size: 17px; }
+  .fa { height: 100%; display: grid; grid-template-columns: 600px 1fr; gap: 48px; align-items: center; }
+  .fa-tree { margin: 0; padding: 26px 30px; background: #0d1117; color: #c9d1d9; border-radius: 16px; font: 20px/1.55 ui-monospace, "SF Mono", Menlo, monospace; }
+  .fa-tree b { color: #79c0ff; font-weight: 600; }
+  .fa-layers { display: flex; flex-direction: column; gap: 12px; }
+  .fa-layer { border: 2px solid var(--blue); border-radius: 14px; padding: 16px 22px; background: var(--pale); }
+  .fa-layer b { display: block; font-size: 24px; color: var(--blue); }
+  .fa-layer span { font-size: 19px; color: var(--text-2); }
+  .fa-layer.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; background: none; border: 0; padding: 0; }
+  .fa-layer.two > div { border: 2px solid var(--blue); border-radius: 14px; padding: 16px 22px; background: var(--pale); }
+  .fa-layer.side { border-style: dashed; background: #fff; }
+  .eh { height: 100%; display: grid; grid-template-columns: 500px 1fr; gap: 48px; align-items: center; }
+  .eh-text ul { margin: 0 0 30px; padding-left: 24px; font-size: 22px; line-height: 1.45; }
+  .eh-text li { margin-bottom: 12px; }
+  .eh-text li b { color: var(--blue); }
+  .tl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .tl-step { padding: 8px 14px; border-radius: 999px; background: var(--pale); color: var(--blue); font-size: 17px; font-weight: 700; }
+  .tl-step.fail { background: #fdecec; color: #c62828; }
+  .tl-step.end { background: var(--blue); color: #fff; }
+  .tl-wait { font-size: 16px; color: var(--text-2); }
+  .tl-arrow { color: var(--text-2); font-size: 18px; }
+  .tl-unit { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .eh-shots { display: flex; justify-content: center; gap: 16px; height: 100%; align-items: center; }
+  .eh-shots figure { margin: 0; flex: 0 1 250px; text-align: center; }
+  .eh-shots .phone img { aspect-ratio: 375 / 812; }
+  .eh-shots figure:only-child { flex-basis: 300px; }
+  .eh-shots figcaption { margin-top: 10px; font-size: 17px; color: var(--text-2); line-height: 1.35; }
+  table.cache-layers { width: 100%; border-collapse: collapse; font-size: 23px; margin-top: 16px; }
+  .cache-layers th { background: none; text-align: left; font-size: 17px; letter-spacing: .5px; text-transform: uppercase; color: var(--text-2); padding: 0 24px 14px; border-bottom: 2px solid var(--border); }
+  .cache-layers td { padding: 15px 22px; border-bottom: 1px solid var(--border); }
+  .cache-layers tr.grp-start td { border-top: 2px solid var(--border); }
+  .cache-layers td.layer { width: 290px; background: var(--pale); vertical-align: middle; }
+  .cache-layers td.layer b { display: block; font-size: 30px; color: var(--blue); }
+  .cache-layers td.layer span { font-size: 19px; color: var(--text-2); }
+  .cache-layers td.pol { font-weight: 700; white-space: nowrap; }
+  .cache-layers td.inv { color: var(--text-2); }
+  .cache { height: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-content: center; }
+  .cache h3 { font-size: 26px; margin: 0 0 16px; }
+  table.cache-table { width: 100%; border-collapse: collapse; font-size: 21px; }
+  .cache-table th { background: none; text-align: left; font-size: 16px; letter-spacing: .5px; text-transform: uppercase; color: var(--text-2); padding: 0 14px 10px; border-bottom: 2px solid var(--border); }
+  .cache-table td { padding: 14px; border-bottom: 1px solid var(--border); }
+  .cache-table td:first-child { font-weight: 700; }
+  .cache-note { margin: 16px 0 0; font-size: 19px; color: var(--text-2); }
+  .tst1 { height: 100%; display: flex; flex-direction: column; gap: 16px; }
+  .tst1 .tst-head span { font-size: 22px; color: var(--text-2); }
+  .tst1 .tst-head b { display: inline; font-size: inherit; color: var(--blue); }
+  .tst1 .proof { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; background: #0d1117; padding: 0; overflow: hidden; }
+  .tst1 .proof img { max-height: 100%; max-width: 100%; }
+  .tst1 .tst-note { margin: 0; font-size: 20px; color: var(--text-2); }
+  .tst { height: calc(100% - 50px); display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .tst-col { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  .tst-head b { display: block; font-size: 26px; }
+  .tst-head span { font-size: 19px; color: var(--text-2); }
+  .tst .proof { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; background: #0d1117; }
+  .tst .proof img { max-height: 100%; width: 100%; object-fit: contain; }
+  .tst-note { margin: 16px 0 0; font-size: 20px; color: var(--text-2); }
+  .nums { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 30px; }
+  .nums-dpr { display: flex; align-items: center; gap: 36px; font-size: 22px; }
+  .nums-dpr b { display: block; font-size: 24px; }
+  .nums-dpr span { color: var(--text-2); }
+  .nums-dpr-vis { display: flex; align-items: center; gap: 6px; }
+  .nums-dpr-vis .css { padding: 10px 18px; border: 2px solid var(--blue); border-radius: 8px; background: var(--pale); color: var(--blue); font-weight: 700; font-size: 20px; }
+  .nums-dpr-vis .eq { margin: 0 8px; font-size: 24px; color: var(--text-2); }
+  .nums-dpr-vis i { width: 40px; height: 40px; border-radius: 6px; background: var(--blue); }
+  table.nums-table { width: 100%; border-collapse: collapse; font-size: 26px; }
+  .nums-table th { background: none; text-align: left; font-size: 18px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--text-2); padding: 0 20px 12px; border-bottom: 2px solid var(--border); }
+  .nums-table td { padding: 20px; border-bottom: 1px solid var(--border); }
+  .nums-table td:first-child { font-weight: 700; }
+  .nums-table td:last-child { background: var(--pale); }
+  .nums-table td:last-child b { font-size: 34px; color: var(--blue); margin-right: 14px; }
+  .nums-table td:last-child span { font-size: 20px; color: var(--text-2); }
+  .nums-extra { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .nums-extra div { border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; }
+  .nums-extra b { display: block; font-size: 26px; color: var(--blue); margin-bottom: 4px; }
+  .nums-extra span { font-size: 22px; line-height: 1.45; color: var(--text-2); }
+  .vd { height: 100%; display: grid; grid-template-columns: 1.1fr 1fr; gap: 64px; align-items: center; }
+  .vd-main h2 { font-size: 46px; margin: 0 0 12px; line-height: 1.15; }
+  .vd-main h2 + p + h2 { margin-top: 48px; }
+  .vd-main p { font-size: 28px; color: var(--text-2); margin: 0; line-height: 1.45; }
+  .big-spec { border: 1px solid var(--border); border-radius: 18px; padding: 28px 34px; margin: 0; }
+  .big-spec .spec-title { font-size: 18px; margin-bottom: 10px; }
+  .big-spec .spec-row { font-size: 24px; padding: 14px 0; border-bottom: 1px solid #eef0f3; }
+  .big-spec .spec-row:last-child { border-bottom: 0; }
+  .big-spec .spec-row b { color: var(--text); font-weight: 600; }
+  .sol-fixes { height: 100%; grid-template-columns: 1fr 1fr; align-content: center; }
+  .sol-fixes.three { grid-template-columns: repeat(3, 1fr); }
+  .sol-fixes .fix { min-height: 0; padding: 34px 34px 38px; }
+  .sol-fixes .fix h3 { font-size: 34px; }
+  .sol-fixes .fix p { font-size: 23px; line-height: 1.45; }
+  .kq { height: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+  .kq-main strong { display: block; font-size: 180px; line-height: 1; letter-spacing: -6px; color: var(--blue); }
+  .kq-main p { font-size: 28px; color: var(--text-2); margin: 20px 0 0; line-height: 1.45; }
+  .kq.single { grid-template-columns: 1fr; text-align: center; }
+  .kq-side-title { font-size: 30px; font-weight: 700; margin-bottom: 8px; }
+  .kq .quality-pair { gap: 18px; }
+  .kq .quality-pair figcaption { font-size: 19px; }
+  .ap-stats { display: flex; flex-direction: column; gap: 22px; width: 460px; }
+  .ap-stats div { background: var(--pale); border-radius: 18px; padding: 26px 30px; }
+  .ap-stats b { display: block; font-size: 48px; line-height: 1.1; color: var(--blue); }
+  .ap-stats span { font-size: 22px; color: var(--text-2); }
   .ws-tile.muted b { color: #5b6472; }
   .demo { height: 100%; display: flex; align-items: center; justify-content: center; }
   .demo-phone { position: relative; width: 318px; border: 0; cursor: pointer; }
@@ -611,6 +769,16 @@
   .retro-list { font-size: 30px; line-height: 1.45; margin: 30px 0 0; padding-left: 36px; }
   .retro-list li { margin: 22px 0; }
   .retro .cols.c2 { height: 100%; gap: 32px; align-items: stretch; }
+  .retro .cols.c2.improve { align-content: center; }
+  .retro .improve .card { border-top: 6px solid var(--blue); border-radius: 18px; padding: 36px 40px; }
+  .retro .improve .card h3 { font-size: 34px; color: var(--blue); }
+  .retro .improve .retro-problem { margin: 0; font-size: 27px; line-height: 1.45; }
+  .retro .cols.c2.learn { align-content: center; }
+  .retro .learn .card { border-top: 6px solid var(--blue); border-radius: 18px; padding: 34px 40px; }
+  .retro .learn .card h3 { font-size: 32px; color: var(--blue); margin-bottom: 22px; }
+  .retro-items > div + div { margin-top: 24px; }
+  .retro-items b { display: block; font-size: 25px; font-weight: 600; line-height: 1.35; color: var(--text); }
+  .retro-items span { display: block; margin-top: 6px; font-size: 21px; line-height: 1.45; color: var(--text-2); }
   .refs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 36px; }
   .refs h3 { font-size: 20px; color: var(--blue); margin: 0 0 8px; }
   .refs h3 + ol { margin-top: 0; }
@@ -837,9 +1005,8 @@
       <li>#1. Tổng quan</li>
       <li>#2. Kiến trúc hệ thống</li>
       <li>#3. Tính năng &amp; thách thức kỹ thuật</li>
-      <li>#4. Test &amp; Observability</li>
+      <li>#4. Caching, Error handling &amp; Testing</li>
       <li>#5. Retrospective</li>
-      <li>#6. Demo</li>
     </ul>
   </div>
 </section>
@@ -912,6 +1079,13 @@
 </section>
 
 <section class="slide">
+  <div class="s-title">Frontend architecture</div>
+  <div class="body">
+    <div class="figure arch-fig"><img src="assets/fe-layers.png?v=1792163000" alt="Kiến trúc phân tầng của FE Mini App, mỗi tầng chỉ gọi tầng ngay dưới: Presentation (Home feed, Reels, Chi tiết tin, Đăng tin) → State (Server state TanStack Query, Client state Zustand) → Data access (HTTP clients: Feature APIs, Axios, Token Refresh; Media Services: Upload Manager, Web Worker) → Backend"></div>
+  </div>
+</section>
+
+<section class="slide">
   <div class="s-title">Entity relationship diagram</div>
   <div class="body">
     <div class="figure arch-fig"><img src="assets/erd-db-simple.png?v=1792030200" alt="ERD: User, Product, Media, Report, Category, Location với khóa chính và khóa ngoại"></div>
@@ -964,7 +1138,7 @@
 </section>
 
 <section class="slide">
-  <div class="s-title">Feed: Smooth scrolling - Giải pháp</div>
+  <div class="s-title">Feed: Seamless scrolling - Giải pháp</div>
   <div class="body">
     <div class="steps-row ss-steps"><figure class="flow-step"><figcaption><span class="no">1</span><b>Fixed card size</b><span class="detail">Giữ bố cục ổn định, không layout shift khi ảnh tải xong</span></figcaption><div class="phone"><img src="assets/app/feed-cards.jpg?v=1792050000" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Show ThumbHash</b><span class="detail">Hiện ảnh mờ trong lúc chờ ảnh thật</span></figcaption><div class="phone"><img src="assets/app/feed-thumbhash.jpg?v=1792050000" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">3</span><b>Virtualize list</b><span class="detail">Chỉ render card trong viewport và một vùng đệm nhỏ</span></figcaption><div class="phone"><img src="assets/app/feed-scrolled.jpg?v=1792050000" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">4</span><b>Play one video</b><span class="detail">Chỉ phát 1 video, giảm tốn pin và băng thông cho người dùng</span></figcaption><div class="phone"><video src="assets/app/feed-one-video.mp4?v=1792050000" poster="assets/app/feed-one-video.jpg?v=1792050000" autoplay muted loop playsinline></video></div></figure></div>
   </div>
@@ -972,16 +1146,11 @@
 </section>
 
 <section class="slide">
-  <div class="s-title">Feed: Smooth scrolling - Kết quả</div>
+  <div class="s-title">Feed: Seamless scrolling - Kết quả</div>
   <div class="body">
     <div class="ss-result">
       <p class="ss-note">Cuộn Feed liên tục 60 s, đo bằng Chrome DevTools Performance (CPU throttling 4×).</p>
-      <figure class="proof"><img src="assets/scroll-60s-memory.png?v=1791429226" alt="Chrome DevTools Performance: cuộn feed 60 giây, Frames gần như toàn xanh, JS heap và DOM nodes lên xuống trong một khoảng cố định"></figure>
-      <div class="ss-stats">
-        <div><b>Frames</b><span>Gần như toàn xanh, không giật</span></div>
-        <div><b>5,7 – 10,3 MB</b><span>JS heap lên xuống, không tăng mãi</span></div>
-        <div><b>735 – 1.731</b><span>DOM nodes, không tăng theo số tin</span></div>
-      </div>
+      <figure class="proof"><img src="assets/scroll-60s-memory-full.png?v=1791429226" alt="Chrome DevTools Performance: cuộn feed 60 giây, Frames gần như toàn xanh, JS heap và DOM nodes lên xuống trong một khoảng cố định"></figure>
     </div>
   </div>
   <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/scroll-60s-memory-full.png?v=1791429226" data-title="Phóng to kết quả">Phóng to kết quả</button><button type="button" class="diagram-btn" data-img="assets/01-home-feed.png?v=1791262540" data-title="1. Feed">1. Feed</button></div>
@@ -990,53 +1159,61 @@
 <section class="slide">
   <div class="s-title">Reels</div>
   <div class="body">
-    <div class="steps-row"><figure class="flow-step"><figcaption><span class="no">1</span><b>Reels Autoplay</b><span class="detail">Video đầu tiên tự động phát với âm thanh.</span></figcaption><div class="phone"><img src="assets/app/reels-play.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Swipe to Explore</b><span class="detail">Vuốt lên để khám phá video tiếp theo.</span></figcaption><div class="phone"><img src="assets/app/reels-next.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">3</span><b>Continuous Playback</b><span class="detail">Video tiếp tục autoplay khi người dùng chuyển nội dung.</span></figcaption><div class="phone"><img src="assets/app/reels-13.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">4</span><b>Product Detail</b><span class="detail">Vuốt trái để xem thông tin chi tiết sản phẩm.</span></figcaption><div class="phone"><img src="assets/app/detail.jpg?v=1791294585" alt=""></div></figure></div>
+    <div class="demo"><button type="button" class="phone demo-phone" aria-label="Phát video demo Reels"><video src="assets/app/reels-demo.mp4" poster="assets/app/reels-play.jpg?v=1791294585" playsinline preload="metadata"></video><span class="play">▶</span></button></div>
   </div>
   <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/02-reels.png?v=1791262540" data-title="2. Reels">2. Reels</button></div>
 </section>
 
-<section class="slide">
-  <div class="s-title">Reels: Technical Challenge</div>
-  <div class="body">
-    <div class="goals"><div class="goal"><div class="goal-no">01</div><h3>Autoplay with Sound</h3><p>Video tự động phát kèm âm thanh ngay khi mở Reels, không cần nhấn Play.</p><div class="metrics"><div class="metric"><b>1 tap</b><span>Để bắt đầu xem Reels</span></div></div></div><div class="goal"><div class="goal-no">02</div><h3>Seamless Scrolling &amp; Playback</h3><p>Lướt qua hàng trăm video mượt mà, video tiếp theo tự động phát mà không cần thao tác thêm.</p><div class="metrics"><div class="metric"><b>0 extra taps</b><span>Để phát video tiếp theo</span></div><div class="metric"><b>100+ Reels</b><span>Lướt liên tục, không giật lag</span></div></div></div></div>
-  </div>
-  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/02-reels.png?v=1791262540" data-title="2. Reels">2. Reels</button></div>
+<section class="slide dark transition">
+  <div class="t-center"><div class="t-kicker">Reels</div><div class="t-title">Technical Challenge</div></div>
 </section>
 
 <section class="slide">
-  <div class="s-title">Reels: Why Sound-On?</div>
+  <div class="s-title">Reels: Autoplay with sound</div>
   <div class="body">
-    <div class="ws">
-      <div class="ws-tile hero"><b>88%</b><span>Người dùng TikTok được khảo sát coi âm thanh là phần thiết yếu của trải nghiệm</span></div>
-      <div class="ws-tile"><b>11.451 Reels</b><span>Nghiên cứu ghi nhận mối liên hệ giữa âm thanh và engagement</span></div>
-      <div class="ws-tile"><b>+15%</b><span>Khả năng skip quảng cáo cao hơn khi sound-off</span></div>
-      <div class="ws-tile"><b>78%</b><span>Quan tâm hơn đến sản phẩm khi nhạc quảng cáo phù hợp</span></div>
-      <div class="ws-tile"><b>Sound-On</b><span>UX pattern được áp dụng trên các nền tảng short-form video lớn</span></div>
+    <div class="so">
+      <div class="so-def"><b>Sound-On</b><span>UX pattern của các nền tảng video ngắn lớn.</span></div>
+      <div class="so-why">Vì sao cần sound-on?</div>
+      <div class="so-stats">
+        <div><b>88%</b><span>người dùng TikTok coi âm thanh là thiết yếu</span></div>
+        <div><b>+15%</b><span>khả năng skip quảng cáo khi tắt tiếng</span></div>
+        <div><b>78%</b><span>quan tâm sản phẩm hơn khi nhạc phù hợp</span></div>
+      </div>
     </div>
   </div>
 </section>
-<section class="slide autoplay">
-  <div class="s-title">Reels: Browser Autoplay Restrictions</div>
+<section class="slide">
+  <div class="s-title">Reels: Autoplay with sound - Vấn đề</div>
   <div class="body">
-    <div class="pc">
-      <div class="fix pc-card">
-        <div class="fix-no">01 · Vấn đề</div>
-        <div class="pc-item"><b>Autoplay Policy</b><ul class="pc-list policy"><li><strong>Chrome:</strong><ul><li>Autoplay muted: Không cần User Gesture.</li><li>Autoplay unmuted: Cần trang đã nhận 1 User Gesture.</li></ul></li><li><strong>WebView Zalo iOS:</strong><ul><li>Autoplay muted: Bắt buộc trang đã nhận User Gesture.</li><li>Autoplay unmuted: Lệnh <code>play()</code> phải gọi trực tiếp trong event của User Gesture.</li></ul></li></ul></div>
-        <div class="pc-item"><b>Autoplay trên Reels mới</b><span>Video element tạo sau lần tương tác ban đầu có thể bị chặn <code>play()</code>, khiến các Reels tải thêm không thể autoplay.</span></div>
-      </div>
-      <div class="fix pc-card">
-        <div class="fix-no">02 · Giải pháp</div>
-        <ul class="pc-list"><li>Tạo một global video element khi user truy cập ứng dụng</li><li>Prefetch trước 10 reels</li><li>Xử lý để trigger play video ngay trong hàm chuyển tab</li><li>Dùng lại global video element, chỉ thay <code>src</code> khi user chuyển video</li></ul>
-      </div>
-      <div class="fix pc-card">
-        <div class="fix-no">03 · Kết quả</div>
-        <div class="pc-result">
-          <button type="button" class="video-thumb" data-video="assets/demo-autoplay-with-sound.mp4" aria-label="Phát video demo autoplay có âm thanh"><img src="assets/demo-autoplay-poster.jpg?v=1791433938" alt="Reels đang phát trong Zalo trên iPhone"><span class="play">▶</span></button>
-          <div>
-            <div class="pc-item"><b>120 Reels</b><span>Lướt liên tục 120 Reels, video vẫn autoplay có âm thanh.</span></div>
-            <div class="pc-item"><b>Autoplay</b><span>Autoplay có âm thanh ngay khi mở tab Reels.</span></div>
-          </div>
-        </div>
+    <div class="ap-problem">
+      <table class="compare ap-policy"><tr><th>Autoplay policy</th><th>Chrome</th><th>Safari</th></tr><tr><td>Muted</td><td>Mặc định cho phép</td><td>Mặc định cho phép</td></tr><tr><td>Unmuted</td><td>Sau khi user đã click vào trang</td><td><code>play()</code> phải gọi ngay trong user click action</td></tr></table>
+      <div class="callout">Video element tạo sau lần click đầu vẫn sẽ bị chặn autoplay unmuted, nên Reels tải thêm không tự phát có âm thanh được.</div>
+    </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/02-reels.png?v=1791262540" data-title="2. Reels">2. Reels</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Reels: Autoplay with sound - Giải pháp</div>
+  <div class="body">
+    <div class="fixes ap-fixes">
+      <div class="fix"><div class="fix-no">01</div><h3>Create one global video</h3><p>Tạo 1 video element ngay khi mở app.</p></div>
+      <div class="fix"><div class="fix-no">02</div><h3>Prefetch 10 reels</h3><p>Tải trước 10 reels tiếp theo.</p></div>
+      <div class="fix"><div class="fix-no">03</div><h3>Play in tab switch</h3><p>Gọi <code>play()</code> ngay trong hàm chuyển tab Reels.</p></div>
+      <div class="fix"><div class="fix-no">04</div><h3>Reuse the video</h3><p>Chỉ đổi <code>src</code> khi lướt sang video khác.</p></div>
+    </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/02-reels.png?v=1791262540" data-title="2. Reels">2. Reels</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Reels: Autoplay with sound - Kết quả</div>
+  <div class="body">
+    <div class="demo ap-result">
+      <button type="button" class="phone demo-phone" aria-label="Phát video demo autoplay có âm thanh"><video src="assets/demo-autoplay-with-sound.mp4" poster="assets/demo-autoplay-poster.jpg?v=1791433938" playsinline preload="metadata"></video><span class="play">▶</span></button>
+      <div class="ap-stats">
+        <div><b>Autoplay</b><span>Có âm thanh ngay khi mở tab Reels</span></div>
+        <div><b>Seamless Scroll</b><span>Lướt liên tục, video vẫn tự phát có âm thanh</span></div>
       </div>
     </div>
   </div>
@@ -1063,225 +1240,108 @@
 <section class="slide">
   <div class="s-title">Đăng tin</div>
   <div class="body">
-    <div class="steps-row five"><figure class="flow-step"><figcaption><span class="no">1</span><b>Thêm ảnh, video</b><span class="detail">App tự động optimize và upload ảnh, video mà không block UI.</span></figcaption><div class="phone"><img src="assets/app/sell-uploaded.jpg?v=1791294818" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Nhập tin</b><span class="detail">Người dùng có thể tiếp tục nhập tin khi media đang được xử lý.</span></figcaption><div class="phone"><img src="assets/app/sell-processing.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">3</span><b>Chuyển trang</b><span class="detail">Hoặc thậm chí là navigate sang các trang khác.</span></figcaption><div class="phone"><img src="assets/app/sell-navigate.jpg?v=1791900000" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">4</span><b>Đăng tin</b><span class="detail">Hoàn tất thông tin và nhấn Đăng tin. Không cần chờ server xử lý media.</span></figcaption><div class="phone"><img src="assets/app/sell-filled.jpg?v=1791294818" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">5</span><b>Xử lý &amp; hiển thị</b><span class="detail">Server xử lý nốt ảnh, video. Tin tự động xuất hiện trên feed khi hoàn tất.</span></figcaption><div class="phone"><img src="assets/app/posted.jpg?v=1791294585" alt=""></div></figure></div>
+    <div class="demo"><button type="button" class="phone demo-phone" aria-label="Phát video demo Đăng tin"><video src="assets/app/sell-demo.mp4" poster="assets/app/sell-uploaded.jpg?v=1791294818" playsinline preload="metadata"></video><span class="play">▶</span></button></div>
   </div>
   <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-post-listing.png?v=1791262996" data-title="3. Đăng tin">3. Đăng tin</button></div>
 </section>
 
-<section class="slide">
-  <div class="s-title">Đăng tin: Technical Challenge</div>
-  <div class="body">
-    <div class="goals single"><div class="goal"><div class="goal-no">Client-side Media Optimization</div><h3>Tối ưu ảnh và video ngay trên thiết bị, không làm gián đoạn UI</h3><p>Resize, compress và transcode trước khi upload.<br>Người dùng vẫn có thể nhập tin hoặc chuyển sang tab khác.</p><div class="metrics"><div class="metric"><b>1600 px</b><span>Cạnh dài tối đa của ảnh</span></div><div class="metric"><b>H.264</b><span>Video tối đa 1080p</span></div></div></div></div>
-  </div>
+<section class="slide dark transition">
+  <div class="t-center"><div class="t-kicker">Đăng tin</div><div class="t-title">Technical Challenge</div></div>
 </section>
 
-<section class="slide photo-opt">
-  <div class="s-title">Đăng tin: Tối ưu ảnh</div>
+<section class="slide">
+  <div class="s-title">Đăng tin: Tối ưu ảnh - Vấn đề</div>
   <div class="body">
-    <div class="pc">
-      <div class="fix pc-card">
-        <div class="fix-no">01 · Vấn đề</div>
-        <div class="pc-item">
-          <b>Ảnh gốc nặng</b>
-          <span>10 ảnh × vài MB = vài chục MB phải upload.</span>
-        </div>
-
-        <div class="spec">
-          <div class="spec-title">Giới hạn đầu vào</div>
-          <div class="spec-row"><span>Số ảnh</span><b>tối đa 10 / tin</b></div>
-          <div class="spec-row"><span>Định dạng</span><b>JPEG, PNG, WebP</b></div>
-          <div class="spec-row"><span>Dung lượng</span><b>≤ 10 MB / ảnh</b></div>
-          <div class="spec-row"><span>Cạnh ngắn</span><b>≥ 600 px</b></div>
-        </div>
-      </div>
-
-      <div class="fix pc-card">
-        <div class="fix-no">02 · Giải pháp</div>
-        <div class="stage">
-          <div class="stage-label">Client · Trước khi upload</div>
-          <div class="pc-item">
-            <b>Resize 1600 px, JPEG 0.85</b>
-            <span>Chạy trong Web Worker, không block main thread.</span>
-          </div>
-          <div class="pc-item">
-            <b>Direct Upload</b>
-            <span>Upload trực tiếp lên S3 qua Presigned URL.</span>
-          </div>
-        </div>
-
-        <div class="stage server-stage">
-          <div class="stage-label">Server · Sau khi upload</div>
-          <div class="pc-item">
-            <b>Background Worker</b>
-            <span>Xóa metadata (EXIF/GPS), nén mozjpeg (nếu app gửi ảnh gốc), generate thumbnail WebP 600px.</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="fix pc-card">
-        <div class="fix-no">03 · Kết quả</div>
-        <strong class="result-number">6–12×</strong>
-        <p class="result-caption">Ảnh upload nhẹ hơn ảnh gốc.</p>
-
-        <div class="pc-item quality-result">
-          <b>Chất lượng gần như ảnh gốc</b>
-          <div class="quality-pair">
-            <figure><img src="assets/quality-original.jpg" alt="Ảnh gốc, phóng to 2 lần"><figcaption>Ảnh gốc</figcaption></figure>
-            <figure><img src="assets/quality-app.jpg" alt="Ảnh sau khi app và server nén, phóng to 2 lần"><figcaption>Sau khi nén</figcaption></figure>
-          </div>
-        </div>
-      </div>
+    <div class="vd">
+      <div class="spec big-spec"><div class="spec-title">Giới hạn đầu vào</div><div class="spec-row"><span>Số ảnh</span><b>tối đa 10 / tin</b></div><div class="spec-row"><span>Định dạng</span><b>JPEG, PNG, WebP</b></div><div class="spec-row"><span>Dung lượng</span><b>≤ 10 MB / ảnh</b></div><div class="spec-row"><span>Cạnh ngắn</span><b>≥ 600 px</b></div></div>
+      <div class="vd-main"><h2>Ảnh gốc nặng</h2><p>10 ảnh × vài MB = vài chục MB phải upload.</p></div>
     </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-1-optimize-photos.png?v=1791453964" data-title="3.1 Tối ưu ảnh">3.1 Tối ưu ảnh</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Đăng tin: Tối ưu ảnh - Giải pháp</div>
+  <div class="body">
+    <div class="figure"><img src="assets/architecture-media-photo.png?v=1792080000" alt="Luồng xử lý ảnh trên sơ đồ kiến trúc: Web Worker xoay đúng chiều theo EXIF, resize 1600 px, JPEG 0.85; xin URL, upload S3, báo xong; media worker xóa metadata, nén mozjpeg nếu ảnh gốc, tạo thumbnail WebP 600 px; tải qua CloudFront"></div>
   </div>
   <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-1-optimize-photos.png?v=1791453964" data-title="3.1 Tối ưu ảnh">3.1 Tối ưu ảnh</button><button type="button" class="diagram-btn" data-img="assets/03-3-upload-and-process.png?v=1791277004" data-title="3.3 Upload &amp; xử lý">3.3 Upload &amp; xử lý</button><button type="button" class="diagram-btn" data-extra="extra-image-worker">Đo số Web Worker</button></div>
 </section>
-<section class="slide px-slide">
-  <div class="s-title">Đăng tin: Ý nghĩa các con số</div>
+<section class="slide">
+  <div class="s-title">Đăng tin: Tối ưu ảnh - Ý nghĩa các con số</div>
   <div class="body">
-    <div class="px-concept">
-      <div class="px-demo">
-        <div class="px-row"><span class="px-tag">CSS</span><div class="px-css">1 CSS pixel</div></div>
-        <div class="px-row"><span class="px-tag">Màn hình</span><div class="px-real"><i></i><i></i><i></i></div></div>
-        <div class="px-cap">DPR 3: 1 CSS pixel = 3 pixel thật</div>
+    <div class="nums">
+      <div class="nums-dpr">
+        <div class="nums-dpr-vis"><span class="css">1 CSS px</span><span class="eq">=</span><i></i><i></i><i></i></div>
+        <div><b>Device Pixel Ratio (DPR)</b><span>iPhone 13: DPR = 3</span></div>
       </div>
-      <div class="px-text">
-        <h3>DPR (Device Pixel Ratio)</h3>
-        <div class="px-formula">DPR = pixel thật ÷ CSS pixel</div>
-        <div class="px-formula ex">iPhone 13: 1.170 ÷ 390 = <b>3</b></div>
+      <table class="nums-table">
+        <tr><th>Hiển thị</th><th>CSS px</th><th>× DPR</th><th>= Pixel cần</th><th>Chọn</th></tr>
+        <tr><td>Ảnh chi tiết</td><td>390</td><td>× 3</td><td>1.170</td><td><b>1600 px</b></td></tr>
+        <tr><td>Thumbnail feed</td><td>172</td><td>× 3</td><td>516</td><td><b>600 px</b></td></tr>
+      </table>
+      <div class="nums-extra">
+        <div><b>JPEG 0.85</b><span>Mức Google khuyên, Lighthouse dùng để chấm ảnh</span></div>
+        <div><b>Ảnh gốc ≤ 10 MB</b><span>Ảnh 12 MP: 1,5–6,2 MB</span></div>
       </div>
     </div>
-    <div class="stat-grid">
-      <div class="stat"><i>Ảnh chi tiết · cạnh dài</i><b>1600 px</b><span class="f">Vừa màn hình: 390 × 3 = 1.170 px</span><span class="f">Đủ để phóng to</span></div>
-      <div class="stat"><i>Thumbnail feed · vuông</i><b>600 px</b><span class="f">Card điện thoại: 172 × 3 = 516 px</span></div>
-      <div class="stat"><i>Ảnh gốc · tối đa</i><b>10 MB</b><span class="f">Chụp mặc định 12 MP: 1,5–6,2 MB</span></div>
-    </div>
-  </div>
-</section>
-
-<section class="slide">
-  <div class="s-title">Đăng tin: Chất lượng ảnh sau nén</div>
-  <div class="body">
-    <div class="figure" style="height: calc(100% - 36px);"><img src="assets/zoom4-and1-vase.png?v=5" alt="So sánh nén ảnh ở 1×, 2×, 3×: gửi gốc, app nén và server giữ nguyên, app rồi server nén lại; kèm SSIM, SSIMULACRA 2 và dung lượng"></div>
-    <div class="src">Ảnh Galaxy S23 Ultra (Wikimedia Commons)</div>
-  </div>
-</section>
-
-<section class="slide">
-  <div class="s-title">Đăng tin: Chất lượng ảnh sau nén</div>
-  <div class="body">
-    <div class="figure" style="height: calc(100% - 36px);"><img src="assets/zoom4-ios3-phone.png?v=5" alt="Ảnh điện thoại có nhãn chữ và mã QR, so sánh nén ở 1×, 2×, 3×: gửi gốc, app nén và server giữ nguyên, app rồi server nén lại"></div>
-    <div class="src">Ảnh iPhone 13 Pro (Wikimedia Commons)</div>
   </div>
 </section>
 
 <section class="slide image-formats">
-  <div class="s-title">Đăng tin: So sánh định dạng ảnh</div>
+  <div class="s-title">Đăng tin: Tối ưu ảnh - So sánh định dạng</div>
   <div class="body">
-    <div class="format-input">Bộ data test: 8 ảnh gốc 1,5–4,5 MB, resize về 1600 px, test trên Mac M1, kết quả lấy trung vị.</div>
+    <div class="format-input">Bộ data test: 8 ảnh gốc 1,5–4,5 MB.</div>
     <table class="compare choice">
       <colgroup><col style="width:12%"><col style="width:17%"><col style="width:12%"><col style="width:12%"><col style="width:25%"><col style="width:22%"></colgroup>
       <tr><th>Định dạng</th><th>Dùng ở đâu</th><th>Dung lượng / ảnh</th><th>Thời gian nén / ảnh</th><th>Ưu điểm</th><th>Hạn chế</th></tr>
-      <tr class="chosen"><td>JPEG<span class="format-ratio">libjpeg-turbo</span></td><td>Client</td><td><strong>180 KiB</strong></td><td><strong>10 ms</strong></td><td>Tương thích rộng<br>Nén nhanh nhất</td><td>Nặng nhất, trừ PNG<br>Không có nền trong suốt</td></tr>
+      <tr class="chosen"><td>JPEG<span class="format-ratio">libjpeg-turbo</span></td><td>Client</td><td><strong>180 KiB</strong></td><td><strong>10 ms</strong></td><td>Tương thích rộng<br>Nén nhanh nhất</td><td>Nặng nhất<br>Không có nền trong suốt</td></tr>
       <tr class="chosen"><td>JPEG<span class="format-ratio">mozjpeg</span></td><td>Server · ảnh chi tiết</td><td><strong>152 KiB</strong></td><td><strong>98 ms</strong></td><td>Tương thích rộng<br>Nhẹ hơn libjpeg-turbo<br>Ảnh lớn nhẹ ngang WebP</td><td>Nén chậm hơn libjpeg-turbo<br>Không có nền trong suốt</td></tr>
       <tr class="chosen"><td>WebP</td><td>Server · thumbnail feed</td><td><strong>149 KiB</strong></td><td><strong>126 ms</strong></td><td>Ảnh nhỏ nhẹ hơn JPEG<br>Có nền trong suốt</td><td>iPhone không nén được</td></tr>
       <tr><td>AVIF</td><td>Không dùng</td><td><strong>88 KiB</strong></td><td><strong>2.340 ms</strong></td><td>Nhẹ nhất ở cùng chất lượng</td><td>iOS 15 không xem được<br>Nén chậm nhất</td></tr>
       <tr><td>JPEG XL</td><td>Không dùng</td><td><strong>113 KiB</strong></td><td><strong>865 ms</strong></td><td>Hiện dần khi đang tải<br>Đổi từ JPEG không mất gì</td><td>iOS 15–16 chưa xem được<br>Điện thoại không nén được</td></tr>
-      <tr><td>PNG</td><td>Không dùng</td><td><strong>2.765 KiB</strong></td><td><strong>139 ms</strong></td><td>Không mất chất lượng<br>Có nền trong suốt</td><td>Nặng nhất</td></tr>
     </table>
 
   </div>
 </section>
-<section class="slide photo-opt video-opt">
-  <div class="s-title">Đăng tin: Tối ưu video</div>
+<section class="slide">
+  <div class="s-title">Đăng tin: Tối ưu ảnh - Kết quả</div>
   <div class="body">
-    <div class="pc">
-      <div class="fix pc-card">
-        <div class="fix-no">01 · Vấn đề</div>
-        <div class="pc-item">
-          <b>Video nặng</b>
-          <span>Upload, xử lý và tải về đều lâu.</span>
-        </div>
-        <div class="pc-item">
-          <b>Android: gửi nguyên file gốc</b>
-          <span>Có thể là HEVC, nhiều máy không phát được.</span>
-        </div>
-
-        <div class="spec">
-          <div class="spec-title">Server chỉ nhận</div>
-          <div class="spec-row"><span>Số video</span><b>tối đa 1 / tin</b></div>
-          <div class="spec-row"><span>Định dạng</span><b>MP4, MOV · H.264</b></div>
-          <div class="spec-row"><span>Thời lượng</span><b>≤ 60 giây</b></div>
-          <div class="spec-row"><span>Dung lượng</span><b>≤ 150 MB</b></div>
-          <div class="spec-row"><span>Độ phân giải</span><b>≤ 1080p</b></div>
-        </div>
-      </div>
-
-      <div class="fix pc-card">
-        <div class="fix-no">02 · Giải pháp</div>
-        <div class="stage">
-          <div class="stage-label">Client · Trước khi upload</div>
-          <div class="pc-item">
-            <b>Android: chuyển sang H.264</b>
-            <span>1080p, 30 fps, bằng WebCodecs.</span>
-          </div>
-          <div class="pc-item">
-            <b>iPhone: giữ nguyên</b>
-            <span>Bộ chọn file của iOS đã chuyển HEVC sang H.264.</span>
-          </div>
-        </div>
-
-        <div class="stage server-stage">
-          <div class="stage-label">Server · Sau khi upload</div>
-          <div class="pc-item">
-            <b>Chuyển về 720p</b>
-            <span>Nếu trên 720p hoặc 4 Mbit/s.</span>
-          </div>
-          <div class="pc-item">
-            <b>Dời moov lên đầu</b>
-            <span>Mọi video, phát được khi chưa tải hết.</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="fix pc-card">
-        <div class="fix-no">03 · Kết quả</div>
-        <div class="result-label">Nhẹ hơn</div>
-        <strong class="result-number">5,7×</strong>
-        <p class="result-caption">Clip thử 60 giây, 1080p 18 Mbit/s → 720p: <span style="white-space: nowrap">136 → 24 MB</span>.</p>
-
-        <div class="spec">
-          <div class="spec-title">Hiệu quả</div>
-          <div class="spec-row"><span>Lưu trữ, băng thông</span><b>−82%</b></div>
-          <div class="spec-row"><span>Phát khi chưa tải hết</span><b>faststart</b></div>
-          <div class="spec-row"><span>Trình duyệt phát H.264</span><b>97,5%</b></div>
-        </div>
-      </div>
+    <div class="kq single">
+      <div class="kq-main"><strong>6–12×</strong><p>Ảnh upload nhẹ hơn ảnh gốc, chất lượng gần như ảnh gốc.</p></div>
     </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-1-optimize-photos.png?v=1791453964" data-title="3.1 Tối ưu ảnh">3.1 Tối ưu ảnh</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Đăng tin: Tối ưu ảnh - Kết quả</div>
+  <div class="body">
+    <div class="figure"><img src="assets/zoom4-ios3-phone.png?v=10" alt="Ảnh điện thoại có nhãn chữ và mã QR, so sánh nén ở 1×, 2×, 3×: gửi gốc, client nén và server giữ nguyên, client nén rồi server nén"></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Đăng tin: Tối ưu video - Vấn đề</div>
+  <div class="body">
+    <div class="vd">
+      <div class="spec big-spec"><div class="spec-title">Giới hạn đầu vào</div><div class="spec-row"><span>Số video</span><b>tối đa 1 / tin</b></div><div class="spec-row"><span>Định dạng</span><b>MP4, MOV · H.264</b></div><div class="spec-row"><span>Thời lượng</span><b>≤ 60 giây</b></div><div class="spec-row"><span>Dung lượng</span><b>≤ 150 MB</b></div><div class="spec-row"><span>Độ phân giải</span><b>≤ 1080p</b></div></div>
+      <div class="vd-main"><h2>Video nặng</h2><p>Upload, xử lý và tải về đều lâu.</p><h2>Android gửi nguyên file gốc</h2><p>Có thể là HEVC, nhiều máy không phát được.</p></div>
+    </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-2-optimize-videos.png?v=1791272330" data-title="3.2 Tối ưu video">3.2 Tối ưu video</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Đăng tin: Tối ưu video - Giải pháp</div>
+  <div class="body">
+    <div class="figure"><img src="assets/architecture-media-video.png?v=1792080000" alt="Luồng xử lý video trên sơ đồ kiến trúc: Android chuyển H.264 1080p 30 fps, iPhone giữ nguyên; xin URL, upload S3, báo xong; media worker chuyển về 720p nếu trên 720p hoặc 4 Mbit/s, dời moov lên đầu; tải qua CloudFront"></div>
   </div>
   <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-2-optimize-videos.png?v=1791272330" data-title="3.2 Tối ưu video">3.2 Tối ưu video</button><button type="button" class="diagram-btn" data-img="assets/03-3-upload-and-process.png?v=1791277004" data-title="3.3 Upload &amp; xử lý">3.3 Upload &amp; xử lý</button></div>
 </section>
 
-<section class="slide video-len">
-  <div class="s-title">Đăng tin: Vì sao video tối đa 60 giây</div>
-  <div class="body">
-    <div class="vl-keys">
-      <div class="vl-key"><b>72%</b><span>video TikTok dài dưới 60 giây</span><em>Fanpage Karma, 32.000 video</em></div>
-      <div class="vl-key"><b>21–34 giây</b><span>độ dài TikTok khuyên cho quảng cáo, tối đa 60 giây</span><em>TikTok for Business</em></div>
-      <div class="vl-key"><b>~35 giây</b><span>tương tác cao nhất khi thử video 10–60 giây</span><em>Reichstein &amp; Dost, 2025</em></div>
-    </div>
-    <div class="vl-table">
-      <div class="vl-cap">Hiệu quả theo độ dài · 32.000 video TikTok (Fanpage Karma, 2026)</div>
-      <table class="compare vt vl">
-        <colgroup><col style="width:22%"><col style="width:39%"><col style="width:39%"></colgroup>
-        <tr><th>Thời lượng</th><th>Tỉ lệ video</th><th>Xem hết</th></tr>
-        <tr><td>0–10 giây</td><td><span class="vl-num">14,3%</span><span class="vl-bar"><i style="width:45%"></i></span></td><td><span class="vl-num">15,4%</span><span class="vl-bar"><i style="width:100%"></i></span></td></tr><tr><td>11–30 giây</td><td><span class="vl-num">32%</span><span class="vl-bar"><i style="width:100%"></i></span></td><td><span class="vl-num">3,8%</span><span class="vl-bar"><i style="width:25%"></i></span></td></tr><tr><td>31–60 giây</td><td><span class="vl-num">25,7%</span><span class="vl-bar"><i style="width:80%"></i></span></td><td><span class="vl-num">3,5%</span><span class="vl-bar"><i style="width:23%"></i></span></td></tr><tr><td>61–90 giây</td><td><span class="vl-num">12,9%</span><span class="vl-bar"><i style="width:40%"></i></span></td><td><span class="vl-num">3,4%</span><span class="vl-bar"><i style="width:22%"></i></span></td></tr><tr><td>Trên 90 giây</td><td><span class="vl-num">15,2%</span><span class="vl-bar"><i style="width:48%"></i></span></td><td><span class="vl-num">1,3–2,6%</span><span class="vl-bar"><i style="width:17%"></i></span></td></tr>
-      </table>
-    </div>
-  </div>
-</section>
-
 <section class="slide video-codec">
-  <div class="s-title">Đăng tin: Vì sao chọn H.264</div>
+  <div class="s-title">Đăng tin: Tối ưu video - Vì sao chọn H.264</div>
   <div class="body">
     <table class="compare vt vc">
       <colgroup><col style="width:11%"><col style="width:15%"><col style="width:13%"><col style="width:30%"><col style="width:31%"></colgroup>
@@ -1291,14 +1351,30 @@
       <tr><td>VP9</td><td><strong>97,3%</strong></td><td>~25%</td><td>Phát được trên Chrome và Android</td><td>iPhone từ iOS 17.4 mới phát được</td></tr>
       <tr><td>AV1</td><td><strong>96%</strong><span class="format-ratio">17% có điều kiện</span></td><td>~50%</td><td>File nhẹ nhất<br>Phát được trên Chrome và Android</td><td>iPhone chỉ phát được từ 15 Pro trở lên</td></tr>
     </table>
-    <div class="src">Trình duyệt: Can I use (09/10/2026). H.265: Ohm et al. (2012), IEEE TCSVT. AV1: Facebook Engineering (2018); VP9 suy ra từ cùng bài.</div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Đăng tin: Tối ưu video - Kết quả</div>
+  <div class="body">
+    <div class="kq single">
+      <div class="kq-main"><strong>~6×</strong><p>Video người bán trên production nhẹ hơn video gốc.</p></div>
+    </div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-2-optimize-videos.png?v=1791272330" data-title="3.2 Tối ưu video">3.2 Tối ưu video</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Đăng tin: Tối ưu video - Kết quả</div>
+  <div class="body">
+    <div class="figure"><img src="assets/video-compare.png?v=1792092000" alt="Khung hình giây 10 của clip Android 31,5 s, phóng 1×, 2×, 3× quanh chữ Zalo: gốc 1080p HEVC 40,4 MB; client chuyển H.264 1080p, upload 32,4 MB, VMAF 100; server chuyển 720p, download 9,2 MB, VMAF 99,2"></div>
   </div>
 </section>
 
 <section class="slide">
   <div class="s-title">Quản lý tin</div>
   <div class="body">
-    <div class="steps-row"><figure class="flow-step"><figcaption><span class="no">1</span><b>Theo dõi theo trạng thái</b><span class="detail">Tin chia theo 5 tab: Đang hiển thị, Đang xử lý, Bị lỗi, Đã bán, Đã ẩn.</span></figcaption><div class="phone"><img src="assets/app/mine-list.jpg?v=1791514764" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Thao tác nhanh</b><span class="detail">Sửa tin, đánh dấu đã bán, ẩn và hiện lại tin ngay từ danh sách.</span></figcaption><div class="phone"><img src="assets/app/mine-options.jpg?v=1791514764" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">3</span><b>Báo tin bị lỗi</b><span class="detail">Tin có ảnh, video lỗi nằm ở tab Bị lỗi, kèm lý do và nút Sửa tin.</span></figcaption><div class="phone"><img src="assets/app/mine-failed.jpg?v=1791514764" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">4</span><b>Sửa tin</b><span class="detail">Chỉ cần thay file bị lỗi. Tin được xử lý lại rồi tự hiện lên feed.</span></figcaption><div class="phone"><img src="assets/app/mine-edit.jpg?v=1791514764" alt=""></div></figure></div>
+    <div class="demo"><button type="button" class="phone demo-phone" aria-label="Phát video demo Quản lý tin"><video src="assets/app/mine-demo.mp4" poster="assets/app/mine-list.jpg?v=1791514764" playsinline preload="metadata"></video><span class="play">▶</span></button></div>
   </div>
   <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/04-my-listings.png?v=1791262540" data-title="4. Quản lý tin">4. Quản lý tin</button></div>
 </section>
@@ -1306,21 +1382,51 @@
 <section class="slide dark">
   <div class="hashtag">#embracing_challenges <svg class="shapes" width="85" height="18" viewBox="0 0 85 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect y="1" width="16" height="16" rx="2" fill="#88F2DE"/><rect x="53" width="12.7279" height="12.7279" rx="2" transform="rotate(45 53 0)" fill="#88F2DE"/><rect x="22" y="1" width="16" height="16" rx="8" fill="#1843EF"/><path d="M74.3331 3C75.1029 1.66667 77.0274 1.66667 77.7972 3L83.8594 13.5C84.6292 14.8333 83.6669 16.5 82.1273 16.5H70.003C68.4634 16.5 67.5011 14.8333 68.2709 13.5L74.3331 3Z" fill="#1843EF"/></svg></div>
   <div class="wordmark">Chợ 2Hand</div>
-  <div class="heading">#4. Test &amp; Observability</div>
+  <div class="heading">#4. Caching, Error handling &amp; Testing</div>
 </section>
 
 
 
-<section class="slide testing-proof">
-  <div class="s-title">Testing và xử lý lỗi</div>
+<section class="slide">
+  <div class="s-title">Caching</div>
   <div class="body">
-    <div class="cols c3">
-      <div class="card"><h3>Testing</h3><ul><li>Frontend: 429 unit và component test</li><li>Backend: 291 unit và integration test với DB</li><li>33 kịch bản E2E bằng Playwright</li><li>Manual testing trên máy Android và iOS thật</li></ul></div>
-      <div class="card"><h3>Xử lý lỗi</h3><ul><li>Hết phiên: tự đăng nhập lại</li><li>Mất mạng: mọi trang có màn hình lỗi kèm nút Thử lại, có mạng lại thì tự tải lại</li><li>Upload lỗi: thử lại tối đa 3 lần, mất mạng thì chờ có mạng</li><li>Worker nén ảnh crash: thử lại 1 lần, rồi dùng ảnh gốc</li><li>Worker server lỗi: thử lại 1 lần, file hỏng thì báo lỗi ngay</li><li>Bấm Đăng tin hai lần: vẫn chỉ tạo một tin</li></ul></div>
-      <div class="card"><h3>Theo dõi lỗi</h3><ul><li>Error boundary: hiện màn hình lỗi có nút Thử lại thay vì trắng trang</li><li>Sentry: ghi lại lỗi xảy ra trên máy người dùng</li></ul></div>
+    <table class="cache-layers"><tr><th>Tầng cache</th><th>Dữ liệu</th><th>TTL</th><th>Invalidate</th></tr><tr class="grp-start"><td class="layer" rowspan="3"><b>App cache</b><span>In memory</span></td><td>Feed, Detail, Reels</td><td class="pol">60 giây</td><td class="inv">Update tin; kéo để làm mới</td></tr><tr><td>Quản lý tin</td><td class="pol">60 giây</td><td class="inv">Update tin</td></tr><tr><td>Category, Location</td><td class="pol">Infinity</td><td class="inv">Mở lại app</td></tr><tr class="grp-start"><td class="layer" rowspan="2"><b>Persistent</b><span>Disk</span></td><td>Category, Location</td><td class="pol">1 ngày</td><td class="inv">-</td></tr><tr><td>Phiên đăng nhập</td><td class="pol">Theo token</td><td class="inv">Lỗi 401</td></tr><tr class="grp-start"><td class="layer" rowspan="2"><b>HTTP + CDN</b><span>WebView, CloudFront</span></td><td>Ảnh, video</td><td class="pol">1 năm, immutable</td><td class="inv">-</td></tr><tr><td>API khác</td><td class="pol">ETag / 304</td><td class="inv">-</td></tr></table>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Error Handling — Application Recovery</div>
+  <div class="body">
+    <div class="eh2">
+      <div class="eh2-text"><table class="eh2-table"><tr><th>Authentication</th><td><b>401 → Refresh Zalo token một lần → Retry request</b><span>Single-flight refresh cho các request đồng thời.</span></td></tr><tr><th>Network / API</th><td><b>Timeout 15s → Retry một lần → Error UI</b><span>Có nút Thử lại; tự refetch khi kết nối phục hồi.</span></td></tr><tr><th>Duplicate Submit</th><td><b>Chống tạo tin trùng khi retry</b><span>Giữ nguyên Idempotency-Key khi gửi lại; server trả về kết quả đã tạo.</span></td></tr><tr><th>Rendering</th><td><b>Error Boundary cô lập lỗi theo trang</b><span>Giữ navigation hoạt động; ghi nhận lỗi bằng Sentry.</span></td></tr></table><div class="eh2-tags"><span>Detect</span><span class="eh2-arrow">→</span><span>Recover</span><span class="eh2-arrow">→</span><span>Fallback UI</span><span class="eh2-arrow">→</span><span>Monitor</span></div></div>
+      <div class="eh-shots"><figure><div class="phone"><img src="assets/app/eh-net-home.jpg?v=2" alt="Trang chủ mất mạng, nút Thử lại"></div><figcaption>Home mất mạng</figcaption></figure><figure><div class="phone"><img src="assets/app/eh-error-boundary.jpg" alt="Màn hình Đã có lỗi xảy ra"></div><figcaption>Error Boundary</figcaption></figure></div>
     </div>
   </div>
-  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/testing-passed.png" data-title="Kết quả chạy test Vitest">Kết quả test</button><button type="button" class="diagram-btn" data-img="assets/00-sign-in.png?v=1791363447" data-title="0. Đăng nhập">0. Đăng nhập</button><button type="button" class="diagram-btn" data-img="assets/03-1-optimize-photos.png?v=1791453964" data-title="3.1 Tối ưu ảnh (khi lỗi)">3.1 Tối ưu ảnh (khi lỗi)</button><button type="button" class="diagram-btn" data-img="assets/03-4-upload-retry.png?v=1791277004" data-title="3.4 Thử lại khi upload lỗi">3.4 Thử lại khi upload lỗi</button><button type="button" class="diagram-btn" data-extra="extra-error-screens">Màn hình lỗi</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Error Handling — Media Pipeline</div>
+  <div class="body">
+    <div class="eh2">
+      <div class="eh2-text"><table class="eh2-table"><tr><th>Image Processing</th><td><b>Lỗi xử lý → Fallback ảnh gốc</b><span>Worker crash/timeout → khởi tạo lại, retry 1 lần; không hỗ trợ → bỏ qua tối ưu.</span></td></tr><tr><th>Image Upload</th><td><b>Tối đa 3 lần thử với exponential backoff</b><span>Hết lượt → người dùng chủ động Thử lại.</span></td></tr><tr><th>Video Upload</th><td><b>Multipart upload → chỉ gửi lại các part chưa hoàn thành</b><span>Giữ các part đã hoàn thành, tránh upload lại toàn bộ video.</span></td></tr></table><div class="eh2-tags"><span>Automatic Retry</span><span class="eh2-arrow">→</span><span>Manual Recovery</span><span class="eh2-arrow">→</span><span>Preserve User Input</span></div></div>
+      <div class="eh-shots"><figure><div class="phone"><img src="assets/app/eh-upload-retrying.jpg" alt="Tile ảnh Đang thử lại"></div><figcaption>Đang thử lại</figcaption></figure><figure><div class="phone"><img src="assets/app/eh-upload-failed-viewer.jpg" alt="Upload lỗi, nút Thử lại"></div><figcaption>Hết lượt: nút Thử lại</figcaption></figure><figure><div class="phone"><img src="assets/app/eh-post-failed.jpg" alt="Đăng tin lỗi, form giữ nguyên"></div><figcaption>Đăng lỗi, giữ nội dung</figcaption></figure></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Testing: Unit &amp; component</div>
+  <div class="body">
+    <div class="tst1"><div class="tst-head"><span>Vitest + Testing Library · <b>73 file, 484 test pass</b></span></div><figure class="proof"><img src="assets/vitest-run.png?v=1792103000" alt="Kết quả chạy Vitest: 73 file, 484 test pass"></figure></div>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Testing: E2E</div>
+  <div class="body">
+    <div class="tst1"><div class="tst-head"><span>Playwright trên Chrome Android, API và S3 thật · <b>31 pass, 1 skip</b> (test Sentry cần DSN)</span></div><figure class="proof"><img src="assets/playwright-run.png?v=1792103000" alt="Kết quả chạy Playwright: 31 pass, 1 skip"></figure>
+    <p class="tst-note">Kèm manual testing trên máy Android và iPhone thật.</p></div>
+  </div>
 </section>
 
 <section class="slide dark">
@@ -1330,13 +1436,13 @@
 </section>
 
 <section class="slide retro">
-  <div class="s-title">Retrospective: Kết quả đạt được</div>
+  <div class="s-title">Retrospective: What went well</div>
   <div class="body">
     <div class="stat-grid">
-      <div class="stat"><i>Sản phẩm</i><b>Phase 1</b><span>Marketplace cơ bản trong Zalo</span></div>
-      <div class="stat"><i>Feed · tải trang</i><b>95</b><span>Điểm performance</span></div>
-      <div class="stat"><i>Feed · cuộn</i><b>5.000 tin</b><span>Cuộn 60 s vẫn mượt</span></div>
-      <div class="stat"><i>Reels</i><b>120 Reels</b><span>Tự phát có âm thanh</span></div>
+      <div class="stat"><i>Sản phẩm</i><b>Phase 1</b><span>Core feature</span></div>
+      <div class="stat"><i>Lighthouse</i><b>95/100</b><span>Điểm performance</span></div>
+      <div class="stat"><i>Smooth scroll</i><b>5.000+ tin</b><span>Scroll vẫn mượt</span></div>
+      <div class="stat"><i>Reels</i><b>Autoplay</b><span>With sound on</span></div>
       <div class="stat"><i>Đăng tin · ảnh</i><b>6–12×</b><span>Nhẹ hơn ảnh gốc</span></div>
       <div class="stat"><i>Đăng tin · video</i><b>5,7×</b><span>Nhẹ hơn video gốc</span></div>
     </div>
@@ -1344,50 +1450,23 @@
 </section>
 
 <section class="slide retro">
-  <div class="s-title">Retrospective: Bài học</div>
+  <div class="s-title">Retrospective: What could be improved</div>
   <div class="body">
-    <ul class="retro-list">
-      <li>Phát triển một Zalo Mini App từ đầu đến triển khai</li>
-      <li>Đo performance để xác định phần cần tối ưu</li>
-      <li>Thiết kế hệ thống và triển khai hạ tầng trên AWS</li>
-      <li>Tối ưu ảnh/video để giảm dung lượng upload, giữ chất lượng phù hợp</li>
-      <li>Dùng Web Worker để chạy tác vụ nặng mà không block main thread</li>
-      <li>Kiểm thử trên cả iOS và Android để phát hiện khác biệt giữa hai nền tảng</li>
-    </ul>
+    <div class="cols c2 improve">
+      <div class="card"><h3>Task Prioritization</h3><p class="retro-problem">Cần xác định ưu tiên sớm hơn, cân bằng thời gian giữa UX và technical challenges.</p></div>
+      <div class="card"><h3>Continuous Documentation</h3><p class="retro-problem">Nên ghi lại quyết định kỹ thuật và xây dựng slide theo từng milestone, thay vì dồn vào cuối dự án.</p></div>
+    </div>
   </div>
 </section>
 
 <section class="slide retro">
-  <div class="s-title">Retrospective: Hướng phát triển</div>
+  <div class="s-title">Retrospective: Key Learnings &amp; Next Actions</div>
   <div class="body">
-    <ul class="retro-list">
-      <li>Tiếp tục phát triển các phase tiếp theo theo roadmap ở slide Feature breakdown</li>
-      <li>Load test server để biết ngưỡng chịu tải hiện tại</li>
-      <li>Video: chuyển sang định dạng HLS để hỗ trợ nhiều độ phân giải khác nhau</li>
-      <li>Ảnh: server tạo nhiều kích thước và định dạng khác nhau</li>
-      <li>CI/CD: tự chạy test mỗi PR và tự deploy</li>
-    </ul>
-  </div>
-</section>
-
-<section class="slide dark">
-  <div class="hashtag">#embracing_challenges <svg class="shapes" width="85" height="18" viewBox="0 0 85 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect y="1" width="16" height="16" rx="2" fill="#88F2DE"/><rect x="53" width="12.7279" height="12.7279" rx="2" transform="rotate(45 53 0)" fill="#88F2DE"/><rect x="22" y="1" width="16" height="16" rx="8" fill="#1843EF"/><path d="M74.3331 3C75.1029 1.66667 77.0274 1.66667 77.7972 3L83.8594 13.5C84.6292 14.8333 83.6669 16.5 82.1273 16.5H70.003C68.4634 16.5 67.5011 14.8333 68.2709 13.5L74.3331 3Z" fill="#1843EF"/></svg></div>
-  <div class="wordmark">Chợ 2Hand</div>
-  <div class="heading">#6. Demo</div>
-</section>
-
-<section class="slide">
-  <div class="s-title">Demo</div>
-  <div class="body">
-    <div class="cols" style="grid-template-columns: repeat(4, 1fr); gap: 24px;">
-      <div class="todo">1. Feed: scroll, tìm kiếm, xem trước video</div>
-      <div class="todo">2. Reels: lướt, có tiếng, xem chi tiết</div>
-      <div class="todo">3. Đăng tin: chọn ảnh và video, đăng</div>
-      <div class="todo">4. Quản lý tin: đang xử lý, đã bán, ẩn tin</div>
+    <div class="cols c2 learn">
+      <div class="card"><h3>Key Learnings</h3><div class="retro-items"><div><b>End-to-end ownership</b><span>Thiết kế, triển khai và vận hành Mini App từ FE đến BE và AWS.</span></div><div><b>Constraint-driven engineering</b><span>Tối ưu media và xử lý giới hạn WebView trên iOS/Android.</span></div><div><b>Task prioritization</b><span>Cần ưu tiên theo impact và technical risk, tránh đầu tư quá sâu vào những quyết định có thể điều chỉnh sau.</span></div></div></div>
+      <div class="card"><h3>Next Actions</h3><div class="retro-items"><div><b>Improve reliability</b><span>Load test, mở rộng kiểm thử và tự động hóa CI/CD.</span></div><div><b>Improve media delivery</b><span>HLS cho video và tối ưu ảnh phía server.</span></div><div><b>Better planning</b><span>Xác định MVP scope, technical risks và timebox các quyết định UX từ đầu.</span></div></div></div>
     </div>
-    <div class="src">Quay sẵn video dự phòng cho từng luồng.</div>
   </div>
-  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/01-home-feed.png?v=1791262540" data-title="1. Feed">1. Feed</button><button type="button" class="diagram-btn" data-img="assets/02-reels.png?v=1791262540" data-title="2. Reels">2. Reels</button><button type="button" class="diagram-btn" data-img="assets/03-post-listing.png?v=1791262996" data-title="3. Đăng tin">3. Đăng tin</button><button type="button" class="diagram-btn" data-img="assets/04-my-listings.png?v=1791262540" data-title="4. Quản lý tin">4. Quản lý tin</button></div>
 </section>
 
 <section class="slide dark">
@@ -1400,7 +1479,7 @@
 <section class="slide refs-slide">
   <div class="s-title">References</div>
   <div class="body">
-    <div class="refs"><div><h3>Thị trường và sản phẩm</h3><ol><li>Research and Markets, Vietnam Recommerce Market Report 2025 (GlobeNewswire, 25/6/2025)<a href="https://www.globenewswire.com/news-release/2025/06/25/3104863/0/en/Vietnam-Recommerce-Market-Report-2025-Forecast-to-2029-Vietnam-s-Recommerce-Market-to-Reach-USD-1-97-Billion-at-an-11-3-CAGR.html" target="_blank" rel="noopener">www.globenewswire.com/news-release/2025/06/25/…</a></li><li>PwC, Voice of the Consumer Survey 2024 (Việt Nam)<a href="https://www.pwc.com/vn/en/publications/vietnam-publications/voice-of-consumer-2024.html" target="_blank" rel="noopener">www.pwc.com/vn/en/publications/vietnam-publica…</a></li><li>VietnamPlus, Zalo có 81,3 triệu người dùng hằng tháng (30/7/2026)<a href="https://www.vietnamplus.vn/zalo-co-813-trieu-nguoi-dung-hang-thang-post1127226.vnp" target="_blank" rel="noopener">www.vietnamplus.vn/zalo-co-813-trieu-nguoi-dun…</a></li><li>Chợ Tốt trên Google Play<a href="https://play.google.com/store/apps/details?id=com.chotot.vn" target="_blank" rel="noopener">play.google.com/store/apps/details?id=com.chot…</a></li><li>Trợ giúp Chợ Tốt: đăng tin kèm video<a href="https://trogiup.chotot.com/nguoi-ban/huong-dan-dang-tin-co-kem-video-tren-cho-tot/" target="_blank" rel="noopener">trogiup.chotot.com/nguoi-ban/huong-dan-dang-ti…</a></li></ol><h3>Thiết bị hỗ trợ</h3><ol><li>Apple, iPhone 13 Tech Specs (2532 × 1170 pixel)<a href="https://support.apple.com/kb/SP851" target="_blank" rel="noopener">support.apple.com/kb/SP851</a></li><li>Zalo trên App Store (yêu cầu iOS 15.1)<a href="https://apps.apple.com/vn/app/zalo/id579523206" target="_blank" rel="noopener">apps.apple.com/vn/app/zalo/id579523206</a></li><li>Zalo trên Google Play<a href="https://play.google.com/store/apps/details?id=com.zing.zalo" target="_blank" rel="noopener">play.google.com/store/apps/details?id=com.zing…</a></li><li>Apple, App Review Guidelines 2.5.6<a href="https://developer.apple.com/app-store/review/guidelines/" target="_blank" rel="noopener">developer.apple.com/app-store/review/guidelines/</a></li><li>AppleInsider, What you need to run iOS 15 and iPadOS 15 (2021)<a href="https://appleinsider.com/articles/21/06/07/what-you-need-to-run-ios-15-and-ipados-15" target="_blank" rel="noopener">appleinsider.com/articles/21/06/07/what-you-ne…</a></li></ol></div><div><h3>Reels</h3><ol><li>TikTok × Kantar, How brands are making noise with sound on TikTok (2021)<a href="https://ads.tiktok.com/business/en-US/blog/kantar-report-how-brands-are-making-noise-and-driving-impact-with-sound-on-tiktok" target="_blank" rel="noopener">ads.tiktok.com/business/en-US/blog/kantar-repo…</a></li><li>TikTok Creative Center, Power Creative Elements (2022)<a href="https://ads.tiktok.com/business/creativecenter/quicktok/online/Power_Creative_Elements/pc/en" target="_blank" rel="noopener">ads.tiktok.com/business/creativecenter/quickto…</a></li><li>Meta for Business, Reels ads<a href="https://www.facebook.com/business/ads/facebook-instagram-reels-ads" target="_blank" rel="noopener">www.facebook.com/business/ads/facebook-instagr…</a></li><li>Yu, Hong, Egger (2026), The Sound of Reels, JHTR<a href="https://journals.sagepub.com/doi/10.1177/10963480261420340" target="_blank" rel="noopener">journals.sagepub.com/doi/10.1177/1096348026142…</a></li><li>Markarova, Kim (2024), TikTok Sound Branding, JDMCT<a href="https://doi.org/10.29056/jdmct.2024.06.04" target="_blank" rel="noopener">doi.org/10.29056/jdmct.2024.06.04</a></li><li>Chrome, Autoplay policy<a href="https://developer.chrome.com/blog/autoplay" target="_blank" rel="noopener">developer.chrome.com/blog/autoplay</a></li><li>WebKit, New video policies for iOS<a href="https://webkit.org/blog/6784/new-video-policies-for-ios/" target="_blank" rel="noopener">webkit.org/blog/6784/new-video-policies-for-ios/</a></li></ol><h3>Ảnh</h3><ol><li>Google, WebP Compression Study<a href="https://developers.google.com/speed/webp/docs/webp_study" target="_blank" rel="noopener">developers.google.com/speed/webp/docs/webp_study</a></li><li>Siipola, Is WebP really better than JPEG? (2020)<a href="https://siipo.la/blog/is-webp-really-better-than-jpeg" target="_blank" rel="noopener">siipo.la/blog/is-webp-really-better-than-jpeg</a></li><li>Samsung Community: JPEG Galaxy S25 Ultra (người dùng tự báo)<a href="https://eu.community.samsung.com/t5/galaxy-s25-series/heic-format-larger-than-jpg-s25-ultra/td-p/11828953" target="_blank" rel="noopener">eu.community.samsung.com/t5/galaxy-s25-series/…</a></li><li>Ảnh thử nghiệm: Wikimedia Commons<a href="https://commons.wikimedia.org/wiki/File:Smartphone_(54235966629).jpg" target="_blank" rel="noopener">commons.wikimedia.org/wiki/File:Smartphone_(54…</a></li></ol><h3>Performance</h3><ol><li>Chrome, Lighthouse 10.0<a href="https://developer.chrome.com/blog/lighthouse-10-0" target="_blank" rel="noopener">developer.chrome.com/blog/lighthouse-10-0</a></li><li>web.dev, Largest Contentful Paint<a href="https://web.dev/articles/lcp" target="_blank" rel="noopener">web.dev/articles/lcp</a></li><li>Chrome, Total Blocking Time<a href="https://developer.chrome.com/docs/lighthouse/performance/lighthouse-total-blocking-time" target="_blank" rel="noopener">developer.chrome.com/docs/lighthouse/performan…</a></li></ol></div><div><h3>Video</h3><ol><li>TikTok, Top Tips for Making TikTok Videos (2021)<a href="https://ads.tiktok.com/business/library/Top_Tips_One_Pager_SMB.pdf" target="_blank" rel="noopener">ads.tiktok.com/business/library/Top_Tips_One_…</a></li><li>Reichstein, Dost (2025): độ dài video và tương tác<a href="https://archives.marketing-trends-congress.com/2025/pages/PDF/060.pdf" target="_blank" rel="noopener">archives.marketing-trends-congress.com/2025/…</a></li><li>Fanpage Karma (2026): độ dài video TikTok<a href="https://www.fanpagekarma.com/insights/optimal-tiktok-video-length/" target="_blank" rel="noopener">www.fanpagekarma.com/insights/optimal-tiktok-…</a></li><li>Ohm et al. (2012), IEEE TCSVT: HEVC so với H.264<a href="https://doi.org/10.1109/TCSVT.2012.2221192" target="_blank" rel="noopener">doi.org/10.1109/TCSVT.2012.2221192</a></li><li>Facebook Engineering (2018): AV1, x264, VP9<a href="https://engineering.fb.com/2018/04/10/video-engineering/av1-beats-x264-and-libvpx-vp9-in-practical-use-case/" target="_blank" rel="noopener">engineering.fb.com/2018/04/10/video-engineeri…</a></li><li>Can I use: H.264, HEVC, VP9, AV1<a href="https://caniuse.com/hevc" target="_blank" rel="noopener">caniuse.com/mpeg4 · /hevc · /webm · /av1</a></li><li>Apple Newsroom (2023): A17 Pro giải mã AV1<a href="https://www.apple.com/newsroom/2023/09/apple-unveils-iphone-15-pro-and-iphone-15-pro-max/" target="_blank" rel="noopener">www.apple.com/newsroom/2023/09/apple-unveils-…</a></li></ol></div></div>
+    <div class="refs"><div><h3>Thị trường và sản phẩm</h3><ol><li>Research and Markets, Vietnam Recommerce Market Report 2025 (GlobeNewswire, 25/6/2025)<a href="https://www.globenewswire.com/news-release/2025/06/25/3104863/0/en/Vietnam-Recommerce-Market-Report-2025-Forecast-to-2029-Vietnam-s-Recommerce-Market-to-Reach-USD-1-97-Billion-at-an-11-3-CAGR.html" target="_blank" rel="noopener">www.globenewswire.com/news-release/2025/06/25/…</a></li><li>PwC, Voice of the Consumer Survey 2024 (Việt Nam)<a href="https://www.pwc.com/vn/en/publications/vietnam-publications/voice-of-consumer-2024.html" target="_blank" rel="noopener">www.pwc.com/vn/en/publications/vietnam-publica…</a></li><li>VietnamPlus, Zalo có 81,3 triệu người dùng hằng tháng (30/7/2026)<a href="https://www.vietnamplus.vn/zalo-co-813-trieu-nguoi-dung-hang-thang-post1127226.vnp" target="_blank" rel="noopener">www.vietnamplus.vn/zalo-co-813-trieu-nguoi-dun…</a></li><li>Chợ Tốt trên Google Play<a href="https://play.google.com/store/apps/details?id=com.chotot.vn" target="_blank" rel="noopener">play.google.com/store/apps/details?id=com.chot…</a></li><li>Trợ giúp Chợ Tốt: đăng tin kèm video<a href="https://trogiup.chotot.com/nguoi-ban/huong-dan-dang-tin-co-kem-video-tren-cho-tot/" target="_blank" rel="noopener">trogiup.chotot.com/nguoi-ban/huong-dan-dang-ti…</a></li></ol><h3>Thiết bị hỗ trợ</h3><ol><li>Apple, iPhone 13 Tech Specs (2532 × 1170 pixel)<a href="https://support.apple.com/kb/SP851" target="_blank" rel="noopener">support.apple.com/kb/SP851</a></li><li>Zalo trên App Store (yêu cầu iOS 15.1)<a href="https://apps.apple.com/vn/app/zalo/id579523206" target="_blank" rel="noopener">apps.apple.com/vn/app/zalo/id579523206</a></li><li>Zalo trên Google Play<a href="https://play.google.com/store/apps/details?id=com.zing.zalo" target="_blank" rel="noopener">play.google.com/store/apps/details?id=com.zing…</a></li><li>Apple, App Review Guidelines 2.5.6<a href="https://developer.apple.com/app-store/review/guidelines/" target="_blank" rel="noopener">developer.apple.com/app-store/review/guidelines/</a></li><li>AppleInsider, What you need to run iOS 15 and iPadOS 15 (2021)<a href="https://appleinsider.com/articles/21/06/07/what-you-need-to-run-ios-15-and-ipados-15" target="_blank" rel="noopener">appleinsider.com/articles/21/06/07/what-you-ne…</a></li></ol></div><div><h3>Reels</h3><ol><li>TikTok × Kantar, How brands are making noise with sound on TikTok (2021)<a href="https://ads.tiktok.com/business/en-US/blog/kantar-report-how-brands-are-making-noise-and-driving-impact-with-sound-on-tiktok" target="_blank" rel="noopener">ads.tiktok.com/business/en-US/blog/kantar-repo…</a></li><li>TikTok Creative Center, Power Creative Elements (2022)<a href="https://ads.tiktok.com/business/creativecenter/quicktok/online/Power_Creative_Elements/pc/en" target="_blank" rel="noopener">ads.tiktok.com/business/creativecenter/quickto…</a></li><li>Meta for Business, Reels ads<a href="https://www.facebook.com/business/ads/facebook-instagram-reels-ads" target="_blank" rel="noopener">www.facebook.com/business/ads/facebook-instagr…</a></li><li>Yu, Hong, Egger (2026), The Sound of Reels, JHTR<a href="https://journals.sagepub.com/doi/10.1177/10963480261420340" target="_blank" rel="noopener">journals.sagepub.com/doi/10.1177/1096348026142…</a></li><li>Markarova, Kim (2024), TikTok Sound Branding, JDMCT<a href="https://doi.org/10.29056/jdmct.2024.06.04" target="_blank" rel="noopener">doi.org/10.29056/jdmct.2024.06.04</a></li><li>Chrome, Autoplay policy<a href="https://developer.chrome.com/blog/autoplay" target="_blank" rel="noopener">developer.chrome.com/blog/autoplay</a></li><li>WebKit, New video policies for iOS<a href="https://webkit.org/blog/6784/new-video-policies-for-ios/" target="_blank" rel="noopener">webkit.org/blog/6784/new-video-policies-for-ios/</a></li></ol><h3>Ảnh</h3><ol><li>Google, Optimize Images (PageSpeed Insights)<a href="https://developers.google.com/speed/docs/insights/OptimizeImages" target="_blank" rel="noopener">developers.google.com/speed/docs/insights/OptimizeImages</a></li><li>Chrome, Lighthouse: Efficiently encode images<a href="https://developer.chrome.com/docs/lighthouse/performance/uses-optimized-images" target="_blank" rel="noopener">developer.chrome.com/docs/lighthouse/performan…</a></li><li>Google, WebP Compression Study<a href="https://developers.google.com/speed/webp/docs/webp_study" target="_blank" rel="noopener">developers.google.com/speed/webp/docs/webp_study</a></li><li>Siipola, Is WebP really better than JPEG? (2020)<a href="https://siipo.la/blog/is-webp-really-better-than-jpeg" target="_blank" rel="noopener">siipo.la/blog/is-webp-really-better-than-jpeg</a></li><li>Samsung Community: JPEG Galaxy S25 Ultra (người dùng tự báo)<a href="https://eu.community.samsung.com/t5/galaxy-s25-series/heic-format-larger-than-jpg-s25-ultra/td-p/11828953" target="_blank" rel="noopener">eu.community.samsung.com/t5/galaxy-s25-series/…</a></li><li>Ảnh thử nghiệm: Wikimedia Commons<a href="https://commons.wikimedia.org/wiki/File:Smartphone_(54235966629).jpg" target="_blank" rel="noopener">commons.wikimedia.org/wiki/File:Smartphone_(54…</a></li></ol></div><div><h3>Video</h3><ol><li>TikTok, Top Tips for Making TikTok Videos (2021)<a href="https://ads.tiktok.com/business/library/Top_Tips_One_Pager_SMB.pdf" target="_blank" rel="noopener">ads.tiktok.com/business/library/Top_Tips_One_…</a></li><li>Reichstein, Dost (2025): độ dài video và tương tác<a href="https://archives.marketing-trends-congress.com/2025/pages/PDF/060.pdf" target="_blank" rel="noopener">archives.marketing-trends-congress.com/2025/…</a></li><li>Fanpage Karma (2026): độ dài video TikTok<a href="https://www.fanpagekarma.com/insights/optimal-tiktok-video-length/" target="_blank" rel="noopener">www.fanpagekarma.com/insights/optimal-tiktok-…</a></li><li>Ohm et al. (2012), IEEE TCSVT: HEVC so với H.264<a href="https://doi.org/10.1109/TCSVT.2012.2221192" target="_blank" rel="noopener">doi.org/10.1109/TCSVT.2012.2221192</a></li><li>Facebook Engineering (2018): AV1, x264, VP9<a href="https://engineering.fb.com/2018/04/10/video-engineering/av1-beats-x264-and-libvpx-vp9-in-practical-use-case/" target="_blank" rel="noopener">engineering.fb.com/2018/04/10/video-engineeri…</a></li><li>Can I use: H.264, HEVC, VP9, AV1<a href="https://caniuse.com/hevc" target="_blank" rel="noopener">caniuse.com/mpeg4 · /hevc · /webm · /av1</a></li><li>Apple Newsroom (2023): A17 Pro giải mã AV1<a href="https://www.apple.com/newsroom/2023/09/apple-unveils-iphone-15-pro-and-iphone-15-pro-max/" target="_blank" rel="noopener">www.apple.com/newsroom/2023/09/apple-unveils-…</a></li></ol><h3>Performance</h3><ol><li>Chrome, Lighthouse 10.0<a href="https://developer.chrome.com/blog/lighthouse-10-0" target="_blank" rel="noopener">developer.chrome.com/blog/lighthouse-10-0</a></li><li>web.dev, Largest Contentful Paint<a href="https://web.dev/articles/lcp" target="_blank" rel="noopener">web.dev/articles/lcp</a></li><li>Chrome, Total Blocking Time<a href="https://developer.chrome.com/docs/lighthouse/performance/lighthouse-total-blocking-time" target="_blank" rel="noopener">developer.chrome.com/docs/lighthouse/performan…</a></li></ol></div></div>
   </div>
 </section>
 
@@ -1430,15 +1509,6 @@
   </div>
 </section>
 
-
-<section class="slide extra" id="extra-error-screens">
-  <button type="button" class="extra-close">Đóng (Esc)</button>
-  <div class="s-title">Màn hình khi có lỗi</div>
-  <div class="body">
-    <div class="err-groups"><div class="err-group"><h3>Mất mạng</h3><div class="err-row"><figure class="err-step"><figcaption><b>Mở app</b><span class="detail">Feed và danh mục có nút Thử lại</span></figcaption><div class="phone"><img src="assets/app/err-home-offline.jpg?v=1791858400" alt=""></div></figure><figure class="err-step"><figcaption><b>Chi tiết tin</b><span class="detail">Màn hình lỗi kèm nút Thử lại</span></figcaption><div class="phone"><img src="assets/app/err-detail-offline.jpg?v=1791858400" alt=""></div></figure><figure class="err-step"><figcaption><b>Reels</b><span class="detail">Màn hình lỗi kèm nút Thử lại</span></figcaption><div class="phone"><img src="assets/app/err-reels-offline.jpg?v=1791858400" alt=""></div></figure><figure class="err-step"><figcaption><b>Quản lý tin</b><span class="detail">Màn hình lỗi kèm nút Thử lại</span></figcaption><div class="phone"><img src="assets/app/err-my-listings-offline.jpg?v=1791858400" alt=""></div></figure><figure class="err-step"><figcaption><b>Upload ảnh</b><span class="detail">Chờ có mạng rồi tự tải tiếp</span></figcaption><div class="phone"><img src="assets/app/err-upload-offline.jpg?v=1791858400" alt=""></div></figure><figure class="err-step"><figcaption><b>Đăng tin</b><span class="detail">Báo chưa đăng, giữ nội dung để bấm lại</span></figcaption><div class="phone"><img src="assets/app/err-post-offline.jpg?v=1791858400" alt=""></div></figure></div></div><div class="err-group"><h3>Error boundary</h3><div class="err-row"><figure class="err-step"><figcaption><b>Lỗi khi hiển thị</b><span class="detail">Không trắng trang, thanh tab vẫn dùng được</span></figcaption><div class="phone"><img src="assets/app/err-error-boundary.jpg?v=1791858400" alt=""></div></figure></div></div></div>
-    <div class="src">App bản main (7480541) chạy local trong Chrome 375 × 812. Mất mạng giả lập bằng Playwright; error boundary: chặn tải code của trang Quản lý tin.</div>
-  </div>
-</section>
 
 
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lightbox-title">
