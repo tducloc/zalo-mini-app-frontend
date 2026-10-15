@@ -6,6 +6,8 @@ import type { MyListingsTab } from '@/features/my-listings/types/my-listing';
  */
 export const myListingKeys = {
   all: () => ['my-listings'] as const,
+  /** Every tab's list query, whoever the viewer. */
+  lists: () => ['my-listings', 'list'] as const,
   list: (tab: MyListingsTab, viewerId: string | null) =>
     ['my-listings', 'list', tab, { viewerId }] as const,
   /** Filled by the list queries; never fetched on its own. */

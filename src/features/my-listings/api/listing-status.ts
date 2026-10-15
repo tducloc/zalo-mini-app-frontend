@@ -5,6 +5,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 
+import { invalidateMyListings } from '@/features/my-listings/api/get-my-listings';
 import { myListingKeys } from '@/features/my-listings/api/keys';
 import { MY_LISTINGS_TABS } from '@/features/my-listings/constants/tabs';
 import {
@@ -109,7 +110,7 @@ export function useChangeListingStatus(viewerId: string | null) {
     },
     // Not awaited: the toast should not wait for the refetches.
     onSettled: (product, _error, { change }) => {
-      void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
+      void invalidateMyListings(queryClient);
       if (!product) {
         invalidatePublicLists(queryClient);
         return;

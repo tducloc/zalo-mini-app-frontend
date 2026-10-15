@@ -8,7 +8,7 @@ import type { DraftFields } from '@/features/listings/types/listing-draft';
 import { type SaveError, SaveErrorKind } from '@/features/listings/types/update-listing';
 import { type EditBaseline, listingChanges } from '@/features/listings/utils/edit-listing';
 import { postBlocker } from '@/features/listings/utils/listing-draft';
-import { myListingKeys } from '@/features/my-listings/api/keys';
+import { invalidateMyListings } from '@/features/my-listings/api/get-my-listings';
 import { productKeys } from '@/features/products/api/keys';
 import type { ProductDetail } from '@/features/products/types/product';
 import { useToast } from '@/hooks/use-toast';
@@ -58,7 +58,7 @@ export function useSaveListing({
         return;
       case SaveErrorKind.NotEditable:
         showError(saveMessages.notEditable);
-        void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
+        void invalidateMyListings(queryClient);
         onDone();
         return;
       case SaveErrorKind.Invalid:
@@ -77,7 +77,7 @@ export function useSaveListing({
       queryKey: productKeys.detailForAllViewers(productId),
       refetchType: 'none',
     });
-    void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
+    void invalidateMyListings(queryClient);
     // No refetch of the cached feed pages; Home starts it again from page one on the next visit.
     void queryClient.invalidateQueries({ queryKey: productKeys.feeds(), refetchType: 'none' });
   };
