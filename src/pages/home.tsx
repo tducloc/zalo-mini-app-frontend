@@ -10,6 +10,7 @@ import FilterChips from '@/features/feed/components/filters/filter-chips';
 import HomeHeader from '@/features/feed/components/home-header';
 import PullToRefresh from '@/features/feed/components/pull-to-refresh';
 import ProductFeed from '@/features/feed/components/grid/product-feed';
+import { useRestartStaleFeed } from '@/features/feed/hooks/use-restart-stale-feed';
 import type { FeedFilters, FilterKey } from '@/features/feed/types/filters';
 import {
   getFilterChips,
@@ -61,9 +62,8 @@ export default function HomePage() {
 
   // queries
   const feedParams = toFeedQueryParams(filters, searchTerm);
-  const feedKey = JSON.stringify(feedParams);
-  const previousFeedKeyRef = useRef(feedKey);
   const feed = useProductFeed(feedParams);
+  useRestartStaleFeed(feedParams, pageRef);
   const categoriesQuery = useCategories();
   // Needed only for the sheet and the location chip label.
   const locationsQuery = useLocations({ enabled: isFilterOpen || Boolean(filters.locationId) });
@@ -72,17 +72,6 @@ export default function HomePage() {
     const timer = setTimeout(commitSearch, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [searchInput, commitSearch]);
-
-  // New search/filters start at page one, so the list starts at the top too.
-  // Not on remount: returning from detail restores the previous position.
-  useEffect(() => {
-    if (previousFeedKeyRef.current === feedKey) {
-      return;
-    }
-
-    previousFeedKeyRef.current = feedKey;
-    pageRef.current?.scrollTo({ top: 0 });
-  }, [feedKey]);
 
   const chips = getFilterChips(filters, {
     categories: categoriesQuery.data ?? [],

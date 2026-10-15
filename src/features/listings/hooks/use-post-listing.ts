@@ -9,7 +9,7 @@ import { draftPipeline } from '@/features/listings/services/media-pipeline';
 import type { DraftFields } from '@/features/listings/types/listing-draft';
 import { PostErrorKind, type PostError } from '@/features/listings/types/post-error';
 import { mediaIdsForPost, postBlocker } from '@/features/listings/utils/listing-draft';
-import { myListingKeys } from '@/features/my-listings/api/keys';
+import { invalidateMyListings } from '@/features/my-listings/api/get-my-listings';
 import { productKeys } from '@/features/products/api/keys';
 import { useToast } from '@/hooks/use-toast';
 import { useListingDraftStore } from '@/stores/listing-draft';
@@ -79,9 +79,10 @@ export function usePostListing({
     }
 
     forgetPostedDraft();
-    void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
+    void invalidateMyListings(queryClient);
     // Published at once (201): the home feed must show it too.
-    void queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
+    // No refetch of the cached feed pages; Home starts it again from page one on the next visit.
+    void queryClient.invalidateQueries({ queryKey: productKeys.feeds(), refetchType: 'none' });
     showSuccess(posted.status === 'PUBLISHED' ? postMessages.published : postMessages.processing);
     // On the tab that lists it. Back from My listings goes to where the seller came from,
     // not to an empty form.

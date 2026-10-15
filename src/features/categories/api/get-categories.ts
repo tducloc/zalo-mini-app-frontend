@@ -8,7 +8,7 @@ import { readNativeCache, writeNativeCache } from '@/lib/native-cache';
 const CACHE_KEY = 'categories';
 // Bump when `CategoryResponse` changes shape, so old saved copies are dropped.
 const CACHE_VERSION = 1;
-const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export async function getCategories(signal?: AbortSignal) {
   const response = await apiClient.get<{ data: CategoryResponse[] }>('/categories', { signal });

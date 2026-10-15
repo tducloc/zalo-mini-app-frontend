@@ -21,7 +21,7 @@ import { useLocations } from '@/features/locations/api/get-locations';
 import { apiClient } from '@/lib/api-client';
 
 const SAVED_VERSION = 1;
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 const savedCategories = [{ id: 'cat_fashion', name: 'Fashion', slug: 'fashion' }];
 const freshCategories = [{ id: 'cat_vehicles', name: 'Vehicles', slug: 'vehicles' }];
@@ -126,8 +126,8 @@ describe.each([
     expect(requests).toEqual([url]);
   });
 
-  it('ignores a copy older than seven days', () => {
-    save(key, saved, Date.now() - SEVEN_DAYS_MS - 1000);
+  it('ignores a copy older than a day', () => {
+    save(key, saved, Date.now() - ONE_DAY_MS - 1000);
     serve({ [url]: fresh });
 
     const { result } = renderHook(useHook, { wrapper: wrapper() });

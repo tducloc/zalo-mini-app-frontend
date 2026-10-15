@@ -5,6 +5,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 
+import { invalidateMyListings } from '@/features/my-listings/api/get-my-listings';
 import { myListingKeys } from '@/features/my-listings/api/keys';
 import { MY_LISTINGS_TABS } from '@/features/my-listings/constants/tabs';
 import {
@@ -62,9 +63,13 @@ function dropFromPublicLists(queryClient: QueryClient, productId: string) {
   dropPages<ReelsPage>(queryClient, reelKeys.all(), productId);
 }
 
+/**
+ * Marks the feeds and reels stale without a request: refetching an infinite list loads every page
+ * it holds. The next visit to Home or Reels starts it again from page one.
+ */
 function invalidatePublicLists(queryClient: QueryClient) {
-  void queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
-  void queryClient.invalidateQueries({ queryKey: reelKeys.all() });
+  void queryClient.invalidateQueries({ queryKey: productKeys.feeds(), refetchType: 'none' });
+  void queryClient.invalidateQueries({ queryKey: reelKeys.all(), refetchType: 'none' });
 }
 
 /**
@@ -105,7 +110,7 @@ export function useChangeListingStatus(viewerId: string | null) {
     },
     // Not awaited: the toast should not wait for the refetches.
     onSettled: (product, _error, { change }) => {
-      void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
+      void invalidateMyListings(queryClient);
       if (!product) {
         invalidatePublicLists(queryClient);
         return;

@@ -1,7 +1,8 @@
 import { QueryClient } from '@tanstack/react-query';
 
-// Feed, reels and detail show the same listings, so they share one freshness rule.
-export const LISTING_STALE_TIME_MS = 5 * 60_000;
+// Feed, reels and detail show the same listings, so they share one freshness rule. After a
+// minute a listing may already be sold.
+export const LISTING_STALE_TIME_MS = 60_000;
 export const LISTING_GC_TIME_MS = 10 * 60_000;
 
 /**

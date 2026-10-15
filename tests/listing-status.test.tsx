@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { InfiniteQueryObserver, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
@@ -119,9 +119,20 @@ describe('useChangeListingStatus', () => {
     expect(idsOf(queryClient.getQueryData(reelKeys.all()))).toEqual([['keep'], [GONE]]);
   });
 
-  it('refetches the feed and reels when a listing is shown again', async () => {
+  it('marks the feed and reels stale when a listing is shown again, without loading their pages', async () => {
     vi.mocked(http.post).mockResolvedValue({ data: { data: detail('PUBLISHED') } });
     const { result, queryClient } = renderStatus();
+    // A feed and reels on screen: refetching them would load every page they hold.
+    const loadPage = vi.fn();
+    const observers = [productKeys.feed(feedParams), reelKeys.all()].map((queryKey) =>
+      new InfiniteQueryObserver(queryClient, {
+        queryKey,
+        queryFn: loadPage,
+        staleTime: Infinity,
+        initialPageParam: undefined,
+        getNextPageParam: () => undefined,
+      }).subscribe(() => undefined),
+    );
 
     await result.current.mutateAsync({ productId: GONE, change: ListingAction.Unarchive });
 
@@ -131,5 +142,7 @@ describe('useChangeListingStatus', () => {
     expect(queryClient.getQueryState(productKeys.feed(otherFeedParams))?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(reelKeys.all())?.isInvalidated).toBe(true);
     expect(idsOf(queryClient.getQueryData(reelKeys.all()))).toEqual([['keep'], [GONE]]);
+    expect(loadPage).not.toHaveBeenCalled();
+    observers.forEach((unsubscribe) => unsubscribe());
   });
 });

@@ -187,3 +187,94 @@ test('plays a preview on screen and hands the video on when its card unmounts', 
   await expectPlayingInView(list);
   await expect(page.locator('video[src]')).toHaveCount(1);
 });
+
+const STALE_AFTER_MS = 61_000;
+
+/** Scrolls until the card at `position` is mounted, so every page before it has loaded. */
+async function scrollToCard(page: Page, position: number) {
+  const target = cardAt(page, position);
+  for (let step = 0; step < 100 && (await target.count()) === 0; step += 1) {
+    await scrollBy(page, 700);
+    await page.waitForTimeout(40);
+  }
+  await expect(target).toBeAttached();
+}
+
+/** The feed's requests from now on: the first page has no cursor. */
+function watchFeedRequests(page: Page) {
+  const urls: string[] = [];
+  page.on('request', (request) => {
+    if (/\/api\/v1\/products\?/.test(request.url())) {
+      urls.push(request.url());
+    }
+  });
+  return urls;
+}
+
+test('starts the feed again from page one when a tab brings back a feed older than a minute', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto('/');
+  await expect(cardAt(page, 1)).toBeVisible();
+  await scrollToCard(page, 3 * PAGE_SIZE);
+  await expect(cardAt(page, 1)).toHaveCount(0);
+
+  await tab(page, 'Cá nhân').click();
+  await expect(tab(page, 'Cá nhân')).toHaveAttribute('aria-current', 'page');
+  await page.clock.fastForward(STALE_AFTER_MS);
+  const requests = watchFeedRequests(page);
+  await tab(page, 'Trang chủ').click();
+
+  await expect(cardAt(page, 1)).toBeVisible();
+  await expect.poll(() => scrollTopOf(page)).toBe(0);
+  await page.waitForTimeout(1_000);
+  expect(requests).toHaveLength(1);
+  expect(requests[0]).not.toContain('cursor=');
+  await expect(cardAt(page, 3 * PAGE_SIZE)).toHaveCount(0);
+});
+
+test('keeps the feed and its place when a tab brings it back within a minute', async ({ page }) => {
+  await page.clock.install();
+  await page.goto('/');
+  await expect(cardAt(page, 1)).toBeVisible();
+  await scrollToCard(page, 2 * PAGE_SIZE);
+  // zmp-ui's Page saves its scroll position 150 ms after scrolling stops.
+  await page.waitForTimeout(400);
+  const savedTop = await scrollTopOf(page);
+
+  await tab(page, 'Cá nhân').click();
+  await expect(tab(page, 'Cá nhân')).toHaveAttribute('aria-current', 'page');
+  await page.clock.fastForward(STALE_AFTER_MS / 2);
+  const requests = watchFeedRequests(page);
+  await tab(page, 'Trang chủ').click();
+
+  await expect.poll(() => scrollTopOf(page)).toBeCloseTo(savedTop, 0);
+  await page.waitForTimeout(1_000);
+  expect(requests).toEqual([]);
+});
+
+test('keeps the feed and its place when a listing’s back button brings it back, even after a minute', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto('/');
+  await expect(cardAt(page, 1)).toBeVisible();
+  const target = cardAt(page, 2 * PAGE_SIZE);
+  await scrollToCard(page, 2 * PAGE_SIZE);
+  await target.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+  await page.waitForTimeout(400);
+  const savedTop = await scrollTopOf(page);
+
+  await target.getByRole('button').click();
+  await expect(page.getByRole('button', { name: 'Quay lại' }).last()).toBeVisible();
+  await page.clock.fastForward(STALE_AFTER_MS);
+  const requests = watchFeedRequests(page);
+  await page.getByRole('button', { name: 'Quay lại' }).last().click();
+
+  await expect(tab(page, 'Trang chủ')).toHaveAttribute('aria-current', 'page');
+  await expect.poll(() => scrollTopOf(page)).toBeCloseTo(savedTop, 0);
+  await expect(target).toBeInViewport();
+  await page.waitForTimeout(1_000);
+  expect(requests).toEqual([]);
+});
