@@ -59,6 +59,9 @@
   .dark .wordmark { position: absolute; top: 150px; left: 72px; font-size: 104px; font-weight: 600; letter-spacing: -2px; }
   .dark .heading { position: absolute; top: 300px; left: 72px; font-size: 52px; font-weight: 500; }
   .dark .byline { position: absolute; top: 390px; left: 72px; font-size: 22px; font-weight: 600; color: #dbe6ff; }
+  .transition .t-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .transition .t-kicker { font-size: 34px; font-weight: 500; color: #9fc0ff; }
+  .transition .t-title { font-size: 112px; font-weight: 600; letter-spacing: -2px; }
   .dark svg.waves { position: absolute; inset: 0; pointer-events: none; }
 
   /* Content slides */
@@ -323,6 +326,12 @@
   .phone { background: #1f2329; padding: 7px; border-radius: 30px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16); }
   .phone img, .phone video { display: block; width: 100%; aspect-ratio: 462 / 1000; object-fit: cover; object-position: top; border-radius: 24px; }
   .lt { display: grid; grid-template-columns: 1fr 520px; gap: 48px; height: 100%; align-items: start; }
+  .lt2 { height: 100%; display: flex; flex-direction: column; gap: 28px; }
+  .lt2-shots { flex: 1; min-height: 0; display: flex; justify-content: center; gap: 56px; }
+  .lt2-shots .proof { height: 100%; display: flex; flex-direction: column; }
+  .lt2-shots .proof img { height: calc(100% - 32px); width: auto; aspect-ratio: 810 / 735; object-fit: contain; }
+  .kw { display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; }
+  .kw span { padding: 10px 22px; border-radius: 999px; background: var(--pale); color: var(--blue); font-size: 21px; font-weight: 600; }
   .score-row { display: flex; align-items: center; gap: 22px; margin-bottom: 22px; }
   .ring { width: 96px; height: 96px; border-radius: 50%; background: conic-gradient(#0cce6b 0 95%, #e6f7ee 95% 100%); display: grid; place-items: center; }
   .ring span { width: 78px; height: 78px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: 34px; font-weight: 700; color: #0a8f4d; }
@@ -367,6 +376,17 @@
   .vl-steps b { display: block; font-size: 21px; }
   .vl-steps span { font-size: 18px; color: var(--text-2); }
   .shot-slot { height: 420px; border: 2px dashed #c9ced6; border-radius: 14px; display: grid; place-items: center; padding: 24px; text-align: center; font-size: 17px; color: #b25e00; }
+  .ss-steps { gap: 20px; }
+  .ss-steps .flow-step { width: 353px; }
+  .ss-steps .flow-step figcaption { height: 104px; }
+  .ss-steps .flow-step .phone { width: 262px; }
+  .ss-result { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 28px; }
+  .ss-result .ss-note { font-size: 22px; margin: 0; }
+  .ss-result .proof img { width: 100%; }
+  .ss-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .ss-stats div { background: var(--pale); border-radius: 14px; padding: 18px 24px; }
+  .ss-stats b { display: block; font-size: 32px; color: var(--blue); }
+  .ss-stats span { font-size: 19px; color: var(--text-2); }
   .ss { display: grid; grid-template-columns: 1fr 420px; gap: 48px; height: 100%; align-items: start; }
   .fixes { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   .fix { border: 1px solid var(--border); border-top: 5px solid var(--blue); border-radius: 16px; padding: 30px 30px; min-height: 240px; }
@@ -481,6 +501,10 @@
   .ws-tile.hero span { color: #fff; font-size: 27px; }
   .ws-tile.muted { background: #f4f6f9; }
   .ws-tile.muted b { color: #5b6472; }
+  .demo { height: 100%; display: flex; align-items: center; justify-content: center; }
+  .demo-phone { position: relative; width: 318px; border: 0; cursor: pointer; }
+  .demo-phone .play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 76px; height: 76px; border-radius: 50%; background: rgba(0, 104, 255, 0.92); color: #fff; font-size: 30px; display: grid; place-items: center; padding-left: 5px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3); }
+  .demo-phone.playing .play { display: none; }
   .video-thumb { position: relative; padding: 0; border: 0; background: none; cursor: pointer; display: block; }
   .video-thumb img { display: block; }
   .video-thumb .play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 52px; height: 52px; border-radius: 50%; background: rgba(0, 104, 255, 0.92); color: #fff; font-size: 22px; display: grid; place-items: center; padding-left: 4px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3); }
@@ -863,8 +887,6 @@
   <div class="body">
     <table class="compare matrix icons"><tr><th></th><th class="">Chợ Tốt</th><th class="">Facebook Marketplace</th><th class="">Nhóm Facebook</th><th class="ours">Chợ 2Hand</th></tr><tr><td>Không cần cài app</td><td class=""><svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class="ours"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>Không cần đăng ký</td><td class=""><svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class="ours"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>Dễ tiếp cận</td><td class=""><svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk n" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8"/></svg></td><td class="ours"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>Đăng tin với video</td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk n" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class="ours"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>Miễn phí</td><td class=""><svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class="ours"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr><tr><td>An toàn</td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td><td class=""><svg class="mk n" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8"/></svg></td><td class="ours"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg></td></tr></table>
     <div class="legend"><svg class="mk y" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12.5l3.5 3.5 7.5-8"/></svg> Có &nbsp;&nbsp; <svg class="mk p" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 12h9"/></svg> Một phần &nbsp;&nbsp; <svg class="mk n" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8"/></svg> Không</div>
-    <div class="callout">Chưa có lựa chọn nào đủ cả 6 tiêu chí. Chợ 2Hand là chợ đồ cũ ngay trong Zalo, có đủ cả 6.</div>
-    <div class="src">Nguồn: trang trợ giúp và kho ứng dụng chính thức, báo chí; tra ngày 6/10/2026. Facebook Marketplace không tải được video ở Việt Nam (kiểm trên app). Chi tiết từng ô: plans/research-competitors.md.</div>
   </div>
 </section>
 
@@ -918,65 +940,48 @@
 <section class="slide">
   <div class="s-title">Feed</div>
   <div class="body">
-    <div class="steps-row"><figure class="flow-step"><figcaption><span class="no">1</span><b>Mở app</b><span class="detail">Tin mới nhất hiện ngay, không phải đợi đăng nhập xong</span></figcaption><div class="phone"><img src="assets/app/feed-home.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Ảnh đang tải</b><span class="detail">Hiện tạm bản mờ, tải xong thì thay bằng ảnh thật</span></figcaption><div class="phone"><img src="assets/app/feed-blur.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">3</span><b>Cuộn xuống</b><span class="detail">Gần hết danh sách thì tự tải thêm tin</span></figcaption><div class="phone"><img src="assets/app/feed-more.jpg?v=1791294585" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">4</span><b>Tin có video</b><span class="detail">Tự phát 3 giây xem trước, không có tiếng</span></figcaption><div class="phone"><video src="assets/app/feed-video.mp4" poster="assets/app/feed-video.jpg" autoplay muted loop playsinline></video></div></figure></div>
+    <div class="demo"><button type="button" class="phone demo-phone" aria-label="Phát video demo Feed"><video src="assets/app/feed-demo.mp4" poster="assets/app/feed-home.jpg?v=1791294585" playsinline preload="metadata"></video><span class="play">▶</span></button></div>
   </div>
   <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/01-home-feed.png?v=1791262540" data-title="1. Feed">1. Feed</button></div>
 </section>
 
-<section class="slide">
-  <div class="s-title">Feed: tìm kiếm và lọc</div>
-  <div class="body">
-    <div class="steps-row"><figure class="flow-step"><figcaption><span class="no">1</span><b>Tìm kiếm</b><span class="detail">Hỗ trợ tìm kiếm không dấu, ví dụ "dong ho" vẫn ra "Đồng hồ"</span></figcaption><div class="phone"><img src="assets/app/feed-search.jpg?v=1791384761" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Lọc tin</b><span class="detail">Theo khu vực, danh mục, tình trạng, giá</span></figcaption><div class="phone"><img src="assets/app/feed-filter.jpg?v=1791384772" alt=""></div></figure></div>
-  </div>
+<section class="slide dark transition">
+  <div class="t-center"><div class="t-kicker">Feed</div><div class="t-title">Technical Challenge</div></div>
 </section>
 
 <section class="slide">
-  <div class="s-title">Feed: Technical Challenge</div>
+  <div class="s-title">Feed: Loading time</div>
   <div class="body">
-    <div class="goals even"><div class="goal"><div class="goal-no">01</div><h3>Loading time</h3><p>Mở app là thấy tin, không phải chờ.</p><div class="metrics"><div class="metric"><b>≤ 2,5 s</b><span>LCP</span></div><div class="metric"><b>&lt; 200 ms</b><span>TBT</span></div><div class="metric"><b>&lt; 250 KB</b><span>Initial JS (gzip)</span></div></div></div><div class="goal"><div class="goal-no">02</div><h3>Smooth scrolling</h3><p>Feed 5.000 tin, cuộn xa đến đâu cũng không giật, không bị layout shift.</p><div class="metrics"><div class="metric"><b>5.000</b><span>tin trong feed</span></div><div class="metric"><b>0</b><span>layout shift (CLS)</span></div></div></div></div>
-  </div>
-  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/01-home-feed.png?v=1791262540" data-title="1. Feed">1. Feed</button></div>
-</section>
-
-<section class="slide">
-  <div class="s-title">Feed: loading time</div>
-  <div class="body">
-    <div class="lt">
-      <div class="lt-left">
-        <div class="score-row">
-          <div class="ring"><span>95</span></div>
-          <div><div class="score-label">Performance</div><div class="score-sub">Công cụ đo hiệu suất của Zalo Mini App</div></div>
-        </div>
-        <div class="tiles">
-          <div class="tile"><div class="tile-top"><b>2,5 s</b><span class="ok">✓</span></div><div class="tile-name">LCP</div><div class="tile-goal">Mục tiêu ≤ 2,5 s</div></div>
-          <div class="tile"><div class="tile-top"><b>100 ms</b><span class="ok">✓</span></div><div class="tile-name">TBT</div><div class="tile-goal">Mục tiêu &lt; 200 ms</div></div>
-          <div class="tile"><div class="tile-top"><b>154 KB</b><span class="ok">✓</span></div><div class="tile-name">Initial JS (gzip)</div><div class="tile-goal">Mục tiêu &lt; 250 KB</div></div>
-        </div>
-        <div class="how"><h3>Cách làm</h3><ul>
-          <li><b>Code splitting</b> theo route, lúc đầu chỉ tải trang chủ</li>
-          <li><b>Thumbnail WebP</b> nhỏ cho ảnh trên feed</li>
-          <li><b>Gọi feed sớm</b> và preload ảnh hàng đầu trong lúc JS chính còn tải</li>
-          <li><b>Prefetch</b> các trang khác khi trình duyệt rảnh</li>
-        </ul></div>
+    <div class="lt2">
+      <div class="lt2-shots">
+        <figure class="proof"><img src="assets/zalo-perf-feed-v1.jpg?v=1792041000" alt="Báo cáo hiệu suất bản v1: Performance 82, LCP 3,3 s, TBT 320 ms, CLS 0"><figcaption>Trước khi tối ưu</figcaption></figure>
+        <figure class="proof"><img src="assets/zalo-perf-feed.jpg?v=1791386833" alt="Báo cáo hiệu suất Zalo Mini App: Performance 95, LCP 2,5 s, TBT 100 ms, CLS 0"><figcaption>Sau khi tối ưu</figcaption></figure>
       </div>
-      <figure class="proof"><img src="assets/zalo-perf-feed.jpg?v=1791386833" alt="Báo cáo hiệu suất Zalo Mini App: Performance 95, LCP 2,5 s, TBT 100 ms, CLS 0"><figcaption>Báo cáo trên Zalo Mini App, 07/10/2026</figcaption></figure>
+      <div class="kw"><span>Code splitting</span><span>Apply WebP thumbnail</span><span>Prefetch feed data</span><span>Preload first row image</span><span>Prefetch các trang khác</span></div>
     </div>
   </div>
   <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/01-home-feed.png?v=1791262540" data-title="1. Feed">1. Feed</button></div>
 </section>
 
 <section class="slide">
-  <div class="s-title">Feed: Smooth scrolling</div>
+  <div class="s-title">Feed: Smooth scrolling - Giải pháp</div>
   <div class="body">
-    <div class="ss-head">Tối ưu trải nghiệm cuộn Feed</div>
-    <div class="ss">
-      <div class="fixes">
-        <div class="fix"><div class="fix-no">01</div><h3>Kích thước card cố định</h3><p>Giữ bố cục ổn định, hạn chế layout shifting khi tải nội dung.</p></div>
-        <div class="fix"><div class="fix-no">02</div><h3>ThumbHash Placeholder</h3><p>Hiển thị ảnh xem trước dạng mờ trong lúc chờ ảnh gốc tải xong.</p></div>
-        <div class="fix"><div class="fix-no">03</div><h3>Virtual List</h3><p>Chỉ render các item trong viewport và một vùng đệm nhỏ, giảm tải DOM và memory.</p></div>
-        <div class="fix"><div class="fix-no">04</div><h3>Tối ưu video playback</h3><p>Giới hạn video phát đồng thời, giảm tiêu thụ tài nguyên và băng thông.</p></div>
+    <div class="steps-row ss-steps"><figure class="flow-step"><figcaption><span class="no">1</span><b>Fixed card size</b><span class="detail">Giữ bố cục ổn định, không layout shift khi ảnh tải xong</span></figcaption><div class="phone"><img src="assets/app/feed-cards.jpg?v=1792050000" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">2</span><b>Show ThumbHash</b><span class="detail">Hiện ảnh mờ trong lúc chờ ảnh thật</span></figcaption><div class="phone"><img src="assets/app/feed-thumbhash.jpg?v=1792050000" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">3</span><b>Virtualize list</b><span class="detail">Chỉ render card trong viewport và một vùng đệm nhỏ</span></figcaption><div class="phone"><img src="assets/app/feed-scrolled.jpg?v=1792050000" alt=""></div></figure><figure class="flow-step"><figcaption><span class="no">4</span><b>Play one video</b><span class="detail">Chỉ phát 1 video, giảm tốn pin và băng thông cho người dùng</span></figcaption><div class="phone"><video src="assets/app/feed-one-video.mp4?v=1792050000" poster="assets/app/feed-one-video.jpg?v=1792050000" autoplay muted loop playsinline></video></div></figure></div>
+  </div>
+  <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/01-home-feed.png?v=1791262540" data-title="1. Feed">1. Feed</button></div>
+</section>
+
+<section class="slide">
+  <div class="s-title">Feed: Smooth scrolling - Kết quả</div>
+  <div class="body">
+    <div class="ss-result">
+      <p class="ss-note">Cuộn Feed liên tục 60 s, đo bằng Chrome DevTools Performance (CPU throttling 4×).</p>
+      <figure class="proof"><img src="assets/scroll-60s-memory.png?v=1791429226" alt="Chrome DevTools Performance: cuộn feed 60 giây, Frames gần như toàn xanh, JS heap và DOM nodes lên xuống trong một khoảng cố định"></figure>
+      <div class="ss-stats">
+        <div><b>Frames</b><span>Gần như toàn xanh, không giật</span></div>
+        <div><b>5,7 – 10,3 MB</b><span>JS heap lên xuống, không tăng mãi</span></div>
+        <div><b>735 – 1.731</b><span>DOM nodes, không tăng theo số tin</span></div>
       </div>
-      <div class="vl-result"><div><h3>Kết quả</h3><p class="ss-note">Đánh giá độ mượt khi cuộn Feed bằng Chrome DevTools Performance (CPU throttling 4×).</p></div><figure class="proof"><img src="assets/scroll-60s-memory.png?v=1791429226" alt="Chrome DevTools Performance: cuộn feed 60 giây, Frames gần như toàn xanh, JS heap và DOM nodes lên xuống trong một khoảng cố định"><figcaption>Cuộn liên tục 60 s</figcaption></figure></div>
     </div>
   </div>
   <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/scroll-60s-memory-full.png?v=1791429226" data-title="Phóng to kết quả">Phóng to kết quả</button><button type="button" class="diagram-btn" data-img="assets/01-home-feed.png?v=1791262540" data-title="1. Feed">1. Feed</button></div>
@@ -1569,6 +1574,17 @@ document.addEventListener('click', (event) => {
   modal.addEventListener('click', (e) => { if (e.target === modal || e.target.tagName === 'BUTTON') close(); });
   document.addEventListener('keydown', onKey, true);
   document.body.appendChild(modal);
+});
+</script>
+<script>
+// Click the phone to play or pause the demo video in place; leaving the slide pauses it.
+document.querySelectorAll('.demo-phone').forEach((phone) => {
+  const video = phone.querySelector('video');
+  const slide = phone.closest('.slide');
+  phone.addEventListener('click', () => (video.paused ? video.play() : video.pause()));
+  video.addEventListener('play', () => phone.classList.add('playing'));
+  video.addEventListener('pause', () => phone.classList.remove('playing'));
+  new MutationObserver(() => { if (!slide.classList.contains('active')) video.pause(); }).observe(slide, { attributeFilter: ['class'] });
 });
 </script>
 <script>
