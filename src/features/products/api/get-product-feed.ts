@@ -4,7 +4,7 @@ import { productKeys } from '@/features/products/api/keys';
 import type { ProductFeedPage, ProductFeedParams } from '@/features/products/types/product';
 import { apiClient } from '@/lib/api-client';
 import { LISTING_GC_TIME_MS, LISTING_STALE_TIME_MS } from '@/lib/query-client';
-import { keepFirstPage } from '@/lib/restart-stale-query';
+import { keepFirstPage, reloadEmptyListOnReconnect } from '@/lib/restart-stale-query';
 
 const FEED_PAGE_SIZE = 20;
 // The first page has no cursor; typed so later pages can pass one.
@@ -80,6 +80,6 @@ export function useProductFeed(params: ProductFeedParams) {
     // A stale infinite query would refetch every loaded page. Home reloads page one itself,
     // when the buyer comes back to it or changes the filters (use-restart-stale-feed.ts).
     refetchOnMount: false,
-    refetchOnReconnect: false,
+    refetchOnReconnect: reloadEmptyListOnReconnect,
   });
 }

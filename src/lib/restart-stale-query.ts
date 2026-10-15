@@ -13,6 +13,13 @@ export function keepFirstPage<Page>(queryClient: QueryClient, filters: QueryFilt
 }
 
 /**
+ * For `refetchOnReconnect`: a list that shows nothing (its first page failed, so the error screen
+ * is up) loads again when the network comes back; a list on screen stays as it is.
+ */
+export const reloadEmptyListOnReconnect = (query: { state: { data: unknown } }) =>
+  query.state.data === undefined;
+
+/**
  * Loads page one of a cached infinite query again, when it is older than `staleTimeMs` or was
  * invalidated. The old first page stays until the new one arrives. Works on a query nothing
  * shows yet, so a page can reset its list before it mounts.

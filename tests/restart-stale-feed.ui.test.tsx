@@ -173,6 +173,21 @@ describe('Home feed freshness', () => {
     expect(loadedIds(queryClient, homeParams)).toEqual(['old-1', 'old-2', 'old-3']);
   });
 
+  it('loads the feed again when the network comes back to its error screen', async () => {
+    const { queryClient, mountHome } = setUp();
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('Network Error'));
+    const { result } = mountHome(homeParams);
+    await waitFor(() => expect(result.current.isError).toBe(true), { timeout: 3_000 });
+    answerFeedWith('new');
+    vi.mocked(apiClient.get).mockClear();
+
+    onlineManager.setOnline(false);
+    onlineManager.setOnline(true);
+
+    await waitFor(() => expect(loadedIds(queryClient, homeParams)).toEqual(['new-1']));
+    expect(apiClient.get).toHaveBeenCalledTimes(1);
+  });
+
   it('loads page one alone when the filters change to a stale cached feed', async () => {
     const { queryClient, scrollTo, mountHome } = setUp();
     await cacheScrolledFeed(queryClient, homeParams, JUST_FRESH_MS);

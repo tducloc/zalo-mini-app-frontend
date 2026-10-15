@@ -16,7 +16,11 @@ import type {
 import { tabConfigs } from '@/features/my-listings/constants/tabs';
 import { http } from '@/lib/http';
 import { LISTING_STALE_TIME_MS } from '@/lib/query-client';
-import { keepFirstPage, restartIfStale } from '@/lib/restart-stale-query';
+import {
+  keepFirstPage,
+  restartIfStale,
+  reloadEmptyListOnReconnect,
+} from '@/lib/restart-stale-query';
 
 const MY_LISTINGS_PAGE_SIZE = 20;
 /**
@@ -72,7 +76,7 @@ export function useMyListings(tab: MyListingsTab, viewerId: string | null) {
     // A stale infinite query would refetch every loaded page; the layout effect below reloads
     // page one instead.
     refetchOnMount: false,
-    refetchOnReconnect: false,
+    refetchOnReconnect: reloadEmptyListOnReconnect,
     refetchInterval: (query) =>
       tab === 'processing' && query.state.data?.pages[0]?.data.length
         ? PROCESSING_REFRESH_MS

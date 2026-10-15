@@ -3,6 +3,7 @@ import { infiniteQueryOptions, type QueryClient, useInfiniteQuery } from '@tanst
 import type { ReelsPage } from '@/features/reels/types/reel';
 import { apiClient } from '@/lib/api-client';
 import { LISTING_GC_TIME_MS, LISTING_STALE_TIME_MS } from '@/lib/query-client';
+import { reloadEmptyListOnReconnect } from '@/lib/restart-stale-query';
 
 const REELS_PAGE_SIZE = 10;
 const FIRST_PAGE_CURSOR: string | undefined = undefined;
@@ -29,7 +30,7 @@ export const reelsQueryOptions = infiniteQueryOptions({
   // A stale infinite query would refetch every loaded page. The Reels tab reloads page one
   // itself when the viewer comes back to it (restart-stale-reels.ts).
   refetchOnMount: false,
-  refetchOnReconnect: false,
+  refetchOnReconnect: reloadEmptyListOnReconnect,
 });
 
 /** Page one only: a stale cache must not make the prefetch load every cached page again. */
