@@ -658,6 +658,8 @@
   .ap-stats div { background: var(--pale); border-radius: 18px; padding: 26px 30px; }
   .ap-stats b { display: block; font-size: 48px; line-height: 1.1; color: var(--blue); }
   .ap-stats span { font-size: 22px; color: var(--text-2); }
+  .ap-stats.row { flex-direction: row; width: auto; gap: 28px; }
+  .ap-stats.row div { width: 480px; }
   .ws-tile.muted b { color: #5b6472; }
   .demo { height: 100%; display: flex; align-items: center; justify-content: center; }
   .demo-phone { position: relative; width: 318px; border: 0; cursor: pointer; }
@@ -1210,8 +1212,7 @@
   <div class="s-title">Reels: Autoplay with sound - Kết quả</div>
   <div class="body">
     <div class="demo ap-result">
-      <button type="button" class="phone demo-phone" aria-label="Phát video demo autoplay có âm thanh"><video src="assets/demo-autoplay-with-sound.mp4" poster="assets/demo-autoplay-poster.jpg?v=1791433938" playsinline preload="metadata"></video><span class="play">▶</span></button>
-      <div class="ap-stats">
+      <div class="ap-stats row">
         <div><b>Autoplay</b><span>Có âm thanh ngay khi mở tab Reels</span></div>
         <div><b>Seamless Scroll</b><span>Lướt liên tục, video vẫn tự phát có âm thanh</span></div>
       </div>
