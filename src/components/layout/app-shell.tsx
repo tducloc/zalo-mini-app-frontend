@@ -12,7 +12,8 @@ import { isReelsPageLoaded, preloadPages } from '@/pages/lazy-pages';
 import { useHasDraft } from '@/stores/listing-draft';
 import { useToastOffset } from '@/hooks/use-toast-offset';
 import { useReelsStore } from '@/stores/reels';
-import { reelKeys, reelsQueryOptions } from '@/features/reels/api/get-reels';
+import { prefetchFirstReelsPage, reelKeys } from '@/features/reels/api/get-reels';
+import { restartStaleReels } from '@/features/reels/utils/restart-stale-reels';
 import type { ReelsPage } from '@/features/reels/types/reel';
 import { videoPool } from '@/lib/video-pool';
 import { warnInDev } from '@/utils/dev-log';
@@ -99,7 +100,7 @@ export default function AppShell({ children }: PropsWithChildren) {
   }, [hasDarkTop]);
 
   useEffect(() => {
-    void queryClient.prefetchInfiniteQuery(reelsQueryOptions);
+    void prefetchFirstReelsPage(queryClient);
   }, [queryClient]);
 
   // The screens' code loads after the window's load event, which waits for the first card
@@ -116,6 +117,10 @@ export default function AppShell({ children }: PropsWithChildren) {
   // A tab replaces the page instead of stacking on it, so only a page with a back button
   // has a page to swipe back to. Tabs switch in place, without the slide.
   const navigateFromTab = (path: string) => {
+    if (path === '/reels' && currentPath !== '/reels') {
+      restartStaleReels(queryClient);
+    }
+
     const navigateToTab = () => navigate(path, { replace: true, animate: false });
     if (
       path === '/reels' &&

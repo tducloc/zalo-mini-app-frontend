@@ -78,7 +78,8 @@ export function useSaveListing({
       refetchType: 'none',
     });
     void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
-    void queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
+    // No refetch of the cached feed pages; Home starts it again from page one on the next visit.
+    void queryClient.invalidateQueries({ queryKey: productKeys.feeds(), refetchType: 'none' });
   };
 
   return async function saveListing(values: ListingFieldValues) {

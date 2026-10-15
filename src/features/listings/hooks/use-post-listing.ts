@@ -81,7 +81,8 @@ export function usePostListing({
     forgetPostedDraft();
     void queryClient.invalidateQueries({ queryKey: myListingKeys.all() });
     // Published at once (201): the home feed must show it too.
-    void queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
+    // No refetch of the cached feed pages; Home starts it again from page one on the next visit.
+    void queryClient.invalidateQueries({ queryKey: productKeys.feeds(), refetchType: 'none' });
     showSuccess(posted.status === 'PUBLISHED' ? postMessages.published : postMessages.processing);
     // On the tab that lists it. Back from My listings goes to where the seller came from,
     // not to an empty form.

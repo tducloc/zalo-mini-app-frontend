@@ -62,9 +62,13 @@ function dropFromPublicLists(queryClient: QueryClient, productId: string) {
   dropPages<ReelsPage>(queryClient, reelKeys.all(), productId);
 }
 
+/**
+ * Marks the feeds and reels stale without a request: refetching an infinite list loads every page
+ * it holds. The next visit to Home or Reels starts it again from page one.
+ */
 function invalidatePublicLists(queryClient: QueryClient) {
-  void queryClient.invalidateQueries({ queryKey: productKeys.feeds() });
-  void queryClient.invalidateQueries({ queryKey: reelKeys.all() });
+  void queryClient.invalidateQueries({ queryKey: productKeys.feeds(), refetchType: 'none' });
+  void queryClient.invalidateQueries({ queryKey: reelKeys.all(), refetchType: 'none' });
 }
 
 /**

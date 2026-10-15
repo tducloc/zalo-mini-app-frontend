@@ -129,11 +129,11 @@ function FeedFooter({
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Manual loads must not cancel a refetch of the pages already shown.
+  // Manual loads must not cancel the reload of page one.
   const handleLoadMore = () => fetchNextPage({ cancelRefetch: false });
 
-  // Never while any fetch runs: fetchNextPage would cancel a full refetch of
-  // stale pages. Paused after a failed page so a broken network does not loop.
+  // Never while any fetch runs: fetchNextPage would cancel the reload of page one.
+  // Paused after a failed page so a broken network does not loop.
   const canAutoLoad = hasNextPage && !isFetching && !isFetchNextPageError;
 
   useEffect(() => {
