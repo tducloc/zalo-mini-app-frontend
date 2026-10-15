@@ -1401,7 +1401,7 @@
   <div class="s-title">Error Handling — Media Pipeline</div>
   <div class="body">
     <div class="eh2">
-      <div class="eh2-text"><table class="eh2-table"><tr><th>Image Processing</th><td><b>Lỗi xử lý → Fallback ảnh gốc</b><span>Worker crash/timeout → khởi tạo lại, retry 1 lần; không hỗ trợ → bỏ qua tối ưu.</span></td></tr><tr><th>Image Upload</th><td><b>Tối đa 3 lần thử với exponential backoff</b><span>Hết lượt → người dùng chủ động Thử lại.</span></td></tr><tr><th>Video Upload</th><td><b>Multipart upload → chỉ gửi lại các part chưa hoàn thành</b><span>Giữ các part đã hoàn thành, tránh upload lại toàn bộ video.</span></td></tr></table></div>
+      <div class="eh2-text"><table class="eh2-table"><tr><th>Image Processing</th><td><b>Lỗi xử lý → Fallback ảnh gốc</b><span>Worker crash/timeout → khởi tạo lại, retry 1 lần; không hỗ trợ → bỏ qua tối ưu.</span></td></tr><tr><th>Image Upload</th><td><b>Tối đa 3 lần thử với exponential backoff + jitter</b><span>Hết lượt → người dùng chủ động Thử lại.</span></td></tr><tr><th>Video Upload</th><td><b>Multipart upload → chỉ gửi lại các part chưa hoàn thành</b><span>Giữ các part đã hoàn thành, tránh upload lại toàn bộ video.</span></td></tr></table></div>
       <div class="eh-shots"><figure><div class="phone"><img src="assets/app/eh-upload-retrying.jpg" alt="Tile ảnh Đang thử lại"></div><figcaption>Đang thử lại</figcaption></figure><figure><div class="phone"><img src="assets/app/eh-upload-failed-viewer.jpg" alt="Upload lỗi, nút Thử lại"></div><figcaption>Hết lượt: nút Thử lại</figcaption></figure><figure><div class="phone"><img src="assets/app/eh-post-failed.jpg" alt="Đăng tin lỗi, form giữ nguyên"></div><figcaption>Đăng lỗi, giữ nội dung</figcaption></figure></div>
     </div>
   </div>
