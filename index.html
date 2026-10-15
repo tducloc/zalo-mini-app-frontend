@@ -1326,8 +1326,8 @@
   <div class="s-title">Đăng tin: Tối ưu video - Vấn đề</div>
   <div class="body">
     <div class="vd">
-      <div class="spec big-spec"><div class="spec-title">Giới hạn đầu vào</div><div class="spec-row"><span>Số video</span><b>tối đa 1 / tin</b></div><div class="spec-row"><span>Định dạng</span><b>MP4, MOV · H.264</b></div><div class="spec-row"><span>Thời lượng</span><b>≤ 60 giây</b></div><div class="spec-row"><span>Dung lượng</span><b>≤ 150 MB</b></div><div class="spec-row"><span>Độ phân giải</span><b>≤ 1080p</b></div></div>
-      <div class="vd-main"><h2>Video nặng</h2><p>Upload, xử lý và tải về đều lâu.</p><h2>Android gửi nguyên file gốc</h2><p>Có thể là HEVC, nhiều máy không phát được.</p></div>
+      <div class="spec big-spec"><div class="spec-title">Giới hạn đầu vào</div><div class="spec-row"><span>Số video</span><b>tối đa 1 / tin</b></div><div class="spec-row"><span>Định dạng</span><b>MP4, MOV · H.264</b></div><div class="spec-row"><span>Thời lượng</span><b>≤ 60 giây</b></div><div class="spec-row"><span>Dung lượng</span><b>≤ 150 MB</b></div></div>
+      <div class="vd-main"><h2>Video nặng</h2><p>Upload, xử lý và tải về đều lâu.</p></div>
     </div>
   </div>
   <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-2-optimize-videos.png?v=1791272330" data-title="3.2 Tối ưu video">3.2 Tối ưu video</button></div>
@@ -1336,7 +1336,7 @@
 <section class="slide">
   <div class="s-title">Đăng tin: Tối ưu video - Giải pháp</div>
   <div class="body">
-    <div class="figure"><img src="assets/architecture-media-video.png?v=1792080000" alt="Luồng xử lý video trên sơ đồ kiến trúc: Android chuyển H.264 1080p 30 fps, iPhone giữ nguyên; xin URL, upload S3, báo xong; media worker chuyển về 720p nếu trên 720p hoặc 4 Mbit/s, dời moov lên đầu; tải qua CloudFront"></div>
+    <div class="figure"><img src="assets/architecture-media-video.png?v=1792170000" alt="Luồng xử lý video trên sơ đồ kiến trúc: video trên 1080p được nén xuống H.264 1080p 30 fps, còn lại giữ nguyên; xin URL, upload S3, báo xong; media worker chuyển về 720p nếu trên 720p hoặc 4 Mbit/s, dời moov lên đầu; tải qua CloudFront"></div>
   </div>
   <div class="diagram-links"><button type="button" class="diagram-btn" data-img="assets/03-2-optimize-videos.png?v=1791272330" data-title="3.2 Tối ưu video">3.2 Tối ưu video</button><button type="button" class="diagram-btn" data-img="assets/03-3-upload-and-process.png?v=1791277004" data-title="3.3 Upload &amp; xử lý">3.3 Upload &amp; xử lý</button></div>
 </section>
