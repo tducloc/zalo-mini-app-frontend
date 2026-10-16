@@ -1,15 +1,22 @@
 import { Icon } from 'zmp-ui';
 
-import { useShareSellerPermissions } from '@/features/contact/hooks/use-seller-permissions';
+import {
+  useAskSellerPermissionsOnce,
+  useShareSellerPermissions,
+} from '@/features/contact/hooks/use-seller-permissions';
 
 const NOTICE_TITLE = 'Hiển thị thông tin liên hệ';
 
-/** On the sell page until the seller shares their Zalo name and phone number. */
+/**
+ * On the sell page until the seller shares their Zalo name and phone number. Asks through
+ * Zalo's sheet on the first visit, and stays hidden while that sheet is open.
+ */
 export default function SellerPermissionNotice() {
+  const isAsking = useAskSellerPermissionsOnce();
   const { missing, share, isSharing } = useShareSellerPermissions();
 
   // Nothing while loading or failed: a notice that flashes away would only distract.
-  if (!missing) {
+  if (!missing || isAsking) {
     return null;
   }
 
