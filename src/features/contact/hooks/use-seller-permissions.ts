@@ -65,12 +65,17 @@ async function askSellerPermissions(
   return asked;
 }
 
-/** The sell page asks once, for the name and the phone together, then stores what they allowed. */
-export function SellerPermissionAsk() {
+/**
+ * The sell page asks once, for the name and the phone together, then stores what they
+ * allowed. True until that first ask is over (or found not needed), so nothing on the
+ * page asks for the same thing behind Zalo's sheet.
+ */
+export function useAskSellerPermissionsOnce() {
   const userId = useSession().session?.user.id ?? null;
   const phone = useMyPhoneNumber();
   const share = useSharePhoneNumber();
   const started = useRef(false);
+  const [isAsking, setAsking] = useState(() => !hasAskedSellerPermissions());
 
   useEffect(() => {
     if (!userId || !phone.isFetched || hasAskedSellerPermissions() || started.current) {
@@ -85,10 +90,11 @@ export function SellerPermissionAsk() {
           started.current = false;
         }
       })
-      .catch((error) => warnInDev('contact', 'saving the shared phone failed', error));
+      .catch((error) => warnInDev('contact', 'saving the shared phone failed', error))
+      .finally(() => setAsking(false));
   }, [userId, phone.isFetched, phone.data, share]);
 
-  return null;
+  return isAsking;
 }
 
 /** What buyers cannot see yet; null when they see both, or while the number loads. */
