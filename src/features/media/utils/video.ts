@@ -117,8 +117,8 @@ export function originalVideoProblem(video: VideoFacts) {
 }
 
 /**
- * Kept for the media lab probe, which still asks this. The sell form does not. Android
- * encodes only when `originalVideoProblem` is set.
+ * Kept for the media lab probe, which still asks this. The sell form does not: it
+ * converts only when `originalVideoProblem` is set.
  */
 export function shouldConvertVideo(_video: VideoFacts) {
   return false;

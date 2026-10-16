@@ -6,8 +6,6 @@
  * the file), an edit page makes its own.
  */
 
-import { getSystemInfo } from 'zmp-sdk';
-
 import { draftUploads, type UploadService } from '@/features/listings/services/upload-media';
 import {
   DraftMediaStatus,
@@ -145,15 +143,7 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
     markReady(id, original, optimized, URL.createObjectURL(blob));
   }
 
-  function isAndroidPhone() {
-    try {
-      return getSystemInfo().platform === 'android';
-    } catch {
-      return false;
-    }
-  }
-
-  /** The Android compatibility file, or null when this phone cannot encode it. */
+  /** The file converted to H.264 inside 1080p, or null when this phone cannot encode it. */
   async function convertPickedVideo({ id, file, signal }: PickedFile, original: OriginalFile) {
     if (!canConvertVideos) {
       return null;
@@ -216,7 +206,7 @@ export function createMediaIntake(store: ListingDraftStore, uploads: UploadServi
     const facts = { ...metadata, bytes: file.size };
     const original = { bytes: file.size, width: facts.width, height: facts.height };
     const problem = originalVideoProblem(facts);
-    if (problem && isAndroidPhone()) {
+    if (problem) {
       const converted = await convertPickedVideo(picked, original);
       if (signal.aborted) {
         return;

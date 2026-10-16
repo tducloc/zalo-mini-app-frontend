@@ -1,7 +1,7 @@
 /**
- * Converts a clip the server would refuse into H.264 inside 1080p. Android uses this
- * because its picker keeps the camera file. iOS already exports H.264. The worker still
- * makes the 720p file buyers watch. Needs WebCodecs.
+ * Converts a clip the server would refuse (above 1080p, not H.264, or too big) into H.264
+ * inside 1080p, on any phone. The worker still makes the 720p file buyers watch. Needs
+ * WebCodecs; without it the clip is refused.
  *
  * The encoder and decoder run on the phone's media hardware; mediabunny only moves frames
  * between them.
@@ -12,7 +12,7 @@ import type { Conversion, InputTrack } from 'mediabunny';
 import { MAX_VIDEO_LONG_EDGE, MAX_VIDEO_SHORT_EDGE } from '@/features/media/constants/limits';
 import { VideoFormat } from '@/features/media/types/video';
 
-/** Bitrate for the Android compatibility file. The worker re-encodes it to about 3 Mbit/s. */
+/** Bitrate for the converted file. The worker re-encodes it to about 3 Mbit/s. */
 const COMPAT_BITRATE = 8_000_000;
 
 /** Faster clips are converted at this rate: product clips do not need 60 fps, and it halves the work. */
